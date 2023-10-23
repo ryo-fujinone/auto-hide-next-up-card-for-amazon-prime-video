@@ -1,0 +1,43 @@
+{
+    "manifest_version": 3,
+    "name": "Auto hide next up card for Amazon Prime Video",
+    "version": "1.0.0",
+    "default_locale": "en",
+    "description": "__MSG_desc__",
+    "icons": {
+        "16": "icons/16.png",
+        "32": "icons/32.png",
+        "48": "icons/48.png",
+        "128": "icons/128.png"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://*.amazon.co.jp/gp/video/*",
+                "https://*.amazon.co.jp/Amazon-Video/*",
+                "https://*.amazon.com/*",
+                "https://*.amazon.ae/*",
+                "https://*.amazon.co.uk/*",
+                "https://*.amazon.it/*",
+                "https://*.amazon.in/*",
+                "https://*.amazon.eg/*",
+                "https://*.amazon.com.au/*",
+                "https://*.amazon.nl/*",
+                "https://*.amazon.ca/*",
+                "https://*.amazon.sa/*",
+                "https://*.amazon.sg/*",
+                "https://*.amazon.se/*",
+                "https://*.amazon.es/*",
+                "https://*.amazon.de/*",
+                "https://*.amazon.com.tr/*",
+                "https://*.amazon.com.br/*",
+                "https://*.amazon.fr/*",
+                "https://*.amazon.com.be/*",
+                "https://*.amazon.pl/*",
+                "https://*.amazon.com.mx/*",
+                "https://*.amazon.cn/*"
+            ],
+            "js": ["main.js"]
+        }
+    ]
+}
