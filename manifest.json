@@ -35,7 +35,8 @@
                 "https://*.amazon.com.be/*",
                 "https://*.amazon.pl/*",
                 "https://*.amazon.com.mx/*",
-                "https://*.amazon.cn/*"
+                "https://*.amazon.cn/*",
+                "https://*.primevideo.com/*"
             ],
             "js": ["main.js"]
         }
