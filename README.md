@@ -2,13 +2,18 @@
 
 Amazon Prime Video の Next up を非表示にする Chrome の拡張機能。
 
-[Chrome ウェブストア](https://chrome.google.com/webstore/detail/auto-hide-next-up-card-fo/pnpkddhaeadgjpmmcahamnicmplobkci)
-
+[Chrome ウェブストア](https://chrome.google.com/webstore/detail/auto-hide-next-up-card-fo/pnpkddhaeadgjpmmcahamnicmplobkci)  
 [ユーザースクリプト](https://greasyfork.org/ja/scripts/478102-auto-hide-next-up-card-for-amazon-prime-video)
 
-非表示ボタンの自動クリックと display:none;の設定を行います。動作テストは日本の Prime Video 上でのみ行いました。
+以下の機能を実装しています。
 
-以下のドメイン上で同じ処理が実行されます。
+-   非表示ボタンの自動クリックと display:none の設定による Next up の非表示
+-   非表示ボタンの自動クリック時にオーバーレイ表示を 5 秒間無効化
+-   レーティング(推奨対象年齢)及びその周辺のオーバーレイ要素の非表示
+
+動作テストは日本の Prime Video 上でのみ行いました。
+
+以下の URL 上で同じ処理が実行されます。
 
 -   https://\*.amazon.ae/\*
 -   https://\*.amazon.ca/\*
