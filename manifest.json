@@ -13,8 +13,7 @@
     "content_scripts": [
         {
             "matches": [
-                "https://*.amazon.co.jp/gp/video/*",
-                "https://*.amazon.co.jp/Amazon-Video/*",
+                "https://*.amazon.co.jp/*",
                 "https://*.amazon.com/*",
                 "https://*.amazon.ae/*",
                 "https://*.amazon.co.uk/*",
