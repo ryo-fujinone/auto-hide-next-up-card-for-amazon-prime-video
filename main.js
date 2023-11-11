@@ -1,6 +1,6 @@
 const observeConfig = { childList: true, subtree: true };
 
-let addStyle = (css) => {
+const addStyle = (css) => {
     const style = document.createElement("style");
     style.textContent = css;
     document.head.appendChild(style);
@@ -57,7 +57,9 @@ const createOptionMessages = () => {
 const getOptionDialog = () => document.querySelector(".nextup-ext-opt-dialog");
 
 const createOptionDialog = () => {
-    if (getOptionDialog()) return;
+    if (getOptionDialog()) {
+        return;
+    }
 
     const messages = createOptionMessages();
     const options = getOptions();
@@ -108,7 +110,9 @@ const createOptionDialog = () => {
         "click",
         (e) => {
             const idName = e.target.id;
-            if (idName === "") return;
+            if (idName === "") {
+                return;
+            }
 
             switch (idName) {
                 case "hide-nextup":
@@ -142,7 +146,9 @@ const openOptionDialogWithKeyboard = () => {
         const webPlayerContainer = document.querySelector(
             ".webPlayerContainer"
         );
-        if (!webPlayerContainer) return;
+        if (!webPlayerContainer) {
+            return;
+        }
 
         _observer.disconnect();
 
@@ -162,12 +168,16 @@ const openOptionDialogWithKeyboard = () => {
 
 const createOptionBtn = () => {
     new MutationObserver((_, _observer) => {
-        if (document.querySelector(".nextup-ext-opt-btn-container")) return;
+        if (document.querySelector(".nextup-ext-opt-btn-container")) {
+            return;
+        }
 
         const btnsContainer = document.querySelector(
             ".atvwebplayersdk-hideabletopbuttons-container"
         );
-        if (!btnsContainer) return;
+        if (!btnsContainer) {
+            return;
+        }
 
         _observer.disconnect();
 
@@ -203,7 +213,9 @@ const temporarilyDisableOverlay = (delay = "5000") => {
     const overlaysWrapper = document.querySelector(
         ".atvwebplayersdk-overlays-wrapper"
     );
-    if (!overlaysWrapper) return;
+    if (!overlaysWrapper) {
+        return;
+    }
     overlaysWrapper.style.display = "none";
     setTimeout(() => {
         overlaysWrapper.style.display = "";
@@ -212,12 +224,16 @@ const temporarilyDisableOverlay = (delay = "5000") => {
 
 const autoHideNextup = () => {
     let options = getOptions();
-    if (!options.hideNextup) return;
+    if (!options.hideNextup) {
+        return;
+    }
     new MutationObserver((_, outerObserver) => {
         const wrapper = document.querySelector(
             ".atvwebplayersdk-nextupcard-wrapper"
         );
-        if (!wrapper) return;
+        if (!wrapper) {
+            return;
+        }
 
         outerObserver.disconnect();
 
@@ -228,8 +244,9 @@ const autoHideNextup = () => {
             );
             if (hideButton) {
                 // Temporarily disable the overlay because it will be displayed by executing click().
-                if (options.temporarilyDisableOverlay)
+                if (options.temporarilyDisableOverlay) {
                     temporarilyDisableOverlay("5000");
+                }
                 hideButton.click();
             }
         }).observe(wrapper, observeConfig);
@@ -238,7 +255,9 @@ const autoHideNextup = () => {
 
 const hideRatingText = () => {
     let options = getOptions();
-    if (!options.hideRating) return;
+    if (!options.hideRating) {
+        return;
+    }
     const css = [
         ".atvwebplayersdk-rating-text {display: none;}",
         ".atvwebplayersdk-ratingdescriptor-text {display: none;}",
@@ -250,26 +269,34 @@ const hideRatingText = () => {
         const ratingDesc = document.querySelector(
             ".atvwebplayersdk-ratingdescriptor-text"
         );
-        if (!ratingDesc) return;
+        if (!ratingDesc) {
+            return;
+        }
 
         _observer.disconnect();
 
         const parent = ratingDesc.parentNode.parentNode;
-        if (parent.childNodes.length !== 3) return;
+        if (parent.childNodes.length !== 3) {
+            return;
+        }
         if (
             !Array.from(parent.childNodes).every(
                 (child) => child.tagName === "DIV"
             )
-        )
+        ) {
             return;
+        }
 
         for (const child of parent.childNodes) {
-            if (child.querySelector(".atvwebplayersdk-ratingdescriptor-text"))
+            if (child.querySelector(".atvwebplayersdk-ratingdescriptor-text")) {
                 continue;
+            }
+
             if (child.childNodes.length === 0 && child.textContent === "") {
                 child.style.display = "none";
                 continue;
             }
+
             if (
                 child.childNodes.length === 1 &&
                 child.childNodes[0].childNodes.length === 0 &&
@@ -282,7 +309,9 @@ const hideRatingText = () => {
     }).observe(document, observeConfig);
 };
 
-if (!localStorage.getItem("nextup-ext")) saveDefaultOptions();
+if (!localStorage.getItem("nextup-ext")) {
+    saveDefaultOptions();
+}
 createOptionBtn();
 openOptionDialogWithKeyboard();
 
