@@ -42,12 +42,14 @@ const createOptionMessages = () => {
         temporarilyDisableOverlay:
             "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
         hideRating: "レーティング(推奨対象年齢)を非表示にする",
+        close: "閉じる",
     };
     const enMessages = {
         hideNextup: "Hide next up card",
         temporarilyDisableOverlay:
             "Disable overlay for 5 seconds when auto-clicking hide button",
         hideRating: "Hide rating",
+        close: "Close",
     };
     return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
@@ -81,7 +83,9 @@ const createOptionDialog = () => {
               <p>${messages.hideRating}</p>
            </label>
            <div>
-              <button id="nextup-ext-opt-dialog-close">閉じる</button>
+              <button id="nextup-ext-opt-dialog-close">${
+                  messages.close
+              }</button>
            </div>
         </dialog>
         `;
