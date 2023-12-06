@@ -1,5 +1,53 @@
 const observeConfig = { childList: true, subtree: true };
 
+const getDefaultOptions = () => {
+    return {
+        hideSkipElemBtn: true,
+        hideNextup: true,
+        temporarilyDisableOverlay: true,
+        hideRating: true,
+        scriptVersion: "2.0.1",
+    };
+};
+
+const getScriptInfo = () => {
+    let scriptInfo = {
+        scriptType: "unknown",
+        scriptVersion: getDefaultOptions().scriptVersion,
+    };
+
+    // user script
+    /**
+     * When using optional chaining with window.GM_info in tampermonkey,
+     * it sometimes became undefined for some reason, so I implemented it using try-catch.
+     */
+    try {
+        const gmVer = window.GM_info.script.version;
+        if (!isNaN(parseFloat(gmVer))) {
+            scriptInfo = {
+                scriptType: "user-script",
+                scriptVersion: gmVer,
+            };
+            return scriptInfo;
+        }
+    } catch (e) {
+        // console.log(e);
+    }
+
+    // chrome extension
+    const chromeExtVer = chrome?.runtime?.getManifest()?.version;
+    if (!isNaN(parseFloat(chromeExtVer))) {
+        scriptInfo = {
+            scriptType: "chrome-extension",
+            scriptVersion: chromeExtVer,
+        };
+        return scriptInfo;
+    }
+
+    // unknown
+    return scriptInfo;
+};
+
 const addStyle = (css) => {
     const style = document.createElement("style");
     style.textContent = css;
@@ -7,12 +55,7 @@ const addStyle = (css) => {
 };
 
 const saveDefaultOptions = () => {
-    const defaultOption = {
-        hideNextup: true,
-        temporarilyDisableOverlay: true,
-        hideRating: true,
-    };
-    const jsonStr = JSON.stringify(defaultOption);
+    const jsonStr = JSON.stringify(getDefaultOptions());
     localStorage.setItem("nextup-ext", jsonStr);
 };
 
@@ -20,24 +63,47 @@ const getOptions = () => {
     let jsonStr = localStorage.getItem("nextup-ext");
     if (!jsonStr) {
         saveDefaultOptions();
-        jsonStr = localStorage.getItem("nextup-ext");
+        return getDefaultOptions();
     }
     return JSON.parse(jsonStr);
 };
 
-const saveOptions = (key, value) => {
+const saveOptions = (_newOptions = {}) => {
     const options = getOptions();
     const newOptions = {
         ...options,
-        [key]: value,
+        ..._newOptions,
     };
-    console.log(newOptions);
+    const jsonStr = JSON.stringify(newOptions);
+    localStorage.setItem("nextup-ext", jsonStr);
+};
+
+const UpdateOptionVersion = (scriptInfo) => {
+    const options = getOptions();
+    if (options.scriptVersion === scriptInfo.scriptVersion) {
+        return;
+    }
+
+    const defaultOptions = getDefaultOptions();
+    const mergedOptions = {
+        ...defaultOptions,
+        ...options,
+        scriptVersion: scriptInfo.scriptVersion,
+    };
+    const mergedOptionsKeys = Object.keys(mergedOptions);
+    const newOptions = mergedOptionsKeys.reduce((obj, key) => {
+        if (Object.hasOwn(defaultOptions, key)) {
+            obj[key] = mergedOptions[key];
+        }
+        return obj;
+    }, {});
     const jsonStr = JSON.stringify(newOptions);
     localStorage.setItem("nextup-ext", jsonStr);
 };
 
 const createOptionMessages = () => {
     const jaMessages = {
+        hideSkipElemBtn: "イントロスキップボタンを非表示にする",
         hideNextup: "Next upを非表示にする",
         temporarilyDisableOverlay:
             "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
@@ -45,6 +111,7 @@ const createOptionMessages = () => {
         close: "閉じる",
     };
     const enMessages = {
+        hideSkipElemBtn: "Hide skip intro button",
         hideNextup: "Hide next up card",
         temporarilyDisableOverlay:
             "Disable overlay for 5 seconds when auto-clicking hide button",
@@ -66,6 +133,12 @@ const createOptionDialog = () => {
 
     const dialogHtmlStr = `
         <dialog class="nextup-ext-opt-dialog">
+           <label>
+              <input type="checkbox" id="hide-skip-elem-btn" name="hide-skip-elem-btn" ${
+                  options.hideSkipElemBtn ? "checked" : ""
+              } />
+              <p>${messages.hideSkipElemBtn}</p>
+           </label>
            <label>
               <input type="checkbox" id="hide-nextup" name="hide-nextup" ${
                   options.hideNextup ? "checked" : ""
@@ -115,14 +188,19 @@ const createOptionDialog = () => {
             }
 
             switch (idName) {
+                case "hide-skip-elem-btn":
+                    saveOptions({ hideSkipElemBtn: e.target.checked });
+                    break;
                 case "hide-nextup":
-                    saveOptions("hideNextup", e.target.checked);
+                    saveOptions({ hideNextup: e.target.checked });
                     break;
                 case "temporarily-disable-overlay":
-                    saveOptions("temporarilyDisableOverlay", e.target.checked);
+                    saveOptions({
+                        temporarilyDisableOverlay: e.target.checked,
+                    });
                     break;
                 case "hide-rationg":
-                    saveOptions("hideRating", e.target.checked);
+                    saveOptions({ hideRating: e.target.checked });
                     break;
                 case "nextup-ext-opt-dialog-close":
                     optDialog.close();
@@ -309,11 +387,19 @@ const hideRatingText = () => {
     }).observe(document, observeConfig);
 };
 
-if (!localStorage.getItem("nextup-ext")) {
-    saveDefaultOptions();
-}
-createOptionBtn();
-openOptionDialogWithKeyboard();
+const main = () => {
+    if (!localStorage.getItem("nextup-ext")) {
+        saveDefaultOptions();
+    }
 
-autoHideNextup();
-hideRatingText();
+    const scriptInfo = getScriptInfo();
+    UpdateOptionVersion(scriptInfo);
+
+    createOptionBtn();
+    openOptionDialogWithKeyboard();
+
+    autoHideNextup();
+    hideRatingText();
+};
+
+main();
