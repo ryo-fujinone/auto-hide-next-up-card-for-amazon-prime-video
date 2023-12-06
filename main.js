@@ -60,7 +60,7 @@ const saveDefaultOptions = () => {
 };
 
 const getOptions = () => {
-    let jsonStr = localStorage.getItem("nextup-ext");
+    const jsonStr = localStorage.getItem("nextup-ext");
     if (!jsonStr) {
         saveDefaultOptions();
         return getDefaultOptions();
@@ -301,7 +301,7 @@ const temporarilyDisableOverlay = (delay = "5000") => {
 };
 
 const autoHideNextup = () => {
-    let options = getOptions();
+    const options = getOptions();
     if (!options.hideNextup) {
         return;
     }
@@ -332,7 +332,7 @@ const autoHideNextup = () => {
 };
 
 const hideRatingText = () => {
-    let options = getOptions();
+    const options = getOptions();
     if (!options.hideRating) {
         return;
     }
