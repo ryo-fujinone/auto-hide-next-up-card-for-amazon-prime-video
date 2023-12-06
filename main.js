@@ -300,8 +300,7 @@ const temporarilyDisableOverlay = (delay = "5000") => {
     }, delay);
 };
 
-const autoHideNextup = () => {
-    const options = getOptions();
+const autoHideNextup = (options) => {
     if (!options.hideNextup) {
         return;
     }
@@ -331,8 +330,7 @@ const autoHideNextup = () => {
     }).observe(document, observeConfig);
 };
 
-const hideRatingText = () => {
-    const options = getOptions();
+const hideRatingText = (options) => {
     if (!options.hideRating) {
         return;
     }
@@ -398,8 +396,9 @@ const main = () => {
     createOptionBtn();
     openOptionDialogWithKeyboard();
 
-    autoHideNextup();
-    hideRatingText();
+    const options = getOptions();
+    autoHideNextup(options);
+    hideRatingText(options);
 };
 
 main();
