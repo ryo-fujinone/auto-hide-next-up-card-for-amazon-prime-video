@@ -2,7 +2,7 @@ const observeConfig = { childList: true, subtree: true };
 
 const getDefaultOptions = () => {
     return {
-        hideSkipElemBtn: true,
+        hideSkipIntroBtn: true,
         hideNextup: true,
         temporarilyDisableOverlay: true,
         hideRating: true,
@@ -103,7 +103,7 @@ const UpdateOptionVersion = (scriptInfo) => {
 
 const createOptionMessages = () => {
     const jaMessages = {
-        hideSkipElemBtn: "イントロスキップボタンを非表示にする",
+        hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
         hideNextup: "Next upを非表示にする",
         temporarilyDisableOverlay:
             "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
@@ -111,7 +111,7 @@ const createOptionMessages = () => {
         close: "閉じる",
     };
     const enMessages = {
-        hideSkipElemBtn: "Hide skip intro button",
+        hideSkipIntroBtn: "Hide skip intro button",
         hideNextup: "Hide next up card",
         temporarilyDisableOverlay:
             "Disable overlay for 5 seconds when auto-clicking hide button",
@@ -134,10 +134,10 @@ const createOptionDialog = () => {
     const dialogHtmlStr = `
         <dialog class="nextup-ext-opt-dialog">
            <label>
-              <input type="checkbox" id="hide-skip-elem-btn" name="hide-skip-elem-btn" ${
-                  options.hideSkipElemBtn ? "checked" : ""
+              <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
+                  options.hideSkipIntroBtn ? "checked" : ""
               } />
-              <p>${messages.hideSkipElemBtn}</p>
+              <p>${messages.hideSkipIntroBtn}</p>
            </label>
            <label>
               <input type="checkbox" id="hide-nextup" name="hide-nextup" ${
@@ -188,8 +188,8 @@ const createOptionDialog = () => {
             }
 
             switch (idName) {
-                case "hide-skip-elem-btn":
-                    saveOptions({ hideSkipElemBtn: e.target.checked });
+                case "hide-skip-intro-btn":
+                    saveOptions({ hideSkipIntroBtn: e.target.checked });
                     break;
                 case "hide-nextup":
                     saveOptions({ hideNextup: e.target.checked });
@@ -285,6 +285,16 @@ const createOptionBtn = () => {
             openOptionDialog();
         });
     }).observe(document, observeConfig);
+};
+
+const hideSkipIntroBtn = (options) => {
+    if (!options.hideSkipIntroBtn) {
+        return;
+    }
+    const css = [
+        ".atvwebplayersdk-skipelement-button {display: none !important;}",
+    ];
+    addStyle(css.join(""));
 };
 
 const temporarilyDisableOverlay = (delay = "5000") => {
@@ -397,6 +407,7 @@ const main = () => {
     openOptionDialogWithKeyboard();
 
     const options = getOptions();
+    hideSkipIntroBtn(options);
     autoHideNextup(options);
     hideRatingText(options);
 };
