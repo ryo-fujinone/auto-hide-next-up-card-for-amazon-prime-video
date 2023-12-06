@@ -345,8 +345,8 @@ const hideRatingText = (options) => {
         return;
     }
     const css = [
-        ".atvwebplayersdk-rating-text {display: none;}",
-        ".atvwebplayersdk-ratingdescriptor-text {display: none;}",
+        ".atvwebplayersdk-rating-text {display: none !important;}",
+        ".atvwebplayersdk-ratingdescriptor-text {display: none !important;}",
     ];
     addStyle(css.join(""));
 
