@@ -6,7 +6,7 @@ const getDefaultOptions = () => {
         hideNextup: true,
         temporarilyDisableOverlay: true,
         hideRating: true,
-        scriptVersion: "2.0.1",
+        scriptVersion: "2.1.0",
     };
 };
 
