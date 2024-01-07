@@ -297,7 +297,10 @@ const hideSkipIntroBtn = (options) => {
     addStyle(css.join(""));
 };
 
-const temporarilyDisableOverlay = (delay = "5000") => {
+const temporarilyDisableOverlay = (options, delay = "5000") => {
+    if (!options.temporarilyDisableOverlay) {
+        return;
+    }
     const overlaysWrapper = document.querySelector(
         ".atvwebplayersdk-overlays-wrapper"
     );
@@ -331,9 +334,7 @@ const autoHideNextup = (options) => {
             );
             if (hideButton) {
                 // Temporarily disable the overlay because it will be displayed by executing click().
-                if (options.temporarilyDisableOverlay) {
-                    temporarilyDisableOverlay("5000");
-                }
+                temporarilyDisableOverlay(options, "5000");
                 hideButton.click();
             }
         }).observe(wrapper, observeConfig);
