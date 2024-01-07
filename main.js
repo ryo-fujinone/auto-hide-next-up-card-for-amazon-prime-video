@@ -78,7 +78,7 @@ const saveOptions = (_newOptions = {}) => {
     localStorage.setItem("nextup-ext", jsonStr);
 };
 
-const UpdateOptionVersion = (scriptInfo) => {
+const updateOptionVersion = (scriptInfo) => {
     const options = getOptions();
     if (options.scriptVersion === scriptInfo.scriptVersion) {
         return;
@@ -401,7 +401,7 @@ const main = () => {
     }
 
     const scriptInfo = getScriptInfo();
-    UpdateOptionVersion(scriptInfo);
+    updateOptionVersion(scriptInfo);
 
     createOptionBtn();
     openOptionDialogWithKeyboard();
