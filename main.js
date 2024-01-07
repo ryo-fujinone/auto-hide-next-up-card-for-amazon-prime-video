@@ -143,6 +143,25 @@ const pauseVideo = () => {
     }
 };
 
+const funcWhenDialogIsClosed = () => {
+    playVideo();
+};
+
+const closeDialogWhenClickedOutside = (e) => {
+    if (e.target.classList.contains("nextup-ext-opt-dialog")) {
+        e.target.close();
+        funcWhenDialogIsClosed();
+        document.removeEventListener("click", closeDialogWhenClickedOutside);
+    }
+};
+
+const funcWhenOpeningDialog = () => {
+    pauseVideo();
+    setTimeout(() => {
+        document.addEventListener("click", closeDialogWhenClickedOutside);
+    }, 1000);
+};
+
 const createOptionDialog = () => {
     if (getOptionDialog()) {
         return;
@@ -153,6 +172,7 @@ const createOptionDialog = () => {
 
     const dialogHtmlStr = `
         <dialog class="nextup-ext-opt-dialog">
+        <div class="dialog-inner">
            <label>
               <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
                   options.hideSkipIntroBtn ? "checked" : ""
@@ -182,17 +202,19 @@ const createOptionDialog = () => {
                   messages.close
               }</button>
            </div>
+        </div>
         </dialog>
         `;
     document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
 
     const css = [
-        ".nextup-ext-opt-dialog {width: 370px;}",
+        ".nextup-ext-opt-dialog {width: 370px; padding: 0;}",
+        ".dialog-inner {padding: 14px;}",
         ".nextup-ext-opt-dialog label {display: inline;}",
         ".nextup-ext-opt-dialog label input {float: left;}",
         ".nextup-ext-opt-dialog label p {float: left; margin-bottom: 5px; width: calc(100% - 24px);}",
         ".nextup-ext-opt-dialog label:last-of-type p {margin-bottom: 12px;}",
-        ".nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close) {text-align: center;}",
+        ".nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close):not(.dialog-inner) {text-align: center;}",
         "#nextup-ext-opt-dialog-close {border-color: black; border: solid 1px; background-color: #EEE}",
         "#nextup-ext-opt-dialog-close:hover {background-color: #DDD}",
     ];
@@ -224,7 +246,7 @@ const createOptionDialog = () => {
                     break;
                 case "nextup-ext-opt-dialog-close":
                     optDialog.close();
-                    playVideo();
+                    funcWhenDialogIsClosed();
                     break;
                 default:
                     break;
@@ -237,7 +259,7 @@ const createOptionDialog = () => {
 const openOptionDialog = () => {
     createOptionDialog();
     const optDialog = getOptionDialog();
-    pauseVideo();
+    funcWhenOpeningDialog();
     optDialog.showModal();
 };
 
@@ -258,9 +280,9 @@ const openOptionDialogWithKeyboard = () => {
                 const optDialog = getOptionDialog();
                 if (optDialog.hasAttribute("open")) {
                     optDialog.close();
-                    playVideo();
+                    funcWhenDialogIsClosed();
                 } else {
-                    pauseVideo();
+                    funcWhenOpeningDialog();
                     optDialog.showModal();
                 }
             }
