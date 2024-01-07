@@ -35,13 +35,17 @@ const getScriptInfo = () => {
     }
 
     // chrome extension
-    const chromeExtVer = chrome?.runtime?.getManifest()?.version;
-    if (!isNaN(parseFloat(chromeExtVer))) {
-        scriptInfo = {
-            scriptType: "chrome-extension",
-            scriptVersion: chromeExtVer,
-        };
-        return scriptInfo;
+    try {
+        const chromeExtVer = chrome?.runtime?.getManifest()?.version;
+        if (!isNaN(parseFloat(chromeExtVer))) {
+            scriptInfo = {
+                scriptType: "chrome-extension",
+                scriptVersion: chromeExtVer,
+            };
+            return scriptInfo;
+        }
+    } catch (e) {
+        // console.log(e);
     }
 
     // unknown
