@@ -123,6 +123,26 @@ const createOptionMessages = () => {
 
 const getOptionDialog = () => document.querySelector(".nextup-ext-opt-dialog");
 
+const playVideo = () => {
+    const video = document.querySelector(".webPlayerElement video");
+    if (!video) {
+        return;
+    }
+    if (video.paused) {
+        video.play();
+    }
+};
+
+const pauseVideo = () => {
+    const video = document.querySelector(".webPlayerElement video");
+    if (!video) {
+        return;
+    }
+    if (!video.paused) {
+        video.pause();
+    }
+};
+
 const createOptionDialog = () => {
     if (getOptionDialog()) {
         return;
@@ -204,6 +224,7 @@ const createOptionDialog = () => {
                     break;
                 case "nextup-ext-opt-dialog-close":
                     optDialog.close();
+                    playVideo();
                     break;
                 default:
                     break;
@@ -216,6 +237,7 @@ const createOptionDialog = () => {
 const openOptionDialog = () => {
     createOptionDialog();
     const optDialog = getOptionDialog();
+    pauseVideo();
     optDialog.showModal();
 };
 
@@ -236,7 +258,9 @@ const openOptionDialogWithKeyboard = () => {
                 const optDialog = getOptionDialog();
                 if (optDialog.hasAttribute("open")) {
                     optDialog.close();
+                    playVideo();
                 } else {
+                    pauseVideo();
                     optDialog.showModal();
                 }
             }
