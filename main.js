@@ -147,23 +147,25 @@ const pauseVideo = () => {
   }
 };
 
-const funcWhenDialogIsClosed = () => {
-  playVideo();
-};
-
-const closeDialogWhenClickedOutside = (e) => {
-  if (e.target.classList.contains("nextup-ext-opt-dialog")) {
-    e.target.close();
-    funcWhenDialogIsClosed();
-    document.removeEventListener("click", closeDialogWhenClickedOutside);
-  }
-};
-
-const funcWhenOpeningDialog = () => {
-  pauseVideo();
-  setTimeout(() => {
-    document.addEventListener("click", closeDialogWhenClickedOutside);
-  }, 1000);
+const worksWithDialog = {
+  clickedOutSide: undefined,
+  _clickedOutSide: function (e) {
+    if (e.target.classList.contains("nextup-ext-opt-dialog")) {
+      e.target.close();
+      this.whenClosed();
+    }
+  },
+  whenOpening: function () {
+    pauseVideo();
+    if (!this.clickedOutSide) {
+      this.clickedOutSide = this._clickedOutSide.bind(this);
+    }
+    document.addEventListener("click", this.clickedOutSide);
+  },
+  whenClosed: function () {
+    document.removeEventListener("click", this.clickedOutSide);
+    playVideo();
+  },
 };
 
 const createOptionDialog = () => {
@@ -250,7 +252,7 @@ const createOptionDialog = () => {
           break;
         case "nextup-ext-opt-dialog-close":
           optDialog.close();
-          funcWhenDialogIsClosed();
+          worksWithDialog.whenClosed();
           break;
         default:
           break;
@@ -263,7 +265,7 @@ const createOptionDialog = () => {
 const openOptionDialog = () => {
   createOptionDialog();
   const optDialog = getOptionDialog();
-  funcWhenOpeningDialog();
+  worksWithDialog.whenOpening();
   optDialog.showModal();
 };
 
@@ -282,9 +284,9 @@ const openOptionDialogWithKeyboard = () => {
         const optDialog = getOptionDialog();
         if (optDialog.hasAttribute("open")) {
           optDialog.close();
-          funcWhenDialogIsClosed();
+          worksWithDialog.whenClosed();
         } else {
-          funcWhenOpeningDialog();
+          worksWithDialog.whenOpening();
           optDialog.showModal();
         }
       }
