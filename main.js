@@ -11,11 +11,6 @@ const getDefaultOptions = () => {
 };
 
 const getScriptInfo = () => {
-  let scriptInfo = {
-    scriptType: "unknown",
-    scriptVersion: getDefaultOptions().scriptVersion,
-  };
-
   // user script
   /**
    * When using optional chaining with window.GM_info in tampermonkey,
@@ -24,11 +19,10 @@ const getScriptInfo = () => {
   try {
     const gmVer = window.GM_info.script.version;
     if (!isNaN(parseFloat(gmVer))) {
-      scriptInfo = {
+      return {
         scriptType: "user-script",
         scriptVersion: gmVer,
       };
-      return scriptInfo;
     }
   } catch (e) {
     // console.log(e);
@@ -38,18 +32,20 @@ const getScriptInfo = () => {
   try {
     const chromeExtVer = chrome?.runtime?.getManifest()?.version;
     if (!isNaN(parseFloat(chromeExtVer))) {
-      scriptInfo = {
+      return {
         scriptType: "chrome-extension",
         scriptVersion: chromeExtVer,
       };
-      return scriptInfo;
     }
   } catch (e) {
     // console.log(e);
   }
 
   // unknown
-  return scriptInfo;
+  return {
+    scriptType: "unknown",
+    scriptVersion: getDefaultOptions().scriptVersion,
+  };
 };
 
 const addStyle = (css) => {
@@ -125,7 +121,9 @@ const createOptionMessages = () => {
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
 
-const getOptionDialog = () => document.querySelector(".nextup-ext-opt-dialog");
+const getOptionDialog = () => {
+  return document.querySelector(".nextup-ext-opt-dialog");
+};
 
 const playVideo = () => {
   const video = document.querySelector(".webPlayerElement video");
@@ -262,36 +260,20 @@ const createOptionDialog = () => {
   );
 };
 
-const openOptionDialog = () => {
-  createOptionDialog();
-  const optDialog = getOptionDialog();
-  worksWithDialog.whenOpening();
-  optDialog.showModal();
-};
-
 const openOptionDialogWithKeyboard = () => {
-  new MutationObserver((_, _observer) => {
-    const webPlayerContainer = document.querySelector(".webPlayerContainer");
-    if (!webPlayerContainer) {
-      return;
-    }
-
-    _observer.disconnect();
-
-    createOptionDialog();
-    document.body.addEventListener("keydown", (e) => {
-      if (e.altKey && e.code === "KeyP") {
-        const optDialog = getOptionDialog();
-        if (optDialog.hasAttribute("open")) {
-          optDialog.close();
-          worksWithDialog.whenClosed();
-        } else {
-          worksWithDialog.whenOpening();
-          optDialog.showModal();
-        }
+  createOptionDialog();
+  document.body.addEventListener("keydown", (e) => {
+    if (e.altKey && e.code === "KeyP") {
+      const optDialog = getOptionDialog();
+      if (optDialog.hasAttribute("open")) {
+        optDialog.close();
+        worksWithDialog.whenClosed();
+      } else {
+        worksWithDialog.whenOpening();
+        optDialog.showModal();
       }
-    });
-  }).observe(document, observeConfig);
+    }
+  });
 };
 
 const createOptionBtn = () => {
@@ -332,7 +314,10 @@ const createOptionBtn = () => {
     cloneTooltip.textContent = "Option - Auto hide next up card";
 
     cloneOptBtn.addEventListener("click", (_) => {
-      openOptionDialog();
+      createOptionDialog();
+      const optDialog = getOptionDialog();
+      worksWithDialog.whenOpening();
+      optDialog.showModal();
     });
   }).observe(document, observeConfig);
 };
@@ -452,13 +437,21 @@ const main = () => {
   const scriptInfo = getScriptInfo();
   updateOptionVersion(scriptInfo);
 
-  createOptionBtn();
-  openOptionDialogWithKeyboard();
+  new MutationObserver((_, _observer) => {
+    const video = document.querySelector(".webPlayerContainer video");
+    if (!video || !video.checkVisibility()) {
+      return;
+    }
+    _observer.disconnect();
 
-  const options = getOptions();
-  hideSkipIntroBtn(options);
-  autoHideNextup(options);
-  hideRatingText(options);
+    createOptionBtn();
+    openOptionDialogWithKeyboard();
+
+    const options = getOptions();
+    hideSkipIntroBtn(options);
+    autoHideNextup(options);
+    hideRatingText(options);
+  }).observe(document, observeConfig);
 };
 
 main();
