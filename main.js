@@ -3,8 +3,10 @@ const observeConfig = { childList: true, subtree: true };
 const getDefaultOptions = () => {
   return {
     hideSkipIntroBtn: true,
+    showSkipIntroBtnOnOverlay: false,
     hideNextup: true,
     temporarilyDisableOverlay: true,
+    showNextupOnOverlay: false,
     hideRating: true,
     scriptVersion: "2.1.1",
   };
@@ -104,17 +106,25 @@ const updateOptionVersion = (scriptInfo) => {
 const createOptionMessages = () => {
   const jaMessages = {
     hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
+    showSkipIntroBtnOnOverlay:
+      "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
     hideNextup: "Next upを非表示にする",
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
+    showNextupOnOverlay:
+      "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
     hideRating: "レーティング(推奨対象年齢)を非表示にする",
     close: "閉じる",
   };
   const enMessages = {
     hideSkipIntroBtn: "Hide skip intro button",
+    showSkipIntroBtnOnOverlay:
+      "Show skip intro button when overlay display is enabled",
     hideNextup: "Hide next up card",
     temporarilyDisableOverlay:
       "Disable overlay for 5 seconds when auto-clicking hide button",
+    showNextupOnOverlay:
+      "Show next up card when overlay display is enabled (only if there is no hide button)",
     hideRating: "Hide rating",
     close: "Close",
   };
@@ -183,17 +193,29 @@ const createOptionDialog = () => {
               } />
               <p>${messages.hideSkipIntroBtn}</p>
            </label>
+           <label class="indent1">
+              <input type="checkbox" id="show-skip-intro-btn" name="show-skip-intro-btn" ${
+                options.showSkipIntroBtnOnOverlay ? "checked" : ""
+              } />
+              <p>${messages.showSkipIntroBtnOnOverlay}</p>
+           </label>
            <label>
               <input type="checkbox" id="hide-nextup" name="hide-nextup" ${
                 options.hideNextup ? "checked" : ""
               } />
               <p>${messages.hideNextup}</p>
            </label>
-           <label>
+           <label class="indent1">
               <input type="checkbox" id="temporarily-disable-overlay" name="temporarily-disable-overlay" ${
                 options.temporarilyDisableOverlay ? "checked" : ""
               } />
               <p>${messages.temporarilyDisableOverlay}</p>
+           </label>
+           <label class="indent1">
+              <input type="checkbox" id="show-nextup" name="show-nextup" ${
+                options.showNextupOnOverlay ? "checked" : ""
+              } />
+              <p>${messages.showNextupOnOverlay}</p>
            </label>
            <label>
               <input type="checkbox" id="hide-rationg" name="hide-rationg" ${
@@ -212,9 +234,10 @@ const createOptionDialog = () => {
   document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
 
   const css = [
-    ".nextup-ext-opt-dialog {width: 370px; padding: 0;}",
+    ".nextup-ext-opt-dialog {padding: 0; word-break: break-all;}",
     ".dialog-inner {padding: 14px;}",
-    ".nextup-ext-opt-dialog label {display: inline;}",
+    ".nextup-ext-opt-dialog label {display: block;}",
+    ".nextup-ext-opt-dialog label.indent1 {margin-left: 14px;}",
     ".nextup-ext-opt-dialog label input {float: left;}",
     ".nextup-ext-opt-dialog label p {float: left; margin-bottom: 5px; width: calc(100% - 24px);}",
     ".nextup-ext-opt-dialog label:last-of-type p {margin-bottom: 12px;}",
@@ -225,6 +248,17 @@ const createOptionDialog = () => {
   addStyle(css.join(""));
 
   const optDialog = getOptionDialog();
+  optDialog.style.setProperty("visibility", "hidden", "important");
+  optDialog.toggleAttribute("open");
+  let maxWidth = 650;
+  if (optDialog.offsetWidth > 500) {
+    maxWidth = optDialog.offsetWidth + 14;
+  }
+  optDialog.style.maxWidth = maxWidth + "px";
+  optDialog.style.width = "100%";
+  optDialog.toggleAttribute("open");
+  optDialog.style.setProperty("visibility", "");
+
   optDialog.addEventListener(
     "click",
     (e) => {
@@ -237,13 +271,16 @@ const createOptionDialog = () => {
         case "hide-skip-intro-btn":
           saveOptions({ hideSkipIntroBtn: e.target.checked });
           break;
+        case "show-skip-intro-btn":
+          saveOptions({ showSkipIntroBtnOnOverlay: e.target.checked });
+          break;
         case "hide-nextup":
           saveOptions({ hideNextup: e.target.checked });
           break;
         case "temporarily-disable-overlay":
-          saveOptions({
-            temporarilyDisableOverlay: e.target.checked,
-          });
+          saveOptions({ temporarilyDisableOverlay: e.target.checked });
+        case "show-nextup":
+          saveOptions({ showNextupOnOverlay: e.target.checked });
           break;
         case "hide-rationg":
           saveOptions({ hideRating: e.target.checked });
@@ -330,9 +367,37 @@ const hideSkipIntroBtn = (options) => {
     ".atvwebplayersdk-skipelement-button {display: none !important;}",
   ];
   addStyle(css.join(""));
+
+  if (!options.showSkipIntroBtnOnOverlay) {
+    return;
+  }
+  new MutationObserver((_, outerObserver) => {
+    const btnsContainer = document.querySelector(
+      ".atvwebplayersdk-hideabletopbuttons-container"
+    );
+    if (!btnsContainer) {
+      return;
+    }
+    outerObserver.disconnect();
+    new MutationObserver((_) => {
+      const skipIntroBtn = document.querySelector(
+        ".atvwebplayersdk-skipelement-button"
+      );
+      if (!skipIntroBtn) {
+        return;
+      }
+      if (btnsContainer.classList.contains("hide")) {
+        skipIntroBtn.style.setProperty("display", "none", "important");
+      } else {
+        skipIntroBtn.style.setProperty("display", "block", "important");
+      }
+    }).observe(btnsContainer, {
+      attributes: true,
+    });
+  }).observe(document, observeConfig);
 };
 
-const temporarilyDisableOverlay = (options, delay = "5000") => {
+const temporarilyDisableOverlay = (options, delay = 5000) => {
   if (!options.temporarilyDisableOverlay) {
     return;
   }
@@ -352,6 +417,11 @@ const autoHideNextup = (options) => {
   if (!options.hideNextup) {
     return;
   }
+  const css = [
+    ".atvwebplayersdk-nextupcard-wrapper {display: none !important;}",
+  ];
+  addStyle(css.join(""));
+
   new MutationObserver((_, outerObserver) => {
     const wrapper = document.querySelector(
       ".atvwebplayersdk-nextupcard-wrapper"
@@ -359,20 +429,43 @@ const autoHideNextup = (options) => {
     if (!wrapper) {
       return;
     }
-
     outerObserver.disconnect();
-
     new MutationObserver((_) => {
-      wrapper.style.display = "none";
       const hideButton = wrapper.querySelector(
         ".atvwebplayersdk-nextupcardhide-button"
       );
       if (hideButton) {
         // Temporarily disable the overlay because it will be displayed by executing click().
-        temporarilyDisableOverlay(options, "5000");
+        temporarilyDisableOverlay(options, 5000);
         hideButton.click();
       }
     }).observe(wrapper, observeConfig);
+
+    if (options.showNextupOnOverlay) {
+      new MutationObserver((_, outerObserver2) => {
+        const btnsContainer = document.querySelector(
+          ".atvwebplayersdk-hideabletopbuttons-container"
+        );
+        if (!btnsContainer) {
+          return;
+        }
+        outerObserver2.disconnect();
+        new MutationObserver((_) => {
+          const img = wrapper.querySelector("img");
+          if (!img || !img.getAttribute("src")) {
+            wrapper.style.setProperty("display", "none", "important");
+            return;
+          }
+          if (btnsContainer.classList.contains("hide")) {
+            wrapper.style.setProperty("display", "none", "important");
+          } else {
+            wrapper.style.setProperty("display", "block", "important");
+          }
+        }).observe(btnsContainer, {
+          attributes: true,
+        });
+      }).observe(document, observeConfig);
+    }
   }).observe(document, observeConfig);
 };
 
