@@ -56,6 +56,7 @@ const getScriptInfo = () => {
   };
 };
 
+// array of alphabets used to set shortcut keys.
 const charObj = {
   _chars: [],
   _codeStrs: [],
@@ -132,38 +133,6 @@ const updateOptionVersion = (scriptInfo) => {
   }, {});
   const jsonStr = JSON.stringify(newOptions);
   localStorage.setItem("nextup-ext", jsonStr);
-};
-
-const createOptionMessages = () => {
-  const jaMessages = {
-    hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
-    showSkipIntroBtnOnOverlay:
-      "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
-    hideNextup: "Next upを非表示にする",
-    temporarilyDisableOverlay:
-      "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
-    showNextupOnOverlay:
-      "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
-    hideRating: "レーティング(推奨対象年齢)を非表示にする",
-    shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
-    shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
-    close: "閉じる",
-  };
-  const enMessages = {
-    hideSkipIntroBtn: "Hide skip intro button",
-    showSkipIntroBtnOnOverlay:
-      "Show skip intro button when overlay display is enabled",
-    hideNextup: "Hide next up card",
-    temporarilyDisableOverlay:
-      "Disable overlay for 5 seconds when auto-clicking hide button",
-    showNextupOnOverlay:
-      "Show next up card when overlay display is enabled (only if there is no hide button)",
-    hideRating: "Hide rating",
-    shortcutKeyForDialog: "Shortcut key to open the options dialog",
-    shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
-    close: "Close",
-  };
-  return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
 
 const getOptionDialog = () => {
@@ -291,6 +260,38 @@ const worksWithDialog = {
   },
 };
 
+const createOptionMessages = () => {
+  const jaMessages = {
+    hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
+    showSkipIntroBtnOnOverlay:
+      "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
+    hideNextup: "Next upを非表示にする",
+    temporarilyDisableOverlay:
+      "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
+    showNextupOnOverlay:
+      "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
+    hideRating: "レーティング(推奨対象年齢)を非表示にする",
+    shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
+    shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
+    close: "閉じる",
+  };
+  const enMessages = {
+    hideSkipIntroBtn: "Hide skip intro button",
+    showSkipIntroBtnOnOverlay:
+      "Show skip intro button when overlay display is enabled",
+    hideNextup: "Hide next up card",
+    temporarilyDisableOverlay:
+      "Disable overlay for 5 seconds when auto-clicking hide button",
+    showNextupOnOverlay:
+      "Show next up card when overlay display is enabled (only if there is no hide button)",
+    hideRating: "Hide rating",
+    shortcutKeyForDialog: "Shortcut key to open the options dialog",
+    shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
+    close: "Close",
+  };
+  return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
+};
+
 const createOptionDialog = () => {
   if (getOptionDialog()) {
     return;
@@ -376,6 +377,8 @@ const createOptionDialog = () => {
   addStyle(css.join(""));
 
   const optDialog = getOptionDialog();
+
+  //  Adjust width of options dialog.
   optDialog.style.setProperty("visibility", "hidden", "important");
   optDialog.toggleAttribute("open");
   let maxWidth = 650;
