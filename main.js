@@ -26,7 +26,7 @@ const getScriptInfo = () => {
    */
   try {
     const gmVer = window.GM_info.script.version;
-    if (!isNaN(parseFloat(gmVer))) {
+    if (typeof gmVer === "string") {
       return {
         scriptType: "user-script",
         scriptVersion: gmVer,
@@ -39,7 +39,7 @@ const getScriptInfo = () => {
   // chrome extension
   try {
     const chromeExtVer = chrome?.runtime?.getManifest()?.version;
-    if (!isNaN(parseFloat(chromeExtVer))) {
+    if (typeof chromeExtVer === "string") {
       return {
         scriptType: "chrome-extension",
         scriptVersion: chromeExtVer,
