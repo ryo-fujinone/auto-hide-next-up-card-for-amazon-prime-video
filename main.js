@@ -1,4 +1,4 @@
-const observeConfig = { childList: true, subtree: true };
+const observeConfig = Object.freeze({ childList: true, subtree: true });
 
 const getDefaultOptions = () => {
   return {
@@ -8,6 +8,12 @@ const getDefaultOptions = () => {
     temporarilyDisableOverlay: true,
     showNextupOnOverlay: false,
     hideRating: true,
+    shortcutKey: {
+      ctrl: false,
+      alt: true,
+      shift: false,
+      charCode: "KeyP",
+    },
     scriptVersion: "2.1.1",
   };
 };
@@ -48,6 +54,31 @@ const getScriptInfo = () => {
     scriptType: "unknown",
     scriptVersion: getDefaultOptions().scriptVersion,
   };
+};
+
+const charObj = {
+  _chars: [],
+  _codeStrs: [],
+  _startCode: "A".charCodeAt(0),
+  getChars: function () {
+    if (this._chars.length) {
+      return this._chars;
+    }
+    [...Array(26)].map((_, i) => {
+      const char = String.fromCharCode(this._startCode + i);
+      this._chars.push(char);
+    });
+    return this._chars;
+  },
+  getCodeStrs: function () {
+    if (this._codeStrs.length) {
+      return this._codeStrs;
+    }
+    this.getChars().map((c) => {
+      this._codeStrs.push("Key" + c);
+    });
+    return this._codeStrs;
+  },
 };
 
 const addStyle = (css) => {
@@ -114,6 +145,8 @@ const createOptionMessages = () => {
     showNextupOnOverlay:
       "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
     hideRating: "レーティング(推奨対象年齢)を非表示にする",
+    shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
+    shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
     close: "閉じる",
   };
   const enMessages = {
@@ -126,6 +159,8 @@ const createOptionMessages = () => {
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
     hideRating: "Hide rating",
+    shortcutKeyForDialog: "Shortcut key to open the options dialog",
+    shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
     close: "Close",
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
@@ -133,6 +168,10 @@ const createOptionMessages = () => {
 
 const getOptionDialog = () => {
   return document.querySelector(".nextup-ext-opt-dialog");
+};
+
+const getShortcutKeyInput = () => {
+  return document.querySelector("#shortcutkey-for-dialog");
 };
 
 const playVideo = () => {
@@ -156,21 +195,97 @@ const pauseVideo = () => {
 };
 
 const worksWithDialog = {
-  clickedOutSide: undefined,
+  clickedOutSide: null,
   _clickedOutSide: function (e) {
     if (e.target.classList.contains("nextup-ext-opt-dialog")) {
       e.target.close();
       this.whenClosed();
     }
   },
+  setShortcutKeyVal: function () {
+    const options = getOptions();
+    let shortcutKeyStrs = [];
+    if (options.shortcutKey.ctrl) {
+      shortcutKeyStrs.push("Ctrl");
+    }
+    if (options.shortcutKey.alt) {
+      shortcutKeyStrs.push("Alt");
+    }
+    if (options.shortcutKey.shift) {
+      shortcutKeyStrs.push("Shift");
+    }
+    const codeStrs = charObj.getCodeStrs();
+    const chars = charObj.getChars();
+    const char = chars[codeStrs.indexOf(options.shortcutKey.charCode)];
+    if (char) {
+      shortcutKeyStrs.push(char);
+    } else {
+      shortcutKeyStrs = ["Alt", "P"];
+      saveOptions({ shortcutKey: getDefaultOptions().shortcutKey });
+    }
+
+    if (!this.changeShortcutKeyVal) {
+      this.changeShortcutKeyVal = this._changeShortcutKeyVal.bind(this);
+    }
+    const shortcutKeyStr = shortcutKeyStrs.join(" + ");
+    const shortcutKeyInput = getShortcutKeyInput();
+    if (shortcutKeyInput) {
+      shortcutKeyInput.value = shortcutKeyStr;
+      shortcutKeyInput.addEventListener("keydown", this.changeShortcutKeyVal);
+    }
+  },
+  changeShortcutKeyVal: null,
+  _changeShortcutKeyVal: function (e) {
+    if (e.code === "Tab" || e.code === "Escape" || e.code === "F5") {
+      return;
+    }
+    const codeStrs = charObj.getCodeStrs();
+    if (codeStrs.indexOf(e.code) === -1 || (!e.ctrlKey && !e.altKey)) {
+      e.preventDefault();
+      return;
+    }
+
+    const newShortcutKeyOptions = getDefaultOptions().shortcutKey;
+    let shortcutKeyStrs = [];
+    if (e.ctrlKey) {
+      shortcutKeyStrs.push("Ctrl");
+    }
+    newShortcutKeyOptions.ctrl = e.ctrlKey;
+    if (e.altKey) {
+      shortcutKeyStrs.push("Alt");
+    }
+    newShortcutKeyOptions.alt = e.altKey;
+    if (e.shiftKey) {
+      shortcutKeyStrs.push("Shift");
+    }
+    newShortcutKeyOptions.shift = e.shiftKey;
+    const chars = charObj.getChars();
+    const char = chars[codeStrs.indexOf(e.code)];
+    shortcutKeyStrs.push(char);
+    newShortcutKeyOptions.charCode = e.code;
+
+    const shortcutKeyStr = shortcutKeyStrs.join(" + ");
+    const shortcutKeyInput = getShortcutKeyInput();
+    shortcutKeyInput.value = shortcutKeyStr;
+
+    saveOptions({ shortcutKey: newShortcutKeyOptions });
+  },
   whenOpening: function () {
     pauseVideo();
+    this.setShortcutKeyVal();
     if (!this.clickedOutSide) {
       this.clickedOutSide = this._clickedOutSide.bind(this);
     }
     document.addEventListener("click", this.clickedOutSide);
   },
   whenClosed: function () {
+    const shortcutKeyInput = getShortcutKeyInput();
+    if (shortcutKeyInput) {
+      shortcutKeyInput.removeEventListener(
+        "keydown",
+        this.changeShortcutKeyVal
+      );
+    }
     document.removeEventListener("click", this.clickedOutSide);
     playVideo();
   },
@@ -185,52 +300,62 @@ const createOptionDialog = () => {
   const options = getOptions();
 
   const dialogHtmlStr = `
-        <dialog class="nextup-ext-opt-dialog">
+    <dialog class="nextup-ext-opt-dialog">
         <div class="dialog-inner">
-           <label>
-              <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
-                options.hideSkipIntroBtn ? "checked" : ""
-              } />
-              <p>${messages.hideSkipIntroBtn}</p>
-           </label>
-           <label class="indent1">
-              <input type="checkbox" id="show-skip-intro-btn" name="show-skip-intro-btn" ${
-                options.showSkipIntroBtnOnOverlay ? "checked" : ""
-              } />
-              <p>${messages.showSkipIntroBtnOnOverlay}</p>
-           </label>
-           <label>
-              <input type="checkbox" id="hide-nextup" name="hide-nextup" ${
-                options.hideNextup ? "checked" : ""
-              } />
-              <p>${messages.hideNextup}</p>
-           </label>
-           <label class="indent1">
-              <input type="checkbox" id="temporarily-disable-overlay" name="temporarily-disable-overlay" ${
-                options.temporarilyDisableOverlay ? "checked" : ""
-              } />
-              <p>${messages.temporarilyDisableOverlay}</p>
-           </label>
-           <label class="indent1">
-              <input type="checkbox" id="show-nextup" name="show-nextup" ${
-                options.showNextupOnOverlay ? "checked" : ""
-              } />
-              <p>${messages.showNextupOnOverlay}</p>
-           </label>
-           <label>
-              <input type="checkbox" id="hide-rationg" name="hide-rationg" ${
-                options.hideRating ? "checked" : ""
-              } />
-              <p>${messages.hideRating}</p>
-           </label>
-           <div>
-              <button id="nextup-ext-opt-dialog-close">${
-                messages.close
-              }</button>
-           </div>
+            <label>
+                <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
+                  options.hideSkipIntroBtn ? "checked" : ""
+                } />
+                <p>${messages.hideSkipIntroBtn}</p>
+            </label>
+            <label class="indent1">
+                <input type="checkbox" id="show-skip-intro-btn" name="show-skip-intro-btn" ${
+                  options.showSkipIntroBtnOnOverlay ? "checked" : ""
+                } />
+                <p>${messages.showSkipIntroBtnOnOverlay}</p>
+            </label>
+            <label>
+                <input type="checkbox" id="hide-nextup" name="hide-nextup" ${
+                  options.hideNextup ? "checked" : ""
+                } />
+                <p>${messages.hideNextup}</p>
+            </label>
+            <label class="indent1">
+                <input type="checkbox" id="temporarily-disable-overlay" name="temporarily-disable-overlay" ${
+                  options.temporarilyDisableOverlay ? "checked" : ""
+                } />
+                <p>${messages.temporarilyDisableOverlay}</p>
+            </label>
+            <label class="indent1">
+                <input type="checkbox" id="show-nextup" name="show-nextup" ${
+                  options.showNextupOnOverlay ? "checked" : ""
+                } />
+                <p>${messages.showNextupOnOverlay}</p>
+            </label>
+            <label>
+                <input type="checkbox" id="hide-rationg" name="hide-rationg" ${
+                  options.hideRating ? "checked" : ""
+                } />
+                <p>${messages.hideRating}</p>
+            </label>
+            <ul>
+                <li>
+                    <label title="${messages.shortcutKeyForDialog_Tooltip}">
+                        <span style="margin-right: 4px;">${
+                          messages.shortcutKeyForDialog
+                        }</span>
+                        <input type="text" id="shortcutkey-for-dialog" name="shortcutkey-for-dialog" />
+                    </label>
+                </li>
+            </ul>
+            <div class="nextup-ext-opt-dialog-btn-wrapper">
+                <button id="nextup-ext-opt-dialog-close">${
+                  messages.close
+                }</button>
+            </div>
         </div>
-        </dialog>
-        `;
+    </dialog>
+    `;
   document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
 
   const css = [
@@ -238,11 +363,14 @@ const createOptionDialog = () => {
     ".dialog-inner {padding: 14px;}",
     ".nextup-ext-opt-dialog label {display: block;}",
     ".nextup-ext-opt-dialog label.indent1 {margin-left: 14px;}",
-    ".nextup-ext-opt-dialog label input {float: left;}",
+    ".nextup-ext-opt-dialog label input[type='checkbox'] {float: left;}",
     ".nextup-ext-opt-dialog label p {float: left; margin-bottom: 5px; width: calc(100% - 24px);}",
-    ".nextup-ext-opt-dialog label:last-of-type p {margin-bottom: 12px;}",
+    ".nextup-ext-opt-dialog ul li {margin-left: 18px;}",
+    ".nextup-ext-opt-dialog label input[type='text'] {height: 20px;}",
+    ".nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {margin-top: 12px;}",
     ".nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close):not(.dialog-inner) {text-align: center;}",
     "#nextup-ext-opt-dialog-close {border-color: black; border: solid 1px; background-color: #EEE}",
+    "#nextup-ext-opt-dialog-close {width: 120px; letter-spacing: 4px;}",
     "#nextup-ext-opt-dialog-close:hover {background-color: #DDD}",
   ];
   addStyle(css.join(""));
@@ -297,22 +425,6 @@ const createOptionDialog = () => {
   );
 };
 
-const openOptionDialogWithKeyboard = () => {
-  createOptionDialog();
-  document.body.addEventListener("keydown", (e) => {
-    if (e.altKey && e.code === "KeyP") {
-      const optDialog = getOptionDialog();
-      if (optDialog.hasAttribute("open")) {
-        optDialog.close();
-        worksWithDialog.whenClosed();
-      } else {
-        worksWithDialog.whenOpening();
-        optDialog.showModal();
-      }
-    }
-  });
-};
-
 const createOptionBtn = () => {
   new MutationObserver((_, _observer) => {
     if (document.querySelector(".nextup-ext-opt-btn-container")) {
@@ -357,6 +469,33 @@ const createOptionBtn = () => {
       optDialog.showModal();
     });
   }).observe(document, observeConfig);
+};
+
+const toggleOptionDialogWithKeyboard = () => {
+  createOptionDialog();
+  document.body.addEventListener("keydown", (e) => {
+    const shortcutKeyInput = getShortcutKeyInput();
+    if (shortcutKeyInput === document.activeElement) {
+      return;
+    }
+
+    const options = getOptions();
+    if (
+      e.code === options.shortcutKey.charCode &&
+      e.ctrlKey === options.shortcutKey.ctrl &&
+      e.altKey === options.shortcutKey.alt &&
+      e.shiftKey === options.shortcutKey.shift
+    ) {
+      const optDialog = getOptionDialog();
+      if (optDialog.hasAttribute("open")) {
+        optDialog.close();
+        worksWithDialog.whenClosed();
+      } else {
+        worksWithDialog.whenOpening();
+        optDialog.showModal();
+      }
+    }
+  });
 };
 
 const hideSkipIntroBtn = (options) => {
@@ -537,8 +676,12 @@ const main = () => {
     }
     _observer.disconnect();
 
-    createOptionBtn();
-    openOptionDialogWithKeyboard();
+    try {
+      createOptionBtn();
+      toggleOptionDialogWithKeyboard();
+    } catch (e) {
+      console.log(e);
+    }
 
     const options = getOptions();
     hideSkipIntroBtn(options);
