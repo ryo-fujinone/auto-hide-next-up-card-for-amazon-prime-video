@@ -4,13 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "run-s build:ext build:userscript",
+    "build:ext": "node build.js",
     "build:userscript": "rollup --config rollup.config.js",
     "dev:firefox": "env-cmd -f .env.firefox web-ext run",
     "dev:chrome": "env-cmd -x -f .env.chrome web-ext run -t chromium --chromium-binary=$CHROMIUM_BINARY_PATH --chromium-profile=$CHROMIUM_PROFILE_PATH",
     "dev:userscript": "env-cmd -f .env.userscript rollup --config rollup.config.js --watch"
   },
   "devDependencies": {
+    "archiver": "^7.0.1",
     "env-cmd": "^10.1.0",
+    "fs-extra": "^11.2.0",
+    "npm-run-all": "^4.1.5",
     "rollup": "^4.13.0",
     "rollup-plugin-auto-reload": "^1.0.3",
     "userscript-metadata-generator": "^0.2.4",
