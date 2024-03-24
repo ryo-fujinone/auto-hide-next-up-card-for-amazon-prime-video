@@ -1,50 +1,24 @@
 # Auto hide next up card for Amazon Prime Video
 
-Amazon Prime Video の Next up 等の邪魔な要素を非表示にする Chrome の拡張機能。
+Amazon Prime VideoのNext up等の邪魔な要素を非表示にするユーザースクリプト及びChromeの拡張機能。
 
-[Chrome ウェブストア](https://chrome.google.com/webstore/detail/auto-hide-next-up-card-fo/pnpkddhaeadgjpmmcahamnicmplobkci)  
-[ユーザースクリプト](https://greasyfork.org/ja/scripts/478102-auto-hide-next-up-card-for-amazon-prime-video)
+[ユーザースクリプト](https://greasyfork.org/ja/scripts/478102-auto-hide-next-up-card-for-amazon-prime-video)  
+[Chrome ウェブストア](https://chrome.google.com/webstore/detail/auto-hide-next-up-card-fo/pnpkddhaeadgjpmmcahamnicmplobkci)
 
 以下の機能を実装しています。
 
-- 非表示ボタンの自動クリックと display:none の設定による Next up の非表示
-  - 非表示ボタンの自動クリック時にオーバーレイ表示を 5 秒間無効化
-  - オーバーレイ表示が有効な時にのみ Next up を表示可能
-    - デフォルトではこの機能は無効になっており、Next up は完全に非表示
-    - この機能は Next up に非表示ボタンが存在しない場合にのみ機能
+- 非表示ボタンの自動クリックとdisplay:noneの設定によるNext upの非表示
+  - 非表示ボタンの自動クリック時にオーバーレイ表示を5秒間無効化
+  - オーバーレイ表示が有効な時にのみNext upを表示可能
+    - デフォルトではこの機能は無効になっており、Next upは完全に非表示
+    - この機能はNext upに非表示ボタンが存在しない場合にのみ機能
 - イントロスキップボタンの非表示
   - オーバーレイ表示が有効な時にのみイントロスキップボタンを表示可能
     - デフォルトではこの機能は無効になっており、イントロスキップボタンは完全に非表示
 - レーティング(推奨対象年齢)及びその周辺のオーバーレイ要素の非表示
 
 動画右上にオプションダイアログを開くことができるオプションアイコンが追加されます。  
-オプションダイアログは `Alt + P` で開くことも可能です。オプションダイアログ上でショートカットキーの変更が可能です。
-ショートカットキーには Ctrl/Alt/Shift とアルファベットが使用可能で、Ctrl/Alt とアルファベットは必須です。
+オプションダイアログは`Alt + P`で開くことも可能です。オプションダイアログ上でショートカットキーの変更が可能です。
+ショートカットキーにはCtrl/Alt/Shiftとアルファベットが使用可能で、Ctrl/Altとアルファベットは必須です。
 
-動作テストは日本の Prime Video 上でのみ行いました。
-
-以下の URL 上で同じ処理が実行されます。
-
-- https://\*.amazon.ae/\*
-- https://\*.amazon.ca/\*
-- https://\*.amazon.cn/\*
-- https://\*.amazon.co.jp/\*
-- https://\*.amazon.co.uk/\*
-- https://\*.amazon.com.au/\*
-- https://\*.amazon.com.be/\*
-- https://\*.amazon.com.br/\*
-- https://\*.amazon.com.mx/\*
-- https://\*.amazon.com.tr/\*
-- https://\*.amazon.com/\*
-- https://\*.amazon.de/\*
-- https://\*.amazon.eg/\*
-- https://\*.amazon.es/\*
-- https://\*.amazon.fr/\*
-- https://\*.amazon.in/\*
-- https://\*.amazon.it/\*
-- https://\*.amazon.nl/\*
-- https://\*.amazon.pl/\*
-- https://\*.amazon.sa/\*
-- https://\*.amazon.se/\*
-- https://\*.amazon.sg/\*
-- https://\*.primevideo.com/\*
+スクリプトは各国のAmazonのページ上で実行されますが、動作テストは日本のPrime Video上でのみ行いました。
