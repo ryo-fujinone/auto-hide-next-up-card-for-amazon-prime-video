@@ -477,6 +477,11 @@ const createOptionBtn = () => {
 const toggleOptionDialogWithKeyboard = () => {
   createOptionDialog();
   document.body.addEventListener("keydown", (e) => {
+    const video = document.querySelector(".webPlayerContainer video");
+    if (!video || !video.checkVisibility()) {
+      return;
+    }
+
     const shortcutKeyInput = getShortcutKeyInput();
     if (shortcutKeyInput === document.activeElement) {
       return;
