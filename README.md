@@ -1,9 +1,10 @@
 # Auto hide next up card for Amazon Prime Video
 
-Amazon Prime VideoのNext up等の邪魔な要素を非表示にするユーザースクリプト及びChromeの拡張機能。
+Amazon Prime VideoのNext up等の邪魔な要素を非表示にするユーザースクリプト及びChrome/Firefoxの拡張機能。
 
-[ユーザースクリプト](https://greasyfork.org/ja/scripts/478102-auto-hide-next-up-card-for-amazon-prime-video)  
-[Chrome ウェブストア](https://chrome.google.com/webstore/detail/auto-hide-next-up-card-fo/pnpkddhaeadgjpmmcahamnicmplobkci)
+[Greasy Fork](https://greasyfork.org/ja/scripts/478102-auto-hide-next-up-card-for-amazon-prime-video)  
+[Chrome ウェブストア](https://chrome.google.com/webstore/detail/auto-hide-next-up-card-fo/pnpkddhaeadgjpmmcahamnicmplobkci)  
+[Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/auto-hide-next-up-card/)
 
 以下の機能を実装しています。
 
@@ -18,7 +19,11 @@ Amazon Prime VideoのNext up等の邪魔な要素を非表示にするユーザ�
 - レーティング(推奨対象年齢)及びその周辺のオーバーレイ要素の非表示
 
 動画右上にオプションダイアログを開くことができるオプションアイコンが追加されます。  
-オプションダイアログは`Alt + P`で開くことも可能です。オプションダイアログ上でショートカットキーの変更が可能です。
+オプションダイアログは`Alt + P`で開くことも可能です。  
+オプションダイアログ上でショートカットキーの変更が可能です。  
 ショートカットキーにはCtrl/Alt/Shiftとアルファベットが使用可能で、Ctrl/Altとアルファベットは必須です。
+
+オプションダイアログ上で設定を変更した後は設定反映のためにページをリロードしてください。  
+(ショートカットキーの設定に限り、ページのリロード無しで反映されます。)
 
 スクリプトは各国のAmazonのページ上で実行されますが、動作テストは日本のPrime Video上でのみ行いました。
