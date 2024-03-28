@@ -143,8 +143,14 @@ const getShortcutKeyInput = () => {
   return document.querySelector("#shortcutkey-for-dialog");
 };
 
+const getVisibleVideo = () => {
+  return document.querySelector(
+    ".dv-player-fullscreen .webPlayerContainer video"
+  );
+};
+
 const playVideo = () => {
-  const video = document.querySelector(".webPlayerElement video");
+  const video = getVisibleVideo();
   if (!video) {
     return;
   }
@@ -154,7 +160,7 @@ const playVideo = () => {
 };
 
 const pauseVideo = () => {
-  const video = document.querySelector(".webPlayerElement video");
+  const video = getVisibleVideo();
   if (!video) {
     return;
   }
@@ -428,56 +434,9 @@ const createOptionDialog = () => {
   );
 };
 
-const createOptionBtn = () => {
-  new MutationObserver((_, _observer) => {
-    if (document.querySelector(".nextup-ext-opt-btn-container")) {
-      return;
-    }
-
-    const btnsContainer = document.querySelector(
-      ".atvwebplayersdk-hideabletopbuttons-container"
-    );
-    if (!btnsContainer) {
-      return;
-    }
-
-    _observer.disconnect();
-
-    const optContainer = btnsContainer.querySelector(
-      ".atvwebplayersdk-options-wrapper span div:has(.atvwebplayersdk-optionsmenu-button)"
-    );
-    const clone = optContainer.cloneNode(true);
-    clone.classList.add("nextup-ext-opt-btn-container");
-    btnsContainer
-      .querySelector("div:has(.atvwebplayersdk-options-wrapper)")
-      .appendChild(clone);
-
-    const cloneOptBtn = clone.querySelector(
-      ".atvwebplayersdk-optionsmenu-button"
-    );
-    cloneOptBtn.classList.remove("atvwebplayersdk-optionsmenu-button");
-    cloneOptBtn.classList.add("nextup-ext-opt-btn");
-
-    const cloneOptBtnImg = cloneOptBtn.querySelector("img");
-    cloneOptBtnImg.style.filter =
-      "sepia(100%) saturate(2000%) hue-rotate(120deg)";
-
-    const cloneTooltip = clone.querySelector("button + div div");
-    cloneTooltip.textContent = "Option - Auto hide next up card";
-
-    cloneOptBtn.addEventListener("click", (_) => {
-      createOptionDialog();
-      const optDialog = getOptionDialog();
-      worksWithDialog.whenOpening();
-      optDialog.showModal();
-    });
-  }).observe(document, observeConfig);
-};
-
-const toggleOptionDialogWithKeyboard = () => {
-  createOptionDialog();
+const addEventListenerForShortcutKey = () => {
   document.body.addEventListener("keydown", (e) => {
-    const video = document.querySelector(".webPlayerContainer video");
+    const video = getVisibleVideo();
     if (!video || !video.checkVisibility()) {
       return;
     }
@@ -506,168 +465,215 @@ const toggleOptionDialogWithKeyboard = () => {
   });
 };
 
-const hideSkipIntroBtn = (options) => {
-  if (!options.hideSkipIntroBtn) {
-    return;
+class ElementHider {
+  constructor(player, video) {
+    this.player = player;
+    this.video = video;
   }
-  const css = [
-    ".atvwebplayersdk-skipelement-button {display: none !important;}",
-  ];
-  addStyle(css.join(""));
-
-  if (!options.showSkipIntroBtnOnOverlay) {
-    return;
-  }
-  new MutationObserver((_, outerObserver) => {
-    const btnsContainer = document.querySelector(
-      ".atvwebplayersdk-hideabletopbuttons-container"
-    );
-    if (!btnsContainer) {
-      return;
-    }
-    outerObserver.disconnect();
-    new MutationObserver((_) => {
-      const skipIntroBtn = document.querySelector(
-        ".atvwebplayersdk-skipelement-button"
-      );
-      if (!skipIntroBtn) {
+  createOptionBtn() {
+    new MutationObserver((_, _observer) => {
+      if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
         return;
       }
-      if (btnsContainer.classList.contains("hide")) {
-        skipIntroBtn.style.setProperty("display", "none", "important");
-      } else {
-        skipIntroBtn.style.setProperty("display", "block", "important");
+
+      const btnsContainer = this.player.querySelector(
+        ".atvwebplayersdk-hideabletopbuttons-container"
+      );
+      if (!btnsContainer) {
+        return;
       }
-    }).observe(btnsContainer, {
-      attributes: true,
-    });
-  }).observe(document, observeConfig);
-};
 
-const temporarilyDisableOverlay = (options, delay = 5000) => {
-  if (!options.temporarilyDisableOverlay) {
-    return;
-  }
-  const overlaysWrapper = document.querySelector(
-    ".atvwebplayersdk-overlays-wrapper"
-  );
-  if (!overlaysWrapper) {
-    return;
-  }
-  overlaysWrapper.style.display = "none";
-  setTimeout(() => {
-    overlaysWrapper.style.display = "";
-  }, delay);
-};
+      _observer.disconnect();
 
-const autoHideNextup = (options) => {
-  if (!options.hideNextup) {
-    return;
-  }
-  const css = [
-    ".atvwebplayersdk-nextupcard-wrapper {display: none !important;}",
-  ];
-  addStyle(css.join(""));
+      const optContainer = btnsContainer.querySelector(
+        ".atvwebplayersdk-options-wrapper span div:has(.atvwebplayersdk-optionsmenu-button)"
+      );
+      const clone = optContainer.cloneNode(true);
+      clone.classList.add("nextup-ext-opt-btn-container");
+      btnsContainer
+        .querySelector("div:has(.atvwebplayersdk-options-wrapper)")
+        .appendChild(clone);
 
-  new MutationObserver((_, outerObserver) => {
-    const wrapper = document.querySelector(
-      ".atvwebplayersdk-nextupcard-wrapper"
-    );
-    if (!wrapper) {
+      const cloneOptBtn = clone.querySelector(
+        ".atvwebplayersdk-optionsmenu-button"
+      );
+      cloneOptBtn.classList.remove("atvwebplayersdk-optionsmenu-button");
+      cloneOptBtn.classList.add("nextup-ext-opt-btn");
+
+      const cloneOptBtnImg = cloneOptBtn.querySelector("img");
+      cloneOptBtnImg.style.filter =
+        "sepia(100%) saturate(2000%) hue-rotate(120deg)";
+
+      const cloneTooltip = clone.querySelector("button + div div");
+      cloneTooltip.textContent = "Option - Auto hide next up card";
+
+      cloneOptBtn.addEventListener("click", (_) => {
+        const optDialog = getOptionDialog();
+        worksWithDialog.whenOpening();
+        optDialog.showModal();
+      });
+    }).observe(this.player, observeConfig);
+  }
+  hideSkipIntroBtn(options = getDefaultOptions()) {
+    if (!options.hideSkipIntroBtn) {
       return;
     }
-    outerObserver.disconnect();
-    new MutationObserver((_) => {
-      const hideButton = wrapper.querySelector(
-        ".atvwebplayersdk-nextupcardhide-button"
-      );
-      if (hideButton) {
-        // Temporarily disable the overlay because it will be displayed by executing click().
-        temporarilyDisableOverlay(options, 5000);
-        hideButton.click();
-      }
-    }).observe(wrapper, observeConfig);
+    const css = [
+      ".atvwebplayersdk-skipelement-button {display: none !important;}",
+    ];
+    addStyle(css.join(""));
 
-    if (options.showNextupOnOverlay) {
-      new MutationObserver((_, outerObserver2) => {
-        const btnsContainer = document.querySelector(
-          ".atvwebplayersdk-hideabletopbuttons-container"
+    if (!options.showSkipIntroBtnOnOverlay) {
+      return;
+    }
+    new MutationObserver((_, outerObserver) => {
+      const btnsContainer = this.player.querySelector(
+        ".atvwebplayersdk-hideabletopbuttons-container"
+      );
+      if (!btnsContainer) {
+        return;
+      }
+      outerObserver.disconnect();
+      new MutationObserver((_) => {
+        const skipIntroBtn = this.player.querySelector(
+          ".atvwebplayersdk-skipelement-button"
         );
-        if (!btnsContainer) {
+        if (!skipIntroBtn) {
           return;
         }
-        outerObserver2.disconnect();
-        new MutationObserver((_) => {
-          const img = wrapper.querySelector("img");
-          if (!img || !img.getAttribute("src")) {
-            wrapper.style.setProperty("display", "none", "important");
+        if (btnsContainer.classList.contains("hide")) {
+          skipIntroBtn.style.setProperty("display", "none", "important");
+        } else {
+          skipIntroBtn.style.setProperty("display", "block", "important");
+        }
+      }).observe(btnsContainer, {
+        attributes: true,
+      });
+    }).observe(this.player, observeConfig);
+  }
+  temporarilyDisableOverlay(options = getDefaultOptions(), delay = 5000) {
+    if (!options.temporarilyDisableOverlay) {
+      return;
+    }
+    const overlaysWrapper = this.player.querySelector(
+      ".atvwebplayersdk-overlays-wrapper"
+    );
+    if (!overlaysWrapper) {
+      return;
+    }
+    overlaysWrapper.style.display = "none";
+    setTimeout(() => {
+      overlaysWrapper.style.display = "";
+    }, delay);
+  }
+  autoHideNextup(options = getDefaultOptions()) {
+    if (!options.hideNextup) {
+      return;
+    }
+    const css = [
+      ".atvwebplayersdk-nextupcard-wrapper {display: none !important;}",
+    ];
+    addStyle(css.join(""));
+
+    new MutationObserver((_, outerObserver) => {
+      const wrapper = this.player.querySelector(
+        ".atvwebplayersdk-nextupcard-wrapper"
+      );
+      if (!wrapper) {
+        return;
+      }
+      outerObserver.disconnect();
+      new MutationObserver((_) => {
+        const hideButton = wrapper.querySelector(
+          ".atvwebplayersdk-nextupcardhide-button"
+        );
+        if (hideButton) {
+          // Temporarily disable the overlay because it will be displayed by executing click().
+          this.temporarilyDisableOverlay(options, 5000);
+          hideButton.click();
+        }
+      }).observe(wrapper, observeConfig);
+
+      if (options.showNextupOnOverlay) {
+        new MutationObserver((_, outerObserver2) => {
+          const btnsContainer = this.player.querySelector(
+            ".atvwebplayersdk-hideabletopbuttons-container"
+          );
+          if (!btnsContainer) {
             return;
           }
-          if (btnsContainer.classList.contains("hide")) {
-            wrapper.style.setProperty("display", "none", "important");
-          } else {
-            wrapper.style.setProperty("display", "block", "important");
-          }
-        }).observe(btnsContainer, {
-          attributes: true,
-        });
-      }).observe(document, observeConfig);
-    }
-  }).observe(document, observeConfig);
-};
-
-const hideRatingText = (options) => {
-  if (!options.hideRating) {
-    return;
+          outerObserver2.disconnect();
+          new MutationObserver((_) => {
+            const img = wrapper.querySelector("img");
+            if (!img || !img.getAttribute("src")) {
+              wrapper.style.setProperty("display", "none", "important");
+              return;
+            }
+            if (btnsContainer.classList.contains("hide")) {
+              wrapper.style.setProperty("display", "none", "important");
+            } else {
+              wrapper.style.setProperty("display", "block", "important");
+            }
+          }).observe(btnsContainer, {
+            attributes: true,
+          });
+        }).observe(this.player, observeConfig);
+      }
+    }).observe(this.player, observeConfig);
   }
-  const css = [
-    ".atvwebplayersdk-rating-text {display: none !important;}",
-    ".atvwebplayersdk-ratingdescriptor-text {display: none !important;}",
-  ];
-  addStyle(css.join(""));
-
-  // Hide the overlays that appear in the top center and top left when viewing ratings.
-  new MutationObserver((_, _observer) => {
-    const ratingDesc = document.querySelector(
-      ".atvwebplayersdk-ratingdescriptor-text"
-    );
-    if (!ratingDesc) {
+  hideRatingText(options = getDefaultOptions()) {
+    if (!options.hideRating) {
       return;
     }
+    const css = [
+      ".atvwebplayersdk-rating-text {display: none !important;}",
+      ".atvwebplayersdk-ratingdescriptor-text {display: none !important;}",
+    ];
+    addStyle(css.join(""));
 
-    _observer.disconnect();
-
-    const parent = ratingDesc.parentNode.parentNode;
-    if (parent.childNodes.length !== 3) {
-      return;
-    }
-    if (
-      !Array.from(parent.childNodes).every((child) => child.tagName === "DIV")
-    ) {
-      return;
-    }
-
-    for (const child of parent.childNodes) {
-      if (child.querySelector(".atvwebplayersdk-ratingdescriptor-text")) {
-        continue;
+    // Hide the overlays that appear in the top center and top left when viewing ratings.
+    new MutationObserver((_, _observer) => {
+      const ratingDesc = this.player.querySelector(
+        ".atvwebplayersdk-ratingdescriptor-text"
+      );
+      if (!ratingDesc) {
+        return;
       }
 
-      if (child.childNodes.length === 0 && child.textContent === "") {
-        child.style.display = "none";
-        continue;
-      }
+      _observer.disconnect();
 
+      const parent = ratingDesc.parentNode.parentNode;
+      if (parent.childNodes.length !== 3) {
+        return;
+      }
       if (
-        child.childNodes.length === 1 &&
-        child.childNodes[0].childNodes.length === 0 &&
-        child.childNodes[0].textContent === ""
+        !Array.from(parent.childNodes).every((child) => child.tagName === "DIV")
       ) {
-        child.style.display = "none";
-        continue;
+        return;
       }
-    }
-  }).observe(document, observeConfig);
-};
+
+      for (const child of parent.childNodes) {
+        if (child.querySelector(".atvwebplayersdk-ratingdescriptor-text")) {
+          continue;
+        }
+
+        if (child.childNodes.length === 0 && child.textContent === "") {
+          child.style.display = "none";
+          continue;
+        }
+
+        if (
+          child.childNodes.length === 1 &&
+          child.childNodes[0].childNodes.length === 0 &&
+          child.childNodes[0].textContent === ""
+        ) {
+          child.style.display = "none";
+          continue;
+        }
+      }
+    }).observe(this.player, observeConfig);
+  }
+}
 
 const main = () => {
   if (!localStorage.getItem("nextup-ext")) {
@@ -677,25 +683,37 @@ const main = () => {
   const scriptInfo = getScriptInfo();
   updateOptionVersion(scriptInfo);
 
-  new MutationObserver((_, _observer) => {
-    const video = document.querySelector(".webPlayerContainer video");
-    if (!video || !video.checkVisibility()) {
-      return;
-    }
-    _observer.disconnect();
+  const options = getOptions();
+  let isFirstPlayer = true;
 
-    try {
-      createOptionBtn();
-      toggleOptionDialogWithKeyboard();
-    } catch (e) {
-      console.log(e);
-    }
+  new MutationObserver((_) => {
+    const players = document.querySelectorAll(
+      "[id*='dv-web-player']:not([data-detected-from-ext='true'])"
+    );
+    players.forEach((player) => {
+      player.dataset.detectedFromExt = "true";
+      new MutationObserver((_, _observer) => {
+        const video = player.querySelector("video");
+        if (!video || !video.checkVisibility()) {
+          return;
+        }
 
-    const options = getOptions();
-    hideSkipIntroBtn(options);
-    autoHideNextup(options);
-    hideRatingText(options);
-  }).observe(document, observeConfig);
+        _observer.disconnect();
+
+        if (isFirstPlayer) {
+          isFirstPlayer = false;
+          createOptionDialog();
+          addEventListenerForShortcutKey();
+        }
+
+        const hider = new ElementHider(player, video);
+        hider.createOptionBtn();
+        hider.hideSkipIntroBtn(options);
+        hider.autoHideNextup(options);
+        hider.hideRatingText(options);
+      }).observe(player, { childList: true, subtree: true });
+    });
+  }).observe(document, { childList: true, subtree: true });
 };
 
 main();
