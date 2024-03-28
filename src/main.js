@@ -14,7 +14,7 @@ const getDefaultOptions = () => {
       shift: false,
       charCode: "KeyP",
     },
-    scriptVersion: "2.2.0",
+    scriptVersion: "2.2.1",
   };
 };
 
