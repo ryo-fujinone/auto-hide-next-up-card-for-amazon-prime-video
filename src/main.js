@@ -82,8 +82,11 @@ const charObj = {
   },
 };
 
-const addStyle = (css) => {
+const addStyle = (css, id) => {
   const style = document.createElement("style");
+  if (id) {
+    style.setAttribute("id", id);
+  }
   style.textContent = css;
   document.head.appendChild(style);
 };
@@ -518,10 +521,13 @@ class ElementHider {
     if (!options.hideSkipIntroBtn) {
       return;
     }
-    const css = [
-      ".atvwebplayersdk-skipelement-button {display: none !important;}",
-    ];
-    addStyle(css.join(""));
+
+    if (!document.querySelector("#hideSkipIntroBtn")) {
+      const css = [
+        ".atvwebplayersdk-skipelement-button {display: none !important;}",
+      ];
+      addStyle(css.join(""), "hideSkipIntroBtn");
+    }
 
     if (!options.showSkipIntroBtnOnOverlay) {
       return;
@@ -566,14 +572,17 @@ class ElementHider {
       overlaysWrapper.style.display = "";
     }, delay);
   }
-  autoHideNextup(options = getDefaultOptions()) {
+  hideNextupCard(options = getDefaultOptions()) {
     if (!options.hideNextup) {
       return;
     }
-    const css = [
-      ".atvwebplayersdk-nextupcard-wrapper {display: none !important;}",
-    ];
-    addStyle(css.join(""));
+
+    if (!document.querySelector("#hideNextupCard")) {
+      const css = [
+        ".atvwebplayersdk-nextupcard-wrapper {display: none !important;}",
+      ];
+      addStyle(css.join(""), "hideNextupCard");
+    }
 
     new MutationObserver((_, outerObserver) => {
       const wrapper = this.player.querySelector(
@@ -625,11 +634,14 @@ class ElementHider {
     if (!options.hideRating) {
       return;
     }
-    const css = [
-      ".atvwebplayersdk-rating-text {display: none !important;}",
-      ".atvwebplayersdk-ratingdescriptor-text {display: none !important;}",
-    ];
-    addStyle(css.join(""));
+
+    if (!document.querySelector("#hideRatingText")) {
+      const css = [
+        ".atvwebplayersdk-rating-text {display: none !important;}",
+        ".atvwebplayersdk-ratingdescriptor-text {display: none !important;}",
+      ];
+      addStyle(css.join(""), "hideRatingText");
+    }
 
     // Hide the overlays that appear in the top center and top left when viewing ratings.
     new MutationObserver((_, _observer) => {
@@ -709,7 +721,7 @@ const main = () => {
         const hider = new ElementHider(player, video);
         hider.createOptionBtn();
         hider.hideSkipIntroBtn(options);
-        hider.autoHideNextup(options);
+        hider.hideNextupCard(options);
         hider.hideRatingText(options);
       }).observe(player, { childList: true, subtree: true });
     });
