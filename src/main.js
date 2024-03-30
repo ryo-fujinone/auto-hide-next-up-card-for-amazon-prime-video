@@ -723,9 +723,9 @@ const main = () => {
         hider.hideSkipIntroBtn(options);
         hider.hideNextupCard(options);
         hider.hideRatingText(options);
-      }).observe(player, { childList: true, subtree: true });
+      }).observe(player, observeConfig);
     });
-  }).observe(document, { childList: true, subtree: true });
+  }).observe(document, observeConfig);
 };
 
 main();
