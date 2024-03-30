@@ -61,21 +61,21 @@ const charObj = {
   _chars: [],
   _codeStrs: [],
   _startCode: "A".charCodeAt(0),
-  getChars: function () {
+  getChars() {
     if (this._chars.length) {
       return this._chars;
     }
-    [...Array(26)].map((_, i) => {
+    [...Array(26)].forEach((_, i) => {
       const char = String.fromCharCode(this._startCode + i);
       this._chars.push(char);
     });
     return this._chars;
   },
-  getCodeStrs: function () {
+  getCodeStrs() {
     if (this._codeStrs.length) {
       return this._codeStrs;
     }
-    this.getChars().map((c) => {
+    this.getChars().forEach((c) => {
       this._codeStrs.push("Key" + c);
     });
     return this._codeStrs;
