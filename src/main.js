@@ -14,6 +14,7 @@ const getDefaultOptions = () => {
       shift: false,
       charCode: "KeyP",
     },
+    shortcutKeyIsEnabled: true,
     scriptVersion: "2.2.2",
   };
 };
@@ -280,6 +281,8 @@ const createOptionMessages = () => {
     showNextupOnOverlay:
       "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
     hideRating: "レーティング(推奨対象年齢)を非表示にする",
+    enableShortcutKey:
+      "ショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
     close: "閉じる",
@@ -294,6 +297,7 @@ const createOptionMessages = () => {
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
     hideRating: "Hide rating",
+    enableShortcutKey: "Enable shortcut key to open the options dialog",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
     close: "Close",
@@ -347,6 +351,13 @@ const createOptionDialog = () => {
                   options.hideRating ? "checked" : ""
                 } />
                 <p>${messages.hideRating}</p>
+            </label>
+            </label>
+            <label>
+                <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
+                  options.shortcutKeyIsEnabled ? "checked" : ""
+                } />
+                <p>${messages.enableShortcutKey}</p>
             </label>
             <ul>
                 <li>
@@ -425,6 +436,9 @@ const createOptionDialog = () => {
         case "hide-rationg":
           saveOptions({ hideRating: e.target.checked });
           break;
+        case "enable-shortcutkey":
+          saveOptions({ shortcutKeyIsEnabled: e.target.checked });
+          break;
         case "nextup-ext-opt-dialog-close":
           optDialog.close();
           worksWithDialog.whenClosed();
@@ -437,7 +451,11 @@ const createOptionDialog = () => {
   );
 };
 
-const addEventListenerForShortcutKey = () => {
+const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
+  if (!options.shortcutKeyIsEnabled) {
+    return;
+  }
+
   document.body.addEventListener("keydown", (e) => {
     const video = getVisibleVideo();
     if (!video || !video.checkVisibility()) {
@@ -715,7 +733,7 @@ const main = () => {
         if (isFirstPlayer) {
           isFirstPlayer = false;
           createOptionDialog();
-          addEventListenerForShortcutKey();
+          addEventListenerForShortcutKey(options);
         }
 
         const hider = new ElementHider(player, video);
