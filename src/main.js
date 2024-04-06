@@ -487,9 +487,8 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
 };
 
 class ElementHider {
-  constructor(player, video) {
+  constructor(player) {
     this.player = player;
-    this.video = video;
   }
   createOptionBtn() {
     new MutationObserver((_, _observer) => {
@@ -736,7 +735,7 @@ const main = () => {
           addEventListenerForShortcutKey(options);
         }
 
-        const hider = new ElementHider(player, video);
+        const hider = new ElementHider(player);
         hider.createOptionBtn();
         hider.hideSkipIntroBtn(options);
         hider.hideNextupCard(options);
