@@ -15,7 +15,7 @@ const getDefaultOptions = () => {
       charCode: "KeyP",
     },
     shortcutKeyIsEnabled: true,
-    scriptVersion: "2.2.2",
+    scriptVersion: "2.2.3",
   };
 };
 
