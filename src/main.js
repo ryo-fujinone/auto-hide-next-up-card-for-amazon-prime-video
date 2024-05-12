@@ -651,56 +651,12 @@ class ElementHider {
     if (!options.hideRating) {
       return;
     }
-
     if (!document.querySelector("#hideRatingText")) {
       const css = [
-        ".atvwebplayersdk-rating-text {display: none !important;}",
-        ".atvwebplayersdk-ratingdescriptor-text {display: none !important;}",
+        ".atvwebplayersdk-regulatory-overlay {display: none !important;}",
       ];
       addStyle(css.join(""), "hideRatingText");
     }
-
-    // Hide the overlays that appear in the top center and top left when viewing ratings.
-    new MutationObserver((_, _observer) => {
-      const ratingDesc = this.player.querySelector(
-        ".atvwebplayersdk-ratingdescriptor-text"
-      );
-      if (!ratingDesc) {
-        return;
-      }
-
-      _observer.disconnect();
-
-      const parent = ratingDesc.parentNode.parentNode;
-      if (parent.childNodes.length !== 3) {
-        return;
-      }
-      if (
-        !Array.from(parent.childNodes).every((child) => child.tagName === "DIV")
-      ) {
-        return;
-      }
-
-      for (const child of parent.childNodes) {
-        if (child.querySelector(".atvwebplayersdk-ratingdescriptor-text")) {
-          continue;
-        }
-
-        if (child.childNodes.length === 0 && child.textContent === "") {
-          child.style.display = "none";
-          continue;
-        }
-
-        if (
-          child.childNodes.length === 1 &&
-          child.childNodes[0].childNodes.length === 0 &&
-          child.childNodes[0].textContent === ""
-        ) {
-          child.style.display = "none";
-          continue;
-        }
-      }
-    }).observe(this.player, observeConfig);
   }
 }
 
