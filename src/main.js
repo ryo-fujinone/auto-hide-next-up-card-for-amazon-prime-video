@@ -305,7 +305,7 @@ const createOptionMessages = () => {
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
 
-const createOptionDialog = () => {
+const createOptionDialog = (scriptVersion) => {
   if (getOptionDialog()) {
     return;
   }
@@ -373,7 +373,7 @@ const createOptionDialog = () => {
                 <button id="nextup-ext-opt-dialog-close">${
                   messages.close
                 }</button>
-                <div class="nextup-ext-opt-dialog-version"><span>v${getDefaultOptions().scriptVersion}</span></div>
+                <div class="nextup-ext-opt-dialog-version"><span>v${scriptVersion}</span></div>
             </div>
         </div>
     </dialog>
@@ -689,7 +689,7 @@ const main = () => {
 
         if (isFirstPlayer) {
           isFirstPlayer = false;
-          createOptionDialog();
+          createOptionDialog(scriptInfo.scriptVersion);
           addEventListenerForShortcutKey(options);
         }
 
