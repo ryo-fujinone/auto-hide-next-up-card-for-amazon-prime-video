@@ -491,7 +491,7 @@ class ElementHider {
     this.player = player;
   }
   createOptionBtn() {
-    new MutationObserver((_, _observer) => {
+    new MutationObserver((_, observer) => {
       if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
         return;
       }
@@ -503,7 +503,7 @@ class ElementHider {
         return;
       }
 
-      _observer.disconnect();
+      observer.disconnect();
 
       const optContainer = btnsContainer.querySelector(
         ".atvwebplayersdk-options-wrapper span div:has(.atvwebplayersdk-optionsmenu-button)"
@@ -677,13 +677,13 @@ const main = () => {
     );
     players.forEach((player) => {
       player.dataset.detectedFromExt = "true";
-      new MutationObserver((_, _observer) => {
+      new MutationObserver((_, observer) => {
         const video = player.querySelector("video");
         if (!video || !video.checkVisibility()) {
           return;
         }
 
-        _observer.disconnect();
+        observer.disconnect();
 
         if (isFirstPlayer) {
           isFirstPlayer = false;
