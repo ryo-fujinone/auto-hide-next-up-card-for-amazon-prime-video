@@ -373,6 +373,7 @@ const createOptionDialog = () => {
                 <button id="nextup-ext-opt-dialog-close">${
                   messages.close
                 }</button>
+                <div class="nextup-ext-opt-dialog-version"><span>v${getDefaultOptions().scriptVersion}</span></div>
             </div>
         </div>
     </dialog>
@@ -388,11 +389,12 @@ const createOptionDialog = () => {
     ".nextup-ext-opt-dialog label p {float: left; margin-bottom: 5px; width: calc(100% - 24px);}",
     ".nextup-ext-opt-dialog ul li {margin-left: 18px;}",
     ".nextup-ext-opt-dialog label input[type='text'] {height: 20px;}",
-    ".nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {margin-top: 12px;}",
+    ".nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {margin-top: 12px; position: relative;}",
     ".nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close):not(.dialog-inner) {text-align: center;}",
     "#nextup-ext-opt-dialog-close {border-color: black; border: solid 1px; background-color: #EEE}",
     "#nextup-ext-opt-dialog-close {width: 120px; letter-spacing: 4px;}",
     "#nextup-ext-opt-dialog-close:hover {background-color: #DDD}",
+    ".nextup-ext-opt-dialog-version {position: absolute; top: 0px; right: 0px;}"
   ];
   addStyle(css.join(""));
 
