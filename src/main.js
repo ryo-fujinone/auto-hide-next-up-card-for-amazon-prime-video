@@ -8,6 +8,7 @@ const getDefaultOptions = () => {
     temporarilyDisableOverlay: true,
     showNextupOnOverlay: false,
     hideRating: true,
+    preventsDarkening: false,
     shortcutKey: {
       ctrl: false,
       alt: true,
@@ -281,6 +282,7 @@ const createOptionMessages = () => {
     showNextupOnOverlay:
       "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
     hideRating: "レーティング(推奨対象年齢)を非表示にする",
+    preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     enableShortcutKey:
       "ショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
@@ -297,6 +299,7 @@ const createOptionMessages = () => {
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
     hideRating: "Hide rating",
+    preventsDarkening: "Prevents darkening when overlay display is enabled",
     enableShortcutKey: "Enable shortcut key to open the options dialog",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
@@ -352,6 +355,11 @@ const createOptionDialog = (scriptVersion) => {
                 } />
                 <p>${messages.hideRating}</p>
             </label>
+            <label>
+                <input type="checkbox" id="prevents-darkening" name="prevents-darkening" ${
+                  options.preventsDarkening ? "checked" : ""
+                } />
+                <p>${messages.preventsDarkening}</p>
             </label>
             <label>
                 <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
@@ -394,7 +402,7 @@ const createOptionDialog = (scriptVersion) => {
     "#nextup-ext-opt-dialog-close {border-color: black; border: solid 1px; background-color: #EEE}",
     "#nextup-ext-opt-dialog-close {width: 120px; letter-spacing: 4px;}",
     "#nextup-ext-opt-dialog-close:hover {background-color: #DDD}",
-    ".nextup-ext-opt-dialog-version {position: absolute; top: 0px; right: 0px;}"
+    ".nextup-ext-opt-dialog-version {position: absolute; top: 0px; right: 0px;}",
   ];
   addStyle(css.join(""));
 
@@ -437,6 +445,9 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "hide-rationg":
           saveOptions({ hideRating: e.target.checked });
+          break;
+        case "prevents-darkening":
+          saveOptions({ preventsDarkening: e.target.checked });
           break;
         case "enable-shortcutkey":
           saveOptions({ shortcutKeyIsEnabled: e.target.checked });
@@ -660,6 +671,55 @@ class ElementHider {
       addStyle(css.join(""), "hideRatingText");
     }
   }
+  preventsDarkening(options = getDefaultOptions()) {
+    if (!options.preventsDarkening) {
+      return;
+    }
+
+    if (!document.querySelector("#preventsDarkening")) {
+      const css = [
+        ".atvwebplayersdk-overlays-container > div.fkpovp9 {display: none !important;}",
+      ];
+      addStyle(css.join(""), "preventsDarkening");
+    }
+
+    // Hide even if class name is changed
+    // (The following code will not work if the name or structure of '.atvwebplayersdk-overlays-container' is changed)
+    setTimeout(() => {
+      const darkOverlay = this.player.querySelector(
+        ".atvwebplayersdk-overlays-container > div.fkpovp9"
+      );
+      if (darkOverlay) {
+        return;
+      }
+
+      new MutationObserver((_, observer) => {
+        const overlayDivs = this.player.querySelectorAll(
+          ".atvwebplayersdk-overlays-container > div"
+        );
+        if (overlayDivs.length === 0) {
+          return;
+        }
+        observer.disconnect();
+
+        const bgCss =
+          "rgba(0, 0, 0, 0.25) linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgb(0, 0, 0) 100%) repeat scroll 0% 0% / auto padding-box border-box";
+        const bgColorCss = "rgba(0, 0, 0, 0.25)";
+
+        for (const overlayDiv of overlayDivs) {
+          const computedStyle = getComputedStyle(overlayDiv);
+          if (
+            computedStyle.background === bgCss &&
+            computedStyle.backgroundColor === bgColorCss
+          );
+          {
+            overlayDiv.style.setProperty("display", "none", "important");
+            break;
+          }
+        }
+      }).observe(this.player, observeConfig);
+    }, 5000);
+  }
 }
 
 const main = () => {
@@ -698,6 +758,7 @@ const main = () => {
         hider.hideSkipIntroBtn(options);
         hider.hideNextupCard(options);
         hider.hideRatingText(options);
+        hider.preventsDarkening(options);
       }).observe(player, observeConfig);
     });
   }).observe(document, observeConfig);
