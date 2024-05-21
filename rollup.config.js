@@ -5,10 +5,10 @@ import { userscriptMetadataGenerator } from "userscript-metadata-generator";
 const createDevMetadata = (metadata, scriptUrl) => {
   const requires = [];
 
-  if (typeof metadata.requires === "string") {
-    requires.push(metadata.requires);
-  } else if (Array.isArray(metadata.requires)) {
-    requires.push(...metadata.requires);
+  if (typeof metadata.require === "string") {
+    requires.push(metadata.require);
+  } else if (Array.isArray(metadata.require)) {
+    requires.push(...metadata.require);
   }
 
   requires.push(scriptUrl);

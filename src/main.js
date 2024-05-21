@@ -8,6 +8,8 @@ const getDefaultOptions = () => {
     temporarilyDisableOverlay: true,
     showNextupOnOverlay: false,
     hideRating: true,
+    preventsDarkening: false,
+    moveCenterButtonsToBottom: false,
     shortcutKey: {
       ctrl: false,
       alt: true,
@@ -15,7 +17,7 @@ const getDefaultOptions = () => {
       charCode: "KeyP",
     },
     shortcutKeyIsEnabled: true,
-    scriptVersion: "2.2.4",
+    scriptVersion: "2.3.0",
   };
 };
 
@@ -272,6 +274,7 @@ const worksWithDialog = {
 
 const createOptionMessages = () => {
   const jaMessages = {
+    promptReloadPage: "オプションを変更した場合はページをリロードしてください",
     hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
     showSkipIntroBtnOnOverlay:
       "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
@@ -279,8 +282,11 @@ const createOptionMessages = () => {
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
     showNextupOnOverlay:
-      "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
-    hideRating: "レーティング(推奨対象年齢)を非表示にする",
+      "オーバーレイ表示が有効な時はNext upを表示する（非表示ボタンが無い場合のみ）",
+    hideRating: "レーティング（推薦年齢対象）を非表示にする",
+    preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
+    moveCenterButtonsToBottom:
+      "実験的: 中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     enableShortcutKey:
       "ショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
@@ -288,6 +294,7 @@ const createOptionMessages = () => {
     close: "閉じる",
   };
   const enMessages = {
+    promptReloadPage: "If you change the options, please reload the page",
     hideSkipIntroBtn: "Hide skip intro button",
     showSkipIntroBtnOnOverlay:
       "Show skip intro button when overlay display is enabled",
@@ -297,6 +304,9 @@ const createOptionMessages = () => {
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
     hideRating: "Hide rating",
+    preventsDarkening: "Prevents darkening when overlay display is enabled",
+    moveCenterButtonsToBottom:
+      "Experimental: Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     enableShortcutKey: "Enable shortcut key to open the options dialog",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
@@ -305,7 +315,7 @@ const createOptionMessages = () => {
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
 
-const createOptionDialog = () => {
+const createOptionDialog = (scriptVersion) => {
   if (getOptionDialog()) {
     return;
   }
@@ -316,6 +326,9 @@ const createOptionDialog = () => {
   const dialogHtmlStr = `
     <dialog class="nextup-ext-opt-dialog">
         <div class="dialog-inner">
+            <div class="nextup-ext-opt-dialog-note">
+              <p>${messages.promptReloadPage}</p>            
+            </div>
             <label>
                 <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
                   options.hideSkipIntroBtn ? "checked" : ""
@@ -352,6 +365,17 @@ const createOptionDialog = () => {
                 } />
                 <p>${messages.hideRating}</p>
             </label>
+            <label>
+                <input type="checkbox" id="prevents-darkening" name="prevents-darkening" ${
+                  options.preventsDarkening ? "checked" : ""
+                } />
+                <p>${messages.preventsDarkening}</p>
+            </label>
+            <label>
+                <input type="checkbox" id="move-center-buttons-to-bottom" name="move-center-buttons-to-bottom" ${
+                  options.moveCenterButtonsToBottom ? "checked" : ""
+                } />
+                <p>${messages.moveCenterButtonsToBottom}</p>
             </label>
             <label>
                 <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
@@ -373,6 +397,7 @@ const createOptionDialog = () => {
                 <button id="nextup-ext-opt-dialog-close">${
                   messages.close
                 }</button>
+                <div class="nextup-ext-opt-dialog-version"><span>v${scriptVersion}</span></div>
             </div>
         </div>
     </dialog>
@@ -382,17 +407,19 @@ const createOptionDialog = () => {
   const css = [
     ".nextup-ext-opt-dialog {padding: 0; word-break: break-all;}",
     ".dialog-inner {padding: 14px;}",
+    ".nextup-ext-opt-dialog-note {text-align: center; color: green; margin-bottom: 10px; font-weight: 700;}",
     ".nextup-ext-opt-dialog label {display: block;}",
     ".nextup-ext-opt-dialog label.indent1 {margin-left: 14px;}",
     ".nextup-ext-opt-dialog label input[type='checkbox'] {float: left;}",
     ".nextup-ext-opt-dialog label p {float: left; margin-bottom: 5px; width: calc(100% - 24px);}",
     ".nextup-ext-opt-dialog ul li {margin-left: 18px;}",
     ".nextup-ext-opt-dialog label input[type='text'] {height: 20px;}",
-    ".nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {margin-top: 12px;}",
+    ".nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {margin-top: 12px; position: relative;}",
     ".nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close):not(.dialog-inner) {text-align: center;}",
     "#nextup-ext-opt-dialog-close {border-color: black; border: solid 1px; background-color: #EEE}",
     "#nextup-ext-opt-dialog-close {width: 120px; letter-spacing: 4px;}",
     "#nextup-ext-opt-dialog-close:hover {background-color: #DDD}",
+    ".nextup-ext-opt-dialog-version {position: absolute; top: 0px; right: 0px;}",
   ];
   addStyle(css.join(""));
 
@@ -435,6 +462,12 @@ const createOptionDialog = () => {
           break;
         case "hide-rationg":
           saveOptions({ hideRating: e.target.checked });
+          break;
+        case "prevents-darkening":
+          saveOptions({ preventsDarkening: e.target.checked });
+          break;
+        case "move-center-buttons-to-bottom":
+          saveOptions({ moveCenterButtonsToBottom: e.target.checked });
           break;
         case "enable-shortcutkey":
           saveOptions({ shortcutKeyIsEnabled: e.target.checked });
@@ -490,8 +523,9 @@ class ElementHider {
   constructor(player) {
     this.player = player;
   }
+
   createOptionBtn() {
-    new MutationObserver((_, _observer) => {
+    new MutationObserver((_, observer) => {
       if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
         return;
       }
@@ -503,7 +537,7 @@ class ElementHider {
         return;
       }
 
-      _observer.disconnect();
+      observer.disconnect();
 
       const optContainer = btnsContainer.querySelector(
         ".atvwebplayersdk-options-wrapper span div:has(.atvwebplayersdk-optionsmenu-button)"
@@ -534,6 +568,7 @@ class ElementHider {
       });
     }).observe(this.player, observeConfig);
   }
+
   hideSkipIntroBtn(options = getDefaultOptions()) {
     if (!options.hideSkipIntroBtn) {
       return;
@@ -574,6 +609,7 @@ class ElementHider {
       });
     }).observe(this.player, observeConfig);
   }
+
   temporarilyDisableOverlay(options = getDefaultOptions(), delay = 5000) {
     if (!options.temporarilyDisableOverlay) {
       return;
@@ -589,6 +625,7 @@ class ElementHider {
       overlaysWrapper.style.display = "";
     }, delay);
   }
+
   hideNextupCard(options = getDefaultOptions()) {
     if (!options.hideNextup) {
       return;
@@ -647,6 +684,7 @@ class ElementHider {
       }
     }).observe(this.player, observeConfig);
   }
+
   hideRatingText(options = getDefaultOptions()) {
     if (!options.hideRating) {
       return;
@@ -657,6 +695,112 @@ class ElementHider {
       ];
       addStyle(css.join(""), "hideRatingText");
     }
+  }
+
+  preventsDarkening(options = getDefaultOptions()) {
+    if (!options.preventsDarkening) {
+      return;
+    }
+
+    if (!document.querySelector("#preventsDarkening")) {
+      const css = [
+        ".atvwebplayersdk-overlays-container > div.fkpovp9 {display: none !important;}",
+      ];
+      addStyle(css.join(""), "preventsDarkening");
+    }
+
+    // Hide even if class name is changed
+    // (The following code will not work if the name or structure of '.atvwebplayersdk-overlays-container' is changed)
+    setTimeout(() => {
+      const darkOverlay = this.player.querySelector(
+        ".atvwebplayersdk-overlays-container > div.fkpovp9"
+      );
+      if (darkOverlay) {
+        return;
+      }
+
+      new MutationObserver((_, observer) => {
+        const overlayDivs = this.player.querySelectorAll(
+          ".atvwebplayersdk-overlays-container > div"
+        );
+        if (overlayDivs.length === 0) {
+          return;
+        }
+        observer.disconnect();
+
+        const bgCss =
+          "rgba(0, 0, 0, 0.25) linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgb(0, 0, 0) 100%) repeat scroll 0% 0% / auto padding-box border-box";
+        const bgColorCss = "rgba(0, 0, 0, 0.25)";
+
+        for (const overlayDiv of overlayDivs) {
+          const computedStyle = window.getComputedStyle(overlayDiv);
+          if (
+            computedStyle.background === bgCss &&
+            computedStyle.backgroundColor === bgColorCss
+          );
+          {
+            overlayDiv.style.setProperty("display", "none", "important");
+            break;
+          }
+        }
+      }).observe(this.player, observeConfig);
+    }, 5000);
+  }
+  // This feature is experimental.
+  // Move the center buttons(Play/Pause, Back and Forward) to the bottom.
+  moveCenterButtonsToBottom(options = getDefaultOptions()) {
+    if (!options.moveCenterButtonsToBottom) {
+      return;
+    }
+
+    new MutationObserver((_, observer) => {
+      const playPauseButton = this.player.querySelector(
+        ".atvwebplayersdk-playpause-button"
+      );
+      if (!playPauseButton) {
+        return;
+      }
+      observer.disconnect();
+
+      const container = playPauseButton.parentNode.parentNode.parentNode;
+      const computedStyle = window.getComputedStyle(container);
+      if (!parseFloat(computedStyle.marginTop) < 0) {
+        return;
+      }
+
+      container.style.position = "absolute";
+      container.style.bottom = 0;
+      container.style.zIndex = 999;
+
+      const adjustElementSize = (element) => {
+        if (element) {
+          const elementComputedStyle = window.getComputedStyle(element);
+          const width = parseFloat(elementComputedStyle.width);
+          const height = parseFloat(elementComputedStyle.height);
+          const newWidth = width * 0.65;
+          const newHeight = height * 0.65;
+          console.log(element);
+          console.log(`width: ${width} -> ${newWidth}`);
+          console.log(`height: ${height} -> ${newHeight}`);
+          element.style.width = newWidth + "px";
+          element.style.height = newHeight + "px";
+        }
+      };
+
+      const buttons = container.querySelectorAll("button");
+      for (const button of buttons) {
+        adjustElementSize(button);
+      }
+
+      window.addEventListener("resize", () => {
+        const buttons = container.querySelectorAll("button");
+        for (const button of buttons) {
+          button.style.width = "";
+          button.style.height = "";
+          adjustElementSize(button);
+        }
+      });
+    }).observe(this.player, observeConfig);
   }
 }
 
@@ -677,25 +821,57 @@ const main = () => {
     );
     players.forEach((player) => {
       player.dataset.detectedFromExt = "true";
-      new MutationObserver((_, _observer) => {
+      new MutationObserver((_, observer) => {
         const video = player.querySelector("video");
         if (!video || !video.checkVisibility()) {
           return;
         }
 
-        _observer.disconnect();
+        observer.disconnect();
 
         if (isFirstPlayer) {
           isFirstPlayer = false;
-          createOptionDialog();
+          createOptionDialog(scriptInfo.scriptVersion);
           addEventListenerForShortcutKey(options);
         }
 
         const hider = new ElementHider(player);
-        hider.createOptionBtn();
-        hider.hideSkipIntroBtn(options);
-        hider.hideNextupCard(options);
-        hider.hideRatingText(options);
+
+        try {
+          hider.createOptionBtn();
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.hideSkipIntroBtn(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.hideNextupCard(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.hideRatingText(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.preventsDarkening(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.moveCenterButtonsToBottom(options);
+        } catch (e) {
+          console.log(e);
+        }
       }).observe(player, observeConfig);
     });
   }).observe(document, observeConfig);
