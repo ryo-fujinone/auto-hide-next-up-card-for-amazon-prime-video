@@ -274,6 +274,7 @@ const worksWithDialog = {
 
 const createOptionMessages = () => {
   const jaMessages = {
+    promptReloadPage: "オプションを変更した場合はページをリロードしてください",
     hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
     showSkipIntroBtnOnOverlay:
       "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
@@ -293,6 +294,7 @@ const createOptionMessages = () => {
     close: "閉じる",
   };
   const enMessages = {
+    promptReloadPage: "If you change the options, please reload the page",
     hideSkipIntroBtn: "Hide skip intro button",
     showSkipIntroBtnOnOverlay:
       "Show skip intro button when overlay display is enabled",
@@ -324,6 +326,9 @@ const createOptionDialog = (scriptVersion) => {
   const dialogHtmlStr = `
     <dialog class="nextup-ext-opt-dialog">
         <div class="dialog-inner">
+            <div class="nextup-ext-opt-dialog-note">
+              <p>${messages.promptReloadPage}</p>            
+            </div>
             <label>
                 <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
                   options.hideSkipIntroBtn ? "checked" : ""
@@ -402,6 +407,7 @@ const createOptionDialog = (scriptVersion) => {
   const css = [
     ".nextup-ext-opt-dialog {padding: 0; word-break: break-all;}",
     ".dialog-inner {padding: 14px;}",
+    ".nextup-ext-opt-dialog-note {text-align: center; color: green; margin-bottom: 10px; font-weight: 700;}",
     ".nextup-ext-opt-dialog label {display: block;}",
     ".nextup-ext-opt-dialog label.indent1 {margin-left: 14px;}",
     ".nextup-ext-opt-dialog label input[type='checkbox'] {float: left;}",
