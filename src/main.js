@@ -836,12 +836,42 @@ const main = () => {
         }
 
         const hider = new ElementHider(player);
-        hider.createOptionBtn();
-        hider.hideSkipIntroBtn(options);
-        hider.hideNextupCard(options);
-        hider.hideRatingText(options);
-        hider.preventsDarkening(options);
-        hider.moveCenterButtonsToBottom(options);
+
+        try {
+          hider.createOptionBtn();
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.hideSkipIntroBtn(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.hideNextupCard(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.hideRatingText(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.preventsDarkening(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.moveCenterButtonsToBottom(options);
+        } catch (e) {
+          console.log(e);
+        }
       }).observe(player, observeConfig);
     });
   }).observe(document, observeConfig);
