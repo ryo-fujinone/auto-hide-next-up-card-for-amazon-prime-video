@@ -282,8 +282,8 @@ const createOptionMessages = () => {
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
     showNextupOnOverlay:
-      "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
-    hideRating: "レーティング(推薦年齢対象)を非表示にする",
+      "オーバーレイ表示が有効な時はNext upを表示する（非表示ボタンが無い場合のみ）",
+    hideRating: "レーティング（推薦年齢対象）を非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     moveCenterButtonsToBottom:
       "実験的: 中央のボタン（再生/停止、戻る、進む）を下部に移動する",
