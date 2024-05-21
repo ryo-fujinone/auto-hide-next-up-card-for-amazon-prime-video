@@ -9,6 +9,7 @@ const getDefaultOptions = () => {
     showNextupOnOverlay: false,
     hideRating: true,
     preventsDarkening: false,
+    moveCenterButtonsToBottom: false,
     shortcutKey: {
       ctrl: false,
       alt: true,
@@ -283,6 +284,8 @@ const createOptionMessages = () => {
       "オーバーレイ表示が有効な時はNext upを表示する (非表示ボタンが無い場合のみ)",
     hideRating: "レーティング(推薦年齢対象)を非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
+    moveCenterButtonsToBottom:
+      "実験的: 中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     enableShortcutKey:
       "ショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
@@ -300,6 +303,8 @@ const createOptionMessages = () => {
       "Show next up card when overlay display is enabled (only if there is no hide button)",
     hideRating: "Hide rating",
     preventsDarkening: "Prevents darkening when overlay display is enabled",
+    moveCenterButtonsToBottom:
+      "Experimental: Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     enableShortcutKey: "Enable shortcut key to open the options dialog",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
@@ -360,6 +365,12 @@ const createOptionDialog = (scriptVersion) => {
                   options.preventsDarkening ? "checked" : ""
                 } />
                 <p>${messages.preventsDarkening}</p>
+            </label>
+            <label>
+                <input type="checkbox" id="move-center-buttons-to-bottom" name="move-center-buttons-to-bottom" ${
+                  options.moveCenterButtonsToBottom ? "checked" : ""
+                } />
+                <p>${messages.moveCenterButtonsToBottom}</p>
             </label>
             <label>
                 <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
@@ -449,6 +460,9 @@ const createOptionDialog = (scriptVersion) => {
         case "prevents-darkening":
           saveOptions({ preventsDarkening: e.target.checked });
           break;
+        case "move-center-buttons-to-bottom":
+          saveOptions({ moveCenterButtonsToBottom: e.target.checked });
+          break;
         case "enable-shortcutkey":
           saveOptions({ shortcutKeyIsEnabled: e.target.checked });
           break;
@@ -503,6 +517,7 @@ class ElementHider {
   constructor(player) {
     this.player = player;
   }
+
   createOptionBtn() {
     new MutationObserver((_, observer) => {
       if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
@@ -547,6 +562,7 @@ class ElementHider {
       });
     }).observe(this.player, observeConfig);
   }
+
   hideSkipIntroBtn(options = getDefaultOptions()) {
     if (!options.hideSkipIntroBtn) {
       return;
@@ -587,6 +603,7 @@ class ElementHider {
       });
     }).observe(this.player, observeConfig);
   }
+
   temporarilyDisableOverlay(options = getDefaultOptions(), delay = 5000) {
     if (!options.temporarilyDisableOverlay) {
       return;
@@ -602,6 +619,7 @@ class ElementHider {
       overlaysWrapper.style.display = "";
     }, delay);
   }
+
   hideNextupCard(options = getDefaultOptions()) {
     if (!options.hideNextup) {
       return;
@@ -660,6 +678,7 @@ class ElementHider {
       }
     }).observe(this.player, observeConfig);
   }
+
   hideRatingText(options = getDefaultOptions()) {
     if (!options.hideRating) {
       return;
@@ -671,6 +690,7 @@ class ElementHider {
       addStyle(css.join(""), "hideRatingText");
     }
   }
+
   preventsDarkening(options = getDefaultOptions()) {
     if (!options.preventsDarkening) {
       return;
@@ -707,7 +727,7 @@ class ElementHider {
         const bgColorCss = "rgba(0, 0, 0, 0.25)";
 
         for (const overlayDiv of overlayDivs) {
-          const computedStyle = getComputedStyle(overlayDiv);
+          const computedStyle = window.getComputedStyle(overlayDiv);
           if (
             computedStyle.background === bgCss &&
             computedStyle.backgroundColor === bgColorCss
@@ -719,6 +739,62 @@ class ElementHider {
         }
       }).observe(this.player, observeConfig);
     }, 5000);
+  }
+  // This feature is experimental.
+  // Move the center buttons(Play/Pause, Back and Forward) to the bottom.
+  moveCenterButtonsToBottom(options = getDefaultOptions()) {
+    if (!options.moveCenterButtonsToBottom) {
+      return;
+    }
+
+    new MutationObserver((_, observer) => {
+      const playPauseButton = this.player.querySelector(
+        ".atvwebplayersdk-playpause-button"
+      );
+      if (!playPauseButton) {
+        return;
+      }
+      observer.disconnect();
+
+      const container = playPauseButton.parentNode.parentNode.parentNode;
+      const computedStyle = window.getComputedStyle(container);
+      if (!parseFloat(computedStyle.marginTop) < 0) {
+        return;
+      }
+
+      container.style.position = "absolute";
+      container.style.bottom = 0;
+      container.style.zIndex = 999;
+
+      const adjustElementSize = (element) => {
+        if (element) {
+          const elementComputedStyle = window.getComputedStyle(element);
+          const width = parseFloat(elementComputedStyle.width);
+          const height = parseFloat(elementComputedStyle.height);
+          const newWidth = width * 0.65;
+          const newHeight = height * 0.65;
+          console.log(element);
+          console.log(`width: ${width} -> ${newWidth}`);
+          console.log(`height: ${height} -> ${newHeight}`);
+          element.style.width = newWidth + "px";
+          element.style.height = newHeight + "px";
+        }
+      };
+
+      const buttons = container.querySelectorAll("button");
+      for (const button of buttons) {
+        adjustElementSize(button);
+      }
+
+      window.addEventListener("resize", () => {
+        const buttons = container.querySelectorAll("button");
+        for (const button of buttons) {
+          button.style.width = "";
+          button.style.height = "";
+          adjustElementSize(button);
+        }
+      });
+    }).observe(this.player, observeConfig);
   }
 }
 
@@ -759,6 +835,7 @@ const main = () => {
         hider.hideNextupCard(options);
         hider.hideRatingText(options);
         hider.preventsDarkening(options);
+        hider.moveCenterButtonsToBottom(options);
       }).observe(player, observeConfig);
     });
   }).observe(document, observeConfig);
