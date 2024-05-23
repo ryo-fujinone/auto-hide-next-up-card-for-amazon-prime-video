@@ -743,9 +743,9 @@ class ElementHider {
           const height = parseFloat(elementComputedStyle.height);
           const newWidth = width * 0.65;
           const newHeight = height * 0.65;
-          console.log(element);
-          console.log(`width: ${width} -> ${newWidth}`);
-          console.log(`height: ${height} -> ${newHeight}`);
+          // console.log(element);
+          // console.log(`width: ${width} -> ${newWidth}`);
+          // console.log(`height: ${height} -> ${newHeight}`);
           element.style.width = newWidth + "px";
           element.style.height = newHeight + "px";
         }
