@@ -708,44 +708,8 @@ class ElementHider {
       ];
       addStyle(css.join(""), "preventsDarkening");
     }
-
-    // Hide even if class name is changed
-    // (The following code will not work if the name or structure of '.atvwebplayersdk-overlays-container' is changed)
-    setTimeout(() => {
-      const darkOverlay = this.player.querySelector(
-        ".atvwebplayersdk-overlays-container > div.fkpovp9"
-      );
-      if (darkOverlay) {
-        return;
-      }
-
-      new MutationObserver((_, observer) => {
-        const overlayDivs = this.player.querySelectorAll(
-          ".atvwebplayersdk-overlays-container > div"
-        );
-        if (overlayDivs.length === 0) {
-          return;
-        }
-        observer.disconnect();
-
-        const bgCss =
-          "rgba(0, 0, 0, 0.25) linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 50%, rgb(0, 0, 0) 100%) repeat scroll 0% 0% / auto padding-box border-box";
-        const bgColorCss = "rgba(0, 0, 0, 0.25)";
-
-        for (const overlayDiv of overlayDivs) {
-          const computedStyle = window.getComputedStyle(overlayDiv);
-          if (
-            computedStyle.background === bgCss &&
-            computedStyle.backgroundColor === bgColorCss
-          );
-          {
-            overlayDiv.style.setProperty("display", "none", "important");
-            break;
-          }
-        }
-      }).observe(this.player, observeConfig);
-    }, 5000);
   }
+
   // This feature is experimental.
   // Move the center buttons(Play/Pause, Back and Forward) to the bottom.
   moveCenterButtonsToBottom(options = getDefaultOptions()) {
