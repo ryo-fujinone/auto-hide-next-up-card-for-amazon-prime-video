@@ -21,5 +21,5 @@
     "userscript-metadata-generator": "^0.2.4",
     "web-ext": "^7.11.0"
   },
-  "packageManager": "pnpm@9.1.0"
+  "packageManager": "pnpm@9.5.0"
 }
