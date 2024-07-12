@@ -7,6 +7,7 @@ const getDefaultOptions = () => {
     hideNextup: true,
     temporarilyDisableOverlay: true,
     showNextupOnOverlay: false,
+    preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
     preventsDarkening: false,
     moveCenterButtonsToBottom: false,
@@ -283,6 +284,10 @@ const createOptionMessages = () => {
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
     showNextupOnOverlay:
       "オーバーレイ表示が有効な時はNext upを表示する（非表示ボタンが無い場合のみ）",
+    preventsTransitionsToRecommendedVideos:
+      "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ（自動再生が有効な場合）",
+    preventsTransitionsToRecommendedVideos_Tooltip:
+      "動画終了時の次のエピソードへの遷移に影響はありません",
     hideRating: "レーティング（推薦年齢対象）を非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     moveCenterButtonsToBottom:
@@ -303,6 +308,10 @@ const createOptionMessages = () => {
       "Disable overlay for 5 seconds when auto-clicking hide button",
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
+    preventsTransitionsToRecommendedVideos:
+      "Prevent transition to suggested content when video ends (if autoplay is enabled)",
+    preventsTransitionsToRecommendedVideos_Tooltip:
+      "There is no impact on the transition to the next episode when the video ends.",
     hideRating: "Hide rating",
     preventsDarkening: "Prevents darkening when overlay display is enabled",
     moveCenterButtonsToBottom:
@@ -358,6 +367,16 @@ const createOptionDialog = (scriptVersion) => {
                   options.showNextupOnOverlay ? "checked" : ""
                 } />
                 <p>${messages.showNextupOnOverlay}</p>
+            </label>
+            <label title=${
+              messages.preventsTransitionsToRecommendedVideos_Tooltip
+            }>
+                <input type="checkbox" id="prevents-transitions-to-recommended-videos" name="prevents-transitions-to-recommended-videos" ${
+                  options.preventsTransitionsToRecommendedVideos
+                    ? "checked"
+                    : ""
+                } />
+                <p>${messages.preventsTransitionsToRecommendedVideos}</p>
             </label>
             <label>
                 <input type="checkbox" id="hide-rationg" name="hide-rationg" ${
@@ -459,6 +478,11 @@ const createOptionDialog = (scriptVersion) => {
           saveOptions({ temporarilyDisableOverlay: e.target.checked });
         case "show-nextup":
           saveOptions({ showNextupOnOverlay: e.target.checked });
+          break;
+        case "prevents-transitions-to-recommended-videos":
+          saveOptions({
+            preventsTransitionsToRecommendedVideos: e.target.checked,
+          });
           break;
         case "hide-rationg":
           saveOptions({ hideRating: e.target.checked });
@@ -766,6 +790,70 @@ class ElementHider {
       });
     }).observe(this.player, observeConfig);
   }
+
+  preventsTransitionsToRecommendedVideos(options = getDefaultOptions()) {
+    if (!options.preventsTransitionsToRecommendedVideos) {
+      return;
+    }
+
+    // Execute preventsTransitionsToRecommendedVideos method each time the video is opened.
+    new MutationObserver((_, observer) => {
+      if (this.player.classList.contains("dv-player-fullscreen")) {
+        observer.disconnect();
+        this.preventsTransitionsToRecommendedVideos(options);
+      }
+    }).observe(this.player, {
+      attributes: true,
+    });
+
+    // The video titles are compared to determine if there has been a transition to a different video.
+    // Detection of transitions to another season is not supported.
+    let titleObserver;
+    const parentObserver = new MutationObserver((_, outerObserver) => {
+      const titleText = this.player.querySelector(
+        ".atvwebplayersdk-title-text"
+      );
+      if (!titleText) {
+        return;
+      }
+      const title = titleText.textContent;
+      if (!title) {
+        return;
+      }
+      outerObserver.disconnect();
+
+      titleObserver = new MutationObserver((_) => {
+        const newTitle = titleText.textContent;
+        if (!newTitle) {
+          return;
+        }
+        console.log(`old [${title}], new [${newTitle}]`);
+        if (title !== newTitle) {
+          const closeBtn = this.player.querySelector(
+            ".atvwebplayersdk-playerclose-button"
+          );
+          closeBtn.click();
+        }
+      });
+      titleObserver.observe(titleText, observeConfig);
+    });
+
+    parentObserver.observe(this.player, observeConfig);
+
+    // Stops parentObserver and titleObserver when the video is closed.
+    new MutationObserver((_, observer) => {
+      if (!this.player.classList.contains("dv-player-fullscreen")) {
+        observer.disconnect();
+        parentObserver.disconnect();
+        if (titleObserver) {
+          titleObserver.disconnect();
+        }
+        console.log("Video closed.");
+      }
+    }).observe(this.player, {
+      attributes: true,
+    });
+  }
 }
 
 const main = () => {
@@ -833,6 +921,12 @@ const main = () => {
 
         try {
           hider.moveCenterButtonsToBottom(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          hider.preventsTransitionsToRecommendedVideos(options);
         } catch (e) {
           console.log(e);
         }
