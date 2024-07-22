@@ -752,7 +752,7 @@ class ElementController {
 
       const container = playPauseButton.parentNode.parentNode.parentNode;
       const computedStyle = window.getComputedStyle(container);
-      if (!parseFloat(computedStyle.marginTop) < 0) {
+      if (parseFloat(computedStyle.marginTop) > 0) {
         return;
       }
 
