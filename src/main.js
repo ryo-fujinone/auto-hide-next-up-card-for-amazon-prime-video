@@ -543,7 +543,7 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
   });
 };
 
-class ElementHider {
+class ElementController {
   constructor(player) {
     this.player = player;
   }
@@ -887,46 +887,46 @@ const main = () => {
           addEventListenerForShortcutKey(options);
         }
 
-        const hider = new ElementHider(player);
+        const controller = new ElementController(player);
 
         try {
-          hider.createOptionBtn();
+          controller.createOptionBtn();
         } catch (e) {
           console.log(e);
         }
 
         try {
-          hider.hideSkipIntroBtn(options);
+          controller.hideSkipIntroBtn(options);
         } catch (e) {
           console.log(e);
         }
 
         try {
-          hider.hideNextupCard(options);
+          controller.hideNextupCard(options);
         } catch (e) {
           console.log(e);
         }
 
         try {
-          hider.hideRatingText(options);
+          controller.hideRatingText(options);
         } catch (e) {
           console.log(e);
         }
 
         try {
-          hider.preventsDarkening(options);
+          controller.preventsDarkening(options);
         } catch (e) {
           console.log(e);
         }
 
         try {
-          hider.moveCenterButtonsToBottom(options);
+          controller.moveCenterButtonsToBottom(options);
         } catch (e) {
           console.log(e);
         }
 
         try {
-          hider.preventsTransitionsToRecommendedVideos(options);
+          controller.preventsTransitionsToRecommendedVideos(options);
         } catch (e) {
           console.log(e);
         }
