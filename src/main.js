@@ -10,6 +10,7 @@ const getDefaultOptions = () => {
     preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
     preventsDarkening: false,
+    addOutlinesForTextsAndIcons: false,
     moveCenterButtonsToBottom: false,
     shortcutKey: {
       ctrl: false,
@@ -290,6 +291,7 @@ const createOptionMessages = () => {
       "動画終了時の次のエピソードへの遷移に影響はありません",
     hideRating: "レーティング（推薦年齢対象）を非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
+    addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
     moveCenterButtonsToBottom:
       "実験的: 中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     enableShortcutKey:
@@ -314,6 +316,7 @@ const createOptionMessages = () => {
       "There is no impact on the transition to the next episode when the video ends.",
     hideRating: "Hide rating",
     preventsDarkening: "Prevents darkening when overlay display is enabled",
+    addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
     moveCenterButtonsToBottom:
       "Experimental: Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     enableShortcutKey: "Enable shortcut key to open the options dialog",
@@ -389,6 +392,12 @@ const createOptionDialog = (scriptVersion) => {
                   options.preventsDarkening ? "checked" : ""
                 } />
                 <p>${messages.preventsDarkening}</p>
+            </label>
+            <label class="indent1">
+                <input type="checkbox" id="add-outlines-for-texts-and-icons" name="add-outlines-for-texts-and-icons" ${
+                  options.addOutlinesForTextsAndIcons ? "checked" : ""
+                } />
+                <p>${messages.addOutlinesForTextsAndIcons}</p>
             </label>
             <label>
                 <input type="checkbox" id="move-center-buttons-to-bottom" name="move-center-buttons-to-bottom" ${
@@ -489,6 +498,9 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "prevents-darkening":
           saveOptions({ preventsDarkening: e.target.checked });
+          break;
+        case "add-outlines-for-texts-and-icons":
+          saveOptions({ addOutlinesForTextsAndIcons: e.target.checked });
           break;
         case "move-center-buttons-to-bottom":
           saveOptions({ moveCenterButtonsToBottom: e.target.checked });
@@ -731,6 +743,26 @@ class ElementController {
         ".atvwebplayersdk-overlays-container > div.fkpovp9 {display: none !important;}",
       ];
       addStyle(css.join(""), "preventsDarkening");
+    }
+
+    if (options.addOutlinesForTextsAndIcons) {
+      const cssForText = [
+        ".atvwebplayersdk-title-text {-webkit-text-stroke: 0.015em black;}",
+        ".atvwebplayersdk-subtitle-text {-webkit-text-stroke: 0.015em black;}",
+        ".atvwebplayersdk-timeindicator-text {-webkit-text-stroke: 0.025em black;}",
+        ".atvwebplayersdk-timeindicator-text span {opacity: 1; font-weight: normal;}",
+        ".atvwebplayersdk-nexttitle-button div:not(:has(img)) {-webkit-text-stroke: 0.025em black;}",
+      ];
+      addStyle(cssForText.join(""));
+
+      const cssForImg = [
+        ".atvwebplayersdk-hideabletopbuttons-container button img, .atvwebplayersdk-playerclose-button img {filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);}",
+        ".nextup-ext-opt-btn img {filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;}",
+        ".atvwebplayersdk-fastseekback-button img, .atvwebplayersdk-playpause-button img, .atvwebplayersdk-fastseekforward-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);}",
+        ".atvwebplayersdk-nexttitle-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);}",
+        ".atvwebplayersdk-hideabletopbuttons-container button + div div, .nextup-ext-opt-btn + div div, .atvwebplayersdk-playerclose-button + div div {-webkit-text-stroke: 0.015em black;}",
+      ];
+      addStyle(cssForImg.join(""));
     }
   }
 
