@@ -289,7 +289,7 @@ const createOptionMessages = () => {
       "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ（自動再生が有効な場合）",
     preventsTransitionsToRecommendedVideos_Tooltip:
       "動画終了時の次のエピソードへの遷移に影響はありません",
-    hideRating: "レーティング（推薦年齢対象）を非表示にする",
+    hideRating: "レーティングを非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
     moveCenterButtonsToBottom:
