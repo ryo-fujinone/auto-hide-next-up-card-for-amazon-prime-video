@@ -747,23 +747,27 @@ class ElementController {
     }
 
     if (options.addOutlinesForTextsAndIcons) {
-      const cssForText = [
-        ".atvwebplayersdk-title-text {-webkit-text-stroke: 0.015em black;}",
-        ".atvwebplayersdk-subtitle-text {-webkit-text-stroke: 0.015em black;}",
-        ".atvwebplayersdk-timeindicator-text {-webkit-text-stroke: 0.025em black;}",
-        ".atvwebplayersdk-timeindicator-text span {opacity: 1; font-weight: normal;}",
-        ".atvwebplayersdk-nexttitle-button div:not(:has(img)) {-webkit-text-stroke: 0.025em black;}",
-      ];
-      addStyle(cssForText.join(""));
+      if (!document.querySelector("#addOutlinesForTexts")) {
+        const cssForText = [
+          ".atvwebplayersdk-title-text {-webkit-text-stroke: 0.015em black;}",
+          ".atvwebplayersdk-subtitle-text {-webkit-text-stroke: 0.015em black;}",
+          ".atvwebplayersdk-timeindicator-text {-webkit-text-stroke: 0.025em black;}",
+          ".atvwebplayersdk-timeindicator-text span {opacity: 1; font-weight: normal;}",
+          ".atvwebplayersdk-nexttitle-button div:not(:has(img)) {-webkit-text-stroke: 0.025em black;}",
+        ];
+        addStyle(cssForText.join(""), "addOutlinesForTexts");
+      }
 
-      const cssForImg = [
-        ".atvwebplayersdk-hideabletopbuttons-container button img, .atvwebplayersdk-playerclose-button img {filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);}",
-        ".nextup-ext-opt-btn img {filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;}",
-        ".atvwebplayersdk-fastseekback-button img, .atvwebplayersdk-playpause-button img, .atvwebplayersdk-fastseekforward-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);}",
-        ".atvwebplayersdk-nexttitle-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);}",
-        ".atvwebplayersdk-hideabletopbuttons-container button + div div, .nextup-ext-opt-btn + div div, .atvwebplayersdk-playerclose-button + div div {-webkit-text-stroke: 0.015em black;}",
-      ];
-      addStyle(cssForImg.join(""));
+      if (!document.querySelector("#addOutlinesForIcons")) {
+        const cssForImg = [
+          ".atvwebplayersdk-hideabletopbuttons-container button img, .atvwebplayersdk-playerclose-button img {filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);}",
+          ".nextup-ext-opt-btn img {filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;}",
+          ".atvwebplayersdk-fastseekback-button img, .atvwebplayersdk-playpause-button img, .atvwebplayersdk-fastseekforward-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);}",
+          ".atvwebplayersdk-nexttitle-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);}",
+          ".atvwebplayersdk-hideabletopbuttons-container button + div div, .nextup-ext-opt-btn + div div, .atvwebplayersdk-playerclose-button + div div {-webkit-text-stroke: 0.015em black;}",
+        ];
+        addStyle(cssForImg.join(""), "addOutlinesForIcons");
+      }
     }
   }
 
