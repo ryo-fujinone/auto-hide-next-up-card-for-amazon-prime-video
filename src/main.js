@@ -432,24 +432,66 @@ const createOptionDialog = (scriptVersion) => {
     `;
   document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
 
-  const css = [
-    ".nextup-ext-opt-dialog {padding: 0; word-break: break-all;}",
-    ".dialog-inner {padding: 14px;}",
-    ".nextup-ext-opt-dialog-note {text-align: center; color: green; margin-bottom: 10px; font-weight: 700;}",
-    ".nextup-ext-opt-dialog label {display: block;}",
-    ".nextup-ext-opt-dialog label.indent1 {margin-left: 14px;}",
-    ".nextup-ext-opt-dialog label input[type='checkbox'] {float: left;}",
-    ".nextup-ext-opt-dialog label p {float: left; margin-bottom: 5px; width: calc(100% - 24px);}",
-    ".nextup-ext-opt-dialog ul li {margin-left: 18px;}",
-    ".nextup-ext-opt-dialog label input[type='text'] {height: 20px;}",
-    ".nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {margin-top: 12px; position: relative;}",
-    ".nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close):not(.dialog-inner) {text-align: center;}",
-    "#nextup-ext-opt-dialog-close {border-color: black; border: solid 1px; background-color: #EEE}",
-    "#nextup-ext-opt-dialog-close {width: 120px; letter-spacing: 4px;}",
-    "#nextup-ext-opt-dialog-close:hover {background-color: #DDD}",
-    ".nextup-ext-opt-dialog-version {position: absolute; top: 0px; right: 0px;}",
-  ];
-  addStyle(css.join(""));
+  const css = `
+    .nextup-ext-opt-dialog {
+      padding: 0;
+      word-break: break-all;
+    }
+    .dialog-inner {
+      padding: 14px;
+    }
+    .nextup-ext-opt-dialog-note {
+      text-align: center;
+      color: green;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .nextup-ext-opt-dialog label {
+      display: block;
+    }
+    .nextup-ext-opt-dialog label.indent1 {
+      margin-left: 14px;
+    }
+    .nextup-ext-opt-dialog label input[type='checkbox'] {
+      float: left;
+    }
+    .nextup-ext-opt-dialog label p {
+      float: left;
+      margin-bottom: 5px;
+      width: calc(100% - 24px);
+    }
+    .nextup-ext-opt-dialog ul li {
+      margin-left: 18px;
+    }
+    .nextup-ext-opt-dialog label input[type='text'] {
+      height: 20px;
+    }
+    .nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {
+      margin-top: 12px;
+      position: relative;
+    }
+    .nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close):not(.dialog-inner) {
+      text-align: center;
+    }
+    #nextup-ext-opt-dialog-close {
+      border-color: black;
+      border: solid 1px;
+      background-color: #EEE
+    }
+    #nextup-ext-opt-dialog-close {
+      width: 120px;
+      letter-spacing: 4px;
+    }
+    #nextup-ext-opt-dialog-close:hover {
+      background-color: #DDD
+    }
+    .nextup-ext-opt-dialog-version {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+    }
+  `;
+  addStyle(css);
 
   const optDialog = getOptionDialog();
 
@@ -612,10 +654,12 @@ class ElementController {
     }
 
     if (!document.querySelector("#hideSkipIntroBtn")) {
-      const css = [
-        ".atvwebplayersdk-skipelement-button {display: none !important;}",
-      ];
-      addStyle(css.join(""), "hideSkipIntroBtn");
+      const css = `
+      .atvwebplayersdk-skipelement-button {
+        display: none !important;
+      }
+      `;
+      addStyle(css, "hideSkipIntroBtn");
     }
 
     if (!options.showSkipIntroBtnOnOverlay) {
@@ -669,10 +713,12 @@ class ElementController {
     }
 
     if (!document.querySelector("#hideNextupCard")) {
-      const css = [
-        ".atvwebplayersdk-nextupcard-wrapper {display: none !important;}",
-      ];
-      addStyle(css.join(""), "hideNextupCard");
+      const css = `
+      .atvwebplayersdk-nextupcard-wrapper {
+        display: none !important;
+      }
+      `;
+      addStyle(css, "hideNextupCard");
     }
 
     new MutationObserver((_, outerObserver) => {
@@ -727,10 +773,12 @@ class ElementController {
       return;
     }
     if (!document.querySelector("#hideRatingText")) {
-      const css = [
-        ".atvwebplayersdk-regulatory-overlay {display: none !important;}",
-      ];
-      addStyle(css.join(""), "hideRatingText");
+      const css = `
+      .atvwebplayersdk-regulatory-overlay {
+        display: none !important;
+      }
+      `;
+      addStyle(css, "hideRatingText");
     }
   }
 
@@ -740,33 +788,61 @@ class ElementController {
     }
 
     if (!document.querySelector("#preventsDarkening")) {
-      const css = [
-        ".atvwebplayersdk-overlays-container > div.fkpovp9 {display: none !important;}",
-      ];
-      addStyle(css.join(""), "preventsDarkening");
+      const css = `
+      .atvwebplayersdk-overlays-container > div.fkpovp9 {
+        display: none !important;
+        }
+        `;
+      addStyle(css, "preventsDarkening");
     }
 
     if (options.addOutlinesForTextsAndIcons) {
       if (!document.querySelector("#addOutlinesForTexts")) {
-        const cssForText = [
-          ".atvwebplayersdk-title-text {-webkit-text-stroke: 0.015em black;}",
-          ".atvwebplayersdk-subtitle-text {-webkit-text-stroke: 0.015em black;}",
-          ".atvwebplayersdk-timeindicator-text {-webkit-text-stroke: 0.025em black;}",
-          ".atvwebplayersdk-timeindicator-text span {opacity: 1; font-weight: normal;}",
-          ".atvwebplayersdk-nexttitle-button div:not(:has(img)) {-webkit-text-stroke: 0.025em black;}",
-        ];
-        addStyle(cssForText.join(""), "addOutlinesForTexts");
+        const cssForText = `
+        .atvwebplayersdk-title-text {
+          -webkit-text-stroke: 0.015em black;
+        }
+        .atvwebplayersdk-subtitle-text {
+          -webkit-text-stroke: 0.015em black;
+        }
+        .atvwebplayersdk-timeindicator-text {
+          -webkit-text-stroke: 0.025em black;
+        }
+        .atvwebplayersdk-timeindicator-text span {
+          opacity: 1;
+          font-weight: normal;
+        }
+        .atvwebplayersdk-nexttitle-button div:not(:has(img)) {
+          -webkit-text-stroke: 0.025em black;
+        }
+        `;
+        addStyle(cssForText, "addOutlinesForTexts");
       }
 
       if (!document.querySelector("#addOutlinesForIcons")) {
-        const cssForImg = [
-          ".atvwebplayersdk-hideabletopbuttons-container button img, .atvwebplayersdk-playerclose-button img {filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);}",
-          ".nextup-ext-opt-btn img {filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;}",
-          ".atvwebplayersdk-fastseekback-button img, .atvwebplayersdk-playpause-button img, .atvwebplayersdk-fastseekforward-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);}",
-          ".atvwebplayersdk-nexttitle-button img {filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);}",
-          ".atvwebplayersdk-hideabletopbuttons-container button + div div, .nextup-ext-opt-btn + div div, .atvwebplayersdk-playerclose-button + div div {-webkit-text-stroke: 0.015em black;}",
-        ];
-        addStyle(cssForImg.join(""), "addOutlinesForIcons");
+        const cssForImg = `
+        .atvwebplayersdk-hideabletopbuttons-container button img,
+        .atvwebplayersdk-playerclose-button img {
+          filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);
+        }
+        .nextup-ext-opt-btn img {
+          filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;
+        }
+        .atvwebplayersdk-fastseekback-button img,
+        .atvwebplayersdk-playpause-button img,
+        .atvwebplayersdk-fastseekforward-button img {
+          filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);
+        }
+        .atvwebplayersdk-nexttitle-button img {
+          filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);
+        }
+        .atvwebplayersdk-hideabletopbuttons-container button + div div,
+        .nextup-ext-opt-btn + div div,
+        .atvwebplayersdk-playerclose-button + div div {
+          -webkit-text-stroke: 0.015em black;
+        }
+        `;
+        addStyle(cssForImg, "addOutlinesForIcons");
       }
     }
   }
