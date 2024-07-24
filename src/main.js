@@ -293,7 +293,7 @@ const createOptionMessages = () => {
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
     moveCenterButtonsToBottom:
-      "実験的: 中央のボタン（再生/停止、戻る、進む）を下部に移動する",
+      "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     enableShortcutKey:
       "ショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
@@ -318,7 +318,7 @@ const createOptionMessages = () => {
     preventsDarkening: "Prevents darkening when overlay display is enabled",
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
     moveCenterButtonsToBottom:
-      "Experimental: Move the center buttons(Play/Pause, Back and Forward) to the bottom",
+      "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     enableShortcutKey: "Enable shortcut key to open the options dialog",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
@@ -767,7 +767,6 @@ class ElementController {
     }
   }
 
-  // This feature is experimental.
   // Move the center buttons(Play/Pause, Back and Forward) to the bottom.
   moveCenterButtonsToBottom(options = getDefaultOptions()) {
     if (!options.moveCenterButtonsToBottom) {
