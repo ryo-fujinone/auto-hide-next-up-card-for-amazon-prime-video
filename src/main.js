@@ -485,6 +485,7 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "temporarily-disable-overlay":
           saveOptions({ temporarilyDisableOverlay: e.target.checked });
+          break;
         case "show-nextup":
           saveOptions({ showNextupOnOverlay: e.target.checked });
           break;
