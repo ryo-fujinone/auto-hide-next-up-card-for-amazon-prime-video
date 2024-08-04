@@ -908,16 +908,6 @@ class ElementController {
       return;
     }
 
-    // Execute preventsTransitionsToRecommendedVideos method each time the video is opened.
-    new MutationObserver((_, observer) => {
-      if (this.player.classList.contains("dv-player-fullscreen")) {
-        observer.disconnect();
-        this.preventsTransitionsToRecommendedVideos(options);
-      }
-    }).observe(this.player, {
-      attributes: true,
-    });
-
     // The video titles are compared to determine if there has been a transition to a different video.
     // Detection of transitions to another season is not supported.
     let titleObserver;
@@ -953,14 +943,25 @@ class ElementController {
     parentObserver.observe(this.player, observeConfig);
 
     // Stops parentObserver and titleObserver when the video is closed.
-    new MutationObserver((_, observer) => {
+    new MutationObserver((_, outerObserver) => {
       if (!this.player.classList.contains("dv-player-fullscreen")) {
-        observer.disconnect();
+        outerObserver.disconnect();
+        console.log("Video closed.");
         parentObserver.disconnect();
         if (titleObserver) {
           titleObserver.disconnect();
         }
-        console.log("Video closed.");
+
+        // Execute preventsTransitionsToRecommendedVideos method each time the video is opened.
+        new MutationObserver((_, observer) => {
+          if (this.player.classList.contains("dv-player-fullscreen")) {
+            observer.disconnect();
+            console.log("Video opened.");
+            this.preventsTransitionsToRecommendedVideos(options);
+          }
+        }).observe(this.player, {
+          attributes: true,
+        });
       }
     }).observe(this.player, {
       attributes: true,
