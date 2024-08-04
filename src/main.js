@@ -655,9 +655,9 @@ class ElementController {
 
     if (!document.querySelector("#hideSkipIntroBtn")) {
       const css = `
-      .atvwebplayersdk-skipelement-button {
-        display: none !important;
-      }
+        .atvwebplayersdk-skipelement-button {
+          display: none !important;
+        }
       `;
       addStyle(css, "hideSkipIntroBtn");
     }
@@ -714,9 +714,9 @@ class ElementController {
 
     if (!document.querySelector("#hideNextupCard")) {
       const css = `
-      .atvwebplayersdk-nextupcard-wrapper {
-        display: none !important;
-      }
+        .atvwebplayersdk-nextupcard-wrapper {
+          display: none !important;
+        }
       `;
       addStyle(css, "hideNextupCard");
     }
@@ -774,9 +774,9 @@ class ElementController {
     }
     if (!document.querySelector("#hideRatingText")) {
       const css = `
-      .atvwebplayersdk-regulatory-overlay {
-        display: none !important;
-      }
+        .atvwebplayersdk-regulatory-overlay {
+          display: none !important;
+        }
       `;
       addStyle(css, "hideRatingText");
     }
@@ -789,9 +789,9 @@ class ElementController {
 
     if (!document.querySelector("#preventsDarkening")) {
       const css = `
-      .atvwebplayersdk-overlays-container > div.fkpovp9 {
-        display: none !important;
-        }
+        .atvwebplayersdk-overlays-container > div.fkpovp9 {
+          display: none !important;
+          }
         `;
       addStyle(css, "preventsDarkening");
     }
@@ -799,48 +799,48 @@ class ElementController {
     if (options.addOutlinesForTextsAndIcons) {
       if (!document.querySelector("#addOutlinesForTexts")) {
         const cssForText = `
-        .atvwebplayersdk-title-text {
-          -webkit-text-stroke: 0.015em black;
-        }
-        .atvwebplayersdk-subtitle-text {
-          -webkit-text-stroke: 0.015em black;
-        }
-        .atvwebplayersdk-timeindicator-text {
-          -webkit-text-stroke: 0.025em black;
-        }
-        .atvwebplayersdk-timeindicator-text span {
-          opacity: 1;
-          font-weight: normal;
-        }
-        .atvwebplayersdk-nexttitle-button div:not(:has(img)) {
-          -webkit-text-stroke: 0.025em black;
-        }
+          .atvwebplayersdk-title-text {
+            -webkit-text-stroke: 0.015em black;
+          }
+          .atvwebplayersdk-subtitle-text {
+            -webkit-text-stroke: 0.015em black;
+          }
+          .atvwebplayersdk-timeindicator-text {
+            -webkit-text-stroke: 0.025em black;
+          }
+          .atvwebplayersdk-timeindicator-text span {
+            opacity: 1;
+            font-weight: normal;
+          }
+          .atvwebplayersdk-nexttitle-button div:not(:has(img)) {
+            -webkit-text-stroke: 0.025em black;
+          }
         `;
         addStyle(cssForText, "addOutlinesForTexts");
       }
 
       if (!document.querySelector("#addOutlinesForIcons")) {
         const cssForImg = `
-        .atvwebplayersdk-hideabletopbuttons-container button img,
-        .atvwebplayersdk-playerclose-button img {
-          filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);
-        }
-        .nextup-ext-opt-btn img {
-          filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;
-        }
-        .atvwebplayersdk-fastseekback-button img,
-        .atvwebplayersdk-playpause-button img,
-        .atvwebplayersdk-fastseekforward-button img {
-          filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);
-        }
-        .atvwebplayersdk-nexttitle-button img {
-          filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);
-        }
-        .atvwebplayersdk-hideabletopbuttons-container button + div div,
-        .nextup-ext-opt-btn + div div,
-        .atvwebplayersdk-playerclose-button + div div {
-          -webkit-text-stroke: 0.015em black;
-        }
+          .atvwebplayersdk-hideabletopbuttons-container button img,
+          .atvwebplayersdk-playerclose-button img {
+            filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);
+          }
+          .nextup-ext-opt-btn img {
+            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;
+          }
+          .atvwebplayersdk-fastseekback-button img,
+          .atvwebplayersdk-playpause-button img,
+          .atvwebplayersdk-fastseekforward-button img {
+            filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);
+          }
+          .atvwebplayersdk-nexttitle-button img {
+            filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);
+          }
+          .atvwebplayersdk-hideabletopbuttons-container button + div div,
+          .nextup-ext-opt-btn + div div,
+          .atvwebplayersdk-playerclose-button + div div {
+            -webkit-text-stroke: 0.015em black;
+          }
         `;
         addStyle(cssForImg, "addOutlinesForIcons");
       }
