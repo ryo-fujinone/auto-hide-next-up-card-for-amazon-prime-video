@@ -6,6 +6,7 @@ const getDefaultOptions = () => {
     showSkipIntroBtnOnOverlay: false,
     hideNextup: true,
     temporarilyDisableOverlay: true,
+    preventsDarkeningAfterNextupAppears: true,
     showNextupOnOverlay: false,
     preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
@@ -283,10 +284,12 @@ const createOptionMessages = () => {
     hideNextup: "Next upを非表示にする",
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
+    preventsDarkeningAfterNextupAppears:
+      "Next up出現以降に画面が暗くなるのを防ぐ（自動再生が無効の場合）",
     showNextupOnOverlay:
       "オーバーレイ表示が有効な時はNext upを表示する（非表示ボタンが無い場合のみ）",
     preventsTransitionsToRecommendedVideos:
-      "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ（自動再生が有効な場合）",
+      "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ（自動再生が有効の場合）",
     preventsTransitionsToRecommendedVideos_Tooltip:
       "動画終了時の次のエピソードへの遷移に影響はありません",
     hideRating: "レーティングを非表示にする",
@@ -308,6 +311,8 @@ const createOptionMessages = () => {
     hideNextup: "Hide next up card",
     temporarilyDisableOverlay:
       "Disable overlay for 5 seconds when auto-clicking hide button",
+    preventsDarkeningAfterNextupAppears:
+      "Prevents darkening after Next up appears (if autoplay is disabled)",
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
     preventsTransitionsToRecommendedVideos:
@@ -364,6 +369,12 @@ const createOptionDialog = (scriptVersion) => {
                   options.temporarilyDisableOverlay ? "checked" : ""
                 } />
                 <p>${messages.temporarilyDisableOverlay}</p>
+            </label>
+            <label class="indent1">
+                <input type="checkbox" id="prevents-darkening-after-nextup-appears" name="prevents-darkening-after-nextup-appears" ${
+                  options.preventsDarkeningAfterNextupAppears ? "checked" : ""
+                } />
+                <p>${messages.preventsDarkeningAfterNextupAppears}</p>
             </label>
             <label class="indent1">
                 <input type="checkbox" id="show-nextup" name="show-nextup" ${
@@ -528,6 +539,11 @@ const createOptionDialog = (scriptVersion) => {
         case "temporarily-disable-overlay":
           saveOptions({ temporarilyDisableOverlay: e.target.checked });
           break;
+        case "prevents-darkening-after-nextup-appears":
+          saveOptions({
+            preventsDarkeningAfterNextupAppears: e.target.checked,
+          });
+          break;
         case "show-nextup":
           saveOptions({ showNextupOnOverlay: e.target.checked });
           break;
@@ -691,6 +707,47 @@ class ElementController {
     }).observe(this.player, observeConfig);
   }
 
+  preventsDarkeningAfterNextupAppears(
+    nextupCardWrapper,
+    options = getDefaultOptions
+  ) {
+    if (options.preventsDarkening) {
+      // If preventsDarkening is enabled, darkening is completely disabled.
+      return;
+    }
+    if (!options.preventsDarkeningAfterNextupAppears) {
+      return;
+    }
+
+    const darkeningElement = this.player.querySelector(
+      ".atvwebplayersdk-overlays-container > div.fkpovp9"
+    );
+    if (!darkeningElement) {
+      return;
+    }
+    const titleText = this.player.querySelector(".atvwebplayersdk-title-text");
+    if (!titleText) {
+      return;
+    }
+    const cursorArea = titleText.parentNode.parentNode.parentNode;
+    if (!cursorArea.getAttribute("style").includes("cursor")) {
+      return;
+    }
+
+    //
+    new MutationObserver((_) => {
+      if (!this.player.querySelector(".atvwebplayersdk-nextupcard-show")) {
+        return;
+      }
+      const cursorState = cursorArea.style.cursor;
+      if (cursorState === "none") {
+        darkeningElement.classList.add("hide");
+      } else if (cursorState === "pointer") {
+        darkeningElement.classList.remove("hide");
+      }
+    }).observe(nextupCardWrapper, { ...observeConfig, attributes: true });
+  }
+
   temporarilyDisableOverlay(options = getDefaultOptions(), delay = 5000) {
     if (!options.temporarilyDisableOverlay) {
       return;
@@ -729,6 +786,13 @@ class ElementController {
         return;
       }
       outerObserver.disconnect();
+
+      try {
+        this.preventsDarkeningAfterNextupAppears(wrapper, options);
+      } catch (e) {
+        console.log(e);
+      }
+
       new MutationObserver((_) => {
         const hideButton = wrapper.querySelector(
           ".atvwebplayersdk-nextupcardhide-button"
