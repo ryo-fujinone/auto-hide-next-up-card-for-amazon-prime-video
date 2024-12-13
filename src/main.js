@@ -742,8 +742,10 @@ class ElementController {
       const cursorState = cursorArea.style.cursor;
       if (cursorState === "none") {
         darkeningElement.classList.add("hide");
+        console.log("Darkening is now disabled.");
       } else if (cursorState === "pointer") {
         darkeningElement.classList.remove("hide");
+        console.log("Darkening is now enabled.");
       }
     }).observe(nextupCardWrapper, { ...observeConfig, attributes: true });
   }
