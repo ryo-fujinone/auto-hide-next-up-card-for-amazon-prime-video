@@ -719,6 +719,12 @@ class ElementController {
       return;
     }
 
+    const overlaysContainer = this.player.querySelector(
+      ".atvwebplayersdk-overlays-container"
+    );
+    if (!overlaysContainer) {
+      return;
+    }
     const darkeningElement = this.player.querySelector(
       ".atvwebplayersdk-overlays-container > div.fkpovp9"
     );
@@ -734,8 +740,7 @@ class ElementController {
       return;
     }
 
-    //
-    new MutationObserver((_) => {
+    const toggleDarkening = () => {
       if (!this.player.querySelector(".atvwebplayersdk-nextupcard-show")) {
         return;
       }
@@ -747,7 +752,15 @@ class ElementController {
         darkeningElement.classList.remove("hide");
         console.log("Darkening is now enabled.");
       }
+    };
+
+    new MutationObserver((_) => {
+      toggleDarkening();
     }).observe(nextupCardWrapper, { ...observeConfig, attributes: true });
+
+    new MutationObserver((_) => {
+      toggleDarkening();
+    }).observe(overlaysContainer, { childList: true, attributes: true });
   }
 
   temporarilyDisableOverlay(options = getDefaultOptions(), delay = 5000) {
