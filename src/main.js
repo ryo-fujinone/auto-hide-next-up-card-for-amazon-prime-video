@@ -718,7 +718,6 @@ class ElementController {
       return;
     }
 
-    //
     if (!document.querySelector("#preventsDarkeningInConjunctionWithNextup")) {
       const css = `
         .atvwebplayersdk-overlays-container:has(.atvwebplayersdk-nextupcard-show) >.fkpovp9 {
