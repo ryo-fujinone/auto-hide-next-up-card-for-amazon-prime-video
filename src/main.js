@@ -6,7 +6,7 @@ const getDefaultOptions = () => {
     showSkipIntroBtnOnOverlay: false,
     hideNextup: true,
     temporarilyDisableOverlay: true,
-    preventsDarkeningAfterNextupAppears: true,
+    preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
     preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
@@ -284,8 +284,8 @@ const createOptionMessages = () => {
     hideNextup: "Next upを非表示にする",
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
-    preventsDarkeningAfterNextupAppears:
-      "Next up出現以降に画面が暗くなるのを防ぐ（自動再生が無効の場合）",
+    preventsDarkeningInConjunctionWithNextup:
+      "Next upの出現と同時に画面が暗くなるのを防ぐ（非表示ボタンが無い場合のみ）",
     showNextupOnOverlay:
       "オーバーレイ表示が有効な時はNext upを表示する（非表示ボタンが無い場合のみ）",
     preventsTransitionsToRecommendedVideos:
@@ -311,8 +311,8 @@ const createOptionMessages = () => {
     hideNextup: "Hide next up card",
     temporarilyDisableOverlay:
       "Disable overlay for 5 seconds when auto-clicking hide button",
-    preventsDarkeningAfterNextupAppears:
-      "Prevents darkening after Next up appears (if autoplay is disabled)",
+    preventsDarkeningInConjunctionWithNextup:
+      "Prevents darkening in conjunction with next up appears (only if there is no hide button)",
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
     preventsTransitionsToRecommendedVideos:
@@ -371,10 +371,12 @@ const createOptionDialog = (scriptVersion) => {
                 <p>${messages.temporarilyDisableOverlay}</p>
             </label>
             <label class="indent1">
-                <input type="checkbox" id="prevents-darkening-after-nextup-appears" name="prevents-darkening-after-nextup-appears" ${
-                  options.preventsDarkeningAfterNextupAppears ? "checked" : ""
+                <input type="checkbox" id="prevents-darkening-in-conjunction-with-nextup" name="prevents-darkening-in-conjunction-with-nextup" ${
+                  options.preventsDarkeningInConjunctionWithNextup
+                    ? "checked"
+                    : ""
                 } />
-                <p>${messages.preventsDarkeningAfterNextupAppears}</p>
+                <p>${messages.preventsDarkeningInConjunctionWithNextup}</p>
             </label>
             <label class="indent1">
                 <input type="checkbox" id="show-nextup" name="show-nextup" ${
@@ -539,9 +541,9 @@ const createOptionDialog = (scriptVersion) => {
         case "temporarily-disable-overlay":
           saveOptions({ temporarilyDisableOverlay: e.target.checked });
           break;
-        case "prevents-darkening-after-nextup-appears":
+        case "prevents-darkening-in-conjunction-with-nextup":
           saveOptions({
-            preventsDarkeningAfterNextupAppears: e.target.checked,
+            preventsDarkeningInConjunctionWithNextup: e.target.checked,
           });
           break;
         case "show-nextup":
@@ -707,60 +709,27 @@ class ElementController {
     }).observe(this.player, observeConfig);
   }
 
-  preventsDarkeningAfterNextupAppears(
-    nextupCardWrapper,
-    options = getDefaultOptions
-  ) {
+  preventsDarkeningInConjunctionWithNextup(options = getDefaultOptions) {
     if (options.preventsDarkening) {
       // If preventsDarkening is enabled, darkening is completely disabled.
       return;
     }
-    if (!options.preventsDarkeningAfterNextupAppears) {
+    if (!options.preventsDarkeningInConjunctionWithNextup) {
       return;
     }
 
-    const overlaysContainer = this.player.querySelector(
-      ".atvwebplayersdk-overlays-container"
-    );
-    if (!overlaysContainer) {
-      return;
+    //
+    if (!document.querySelector("#preventsDarkeningInConjunctionWithNextup")) {
+      const css = `
+        .atvwebplayersdk-overlays-container:has(.atvwebplayersdk-nextupcard-show) >.fkpovp9 {
+          opacity: 0 !important;
+        }
+        .atvwebplayersdk-overlays-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style='cursor: pointer;']) >.fkpovp9 {
+          opacity: 1 !important;
+        }
+      `;
+      addStyle(css, "preventsDarkeningInConjunctionWithNextup");
     }
-    const darkeningElement = this.player.querySelector(
-      ".atvwebplayersdk-overlays-container > div.fkpovp9"
-    );
-    if (!darkeningElement) {
-      return;
-    }
-    const titleText = this.player.querySelector(".atvwebplayersdk-title-text");
-    if (!titleText) {
-      return;
-    }
-    const cursorArea = titleText.parentNode.parentNode.parentNode;
-    if (!cursorArea.getAttribute("style").includes("cursor")) {
-      return;
-    }
-
-    const toggleDarkening = () => {
-      if (!this.player.querySelector(".atvwebplayersdk-nextupcard-show")) {
-        return;
-      }
-      const cursorState = cursorArea.style.cursor;
-      if (cursorState === "none") {
-        darkeningElement.classList.add("hide");
-        console.log("Darkening is now disabled.");
-      } else if (cursorState === "pointer") {
-        darkeningElement.classList.remove("hide");
-        console.log("Darkening is now enabled.");
-      }
-    };
-
-    new MutationObserver((_) => {
-      toggleDarkening();
-    }).observe(nextupCardWrapper, { ...observeConfig, attributes: true });
-
-    new MutationObserver((_) => {
-      toggleDarkening();
-    }).observe(overlaysContainer, { childList: true, attributes: true });
   }
 
   temporarilyDisableOverlay(options = getDefaultOptions(), delay = 5000) {
@@ -802,12 +771,6 @@ class ElementController {
       }
       outerObserver.disconnect();
 
-      try {
-        this.preventsDarkeningAfterNextupAppears(wrapper, options);
-      } catch (e) {
-        console.log(e);
-      }
-
       new MutationObserver((_) => {
         const hideButton = wrapper.querySelector(
           ".atvwebplayersdk-nextupcardhide-button"
@@ -818,6 +781,8 @@ class ElementController {
           hideButton.click();
         }
       }).observe(wrapper, observeConfig);
+
+      this.preventsDarkeningInConjunctionWithNextup(options);
 
       if (options.showNextupOnOverlay) {
         new MutationObserver((_, outerObserver2) => {
