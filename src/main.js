@@ -972,7 +972,7 @@ class ElementController {
         if (!newTitle) {
           return;
         }
-        console.log(`old [${title}], new [${newTitle}]`);
+        console.log(`previous [${title}], current [${newTitle}]`);
         if (title !== newTitle) {
           const closeBtn = this.player.querySelector(
             ".atvwebplayersdk-playerclose-button"
