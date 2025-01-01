@@ -709,7 +709,7 @@ class ElementController {
     }).observe(this.player, observeConfig);
   }
 
-  preventsDarkeningInConjunctionWithNextup(options = getDefaultOptions) {
+  preventsDarkeningInConjunctionWithNextup(options = getDefaultOptions()) {
     if (options.preventsDarkening) {
       // If preventsDarkening is enabled, darkening is completely disabled.
       return;
