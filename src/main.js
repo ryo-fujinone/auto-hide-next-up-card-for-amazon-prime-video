@@ -987,54 +987,45 @@ class ElementController {
       return;
     }
 
-    new MutationObserver((_, observer) => {
-      const playPauseButton = this.player.querySelector(
-        ".atvwebplayersdk-playpause-button"
-      );
-      if (!playPauseButton) {
-        return;
+    const playPauseButton = this.player.querySelector(
+      ".atvwebplayersdk-playpause-button"
+    );
+
+    const container = playPauseButton.parentNode.parentNode.parentNode;
+    const computedStyle = window.getComputedStyle(container);
+    if (parseFloat(computedStyle.marginTop) > 0) {
+      return;
+    }
+
+    container.style.position = "absolute";
+    container.style.bottom = 0;
+    container.style.zIndex = 999;
+
+    const adjustElementSize = (element) => {
+      if (element) {
+        const elementComputedStyle = window.getComputedStyle(element);
+        const width = parseFloat(elementComputedStyle.width);
+        const height = parseFloat(elementComputedStyle.height);
+        const newWidth = width * 0.65;
+        const newHeight = height * 0.65;
+        element.style.width = newWidth + "px";
+        element.style.height = newHeight + "px";
       }
-      observer.disconnect();
+    };
 
-      const container = playPauseButton.parentNode.parentNode.parentNode;
-      const computedStyle = window.getComputedStyle(container);
-      if (parseFloat(computedStyle.marginTop) > 0) {
-        return;
-      }
+    const buttons = container.querySelectorAll("button");
+    for (const button of buttons) {
+      adjustElementSize(button);
+    }
 
-      container.style.position = "absolute";
-      container.style.bottom = 0;
-      container.style.zIndex = 999;
-
-      const adjustElementSize = (element) => {
-        if (element) {
-          const elementComputedStyle = window.getComputedStyle(element);
-          const width = parseFloat(elementComputedStyle.width);
-          const height = parseFloat(elementComputedStyle.height);
-          const newWidth = width * 0.65;
-          const newHeight = height * 0.65;
-          // console.log(element);
-          // console.log(`width: ${width} -> ${newWidth}`);
-          // console.log(`height: ${height} -> ${newHeight}`);
-          element.style.width = newWidth + "px";
-          element.style.height = newHeight + "px";
-        }
-      };
-
+    window.addEventListener("resize", () => {
       const buttons = container.querySelectorAll("button");
       for (const button of buttons) {
+        button.style.width = "";
+        button.style.height = "";
         adjustElementSize(button);
       }
-
-      window.addEventListener("resize", () => {
-        const buttons = container.querySelectorAll("button");
-        for (const button of buttons) {
-          button.style.width = "";
-          button.style.height = "";
-          adjustElementSize(button);
-        }
-      });
-    }).observe(this.player, observeConfig);
+    });
   }
 
   preventsTransitionsToRecommendedVideos(options = getDefaultOptions()) {
