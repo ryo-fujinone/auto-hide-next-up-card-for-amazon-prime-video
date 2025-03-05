@@ -656,6 +656,7 @@ class ElementController {
   createOptionBtn() {
     new MutationObserver((_, observer) => {
       if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
+        observer.disconnect();
         return;
       }
 
