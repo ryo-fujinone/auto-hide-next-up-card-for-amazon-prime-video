@@ -485,17 +485,13 @@ const createOptionDialog = (scriptVersion) => {
       margin-bottom: 10px;
       font-weight: 700;
     }
-    .nextup-ext-opt-dialog label {
-      display: block;
+    .nextup-ext-opt-dialog label:has(input[type='checkbox']){
+      display: flex;
     }
     .nextup-ext-opt-dialog label.indent1 {
       margin-left: 14px;
     }
-    .nextup-ext-opt-dialog label input[type='checkbox'] {
-      float: left;
-    }
     .nextup-ext-opt-dialog label p {
-      float: left;
       margin-bottom: 5px;
       width: calc(100% - 24px);
     }
@@ -526,7 +522,7 @@ const createOptionDialog = (scriptVersion) => {
     }
     .nextup-ext-opt-dialog-version {
       position: absolute;
-      top: 0px;
+      bottom: 0px;
       right: 0px;
     }
   `;
