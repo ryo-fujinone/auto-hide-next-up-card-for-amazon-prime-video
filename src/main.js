@@ -8,6 +8,8 @@ const getDefaultOptions = () => {
     temporarilyDisableOverlay: true,
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
+    hideReactions: true,
+    showReactionsOnOverlay: false,
     preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
     preventsDarkening: false,
@@ -288,6 +290,11 @@ const createOptionMessages = () => {
       "Next upの出現と同時に画面が暗くなるのを防ぐ（非表示ボタンが無い場合のみ）",
     showNextupOnOverlay:
       "オーバーレイ表示が有効な時はNext upを表示する（非表示ボタンが無い場合のみ）",
+    hideReactions: "Reactions（好き/好きではない）を非表示にする",
+    showReactionsOnOverlay:
+      "オーバーレイ表示が有効な時はReactionsを表示する（Next upがDOMに存在する場合のみ）",
+    showReactionsOnOverlay_Tooltip:
+      "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます",
     preventsTransitionsToRecommendedVideos:
       "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ（自動再生が有効の場合）",
     preventsTransitionsToRecommendedVideos_Tooltip:
@@ -315,6 +322,11 @@ const createOptionMessages = () => {
       "Prevents darkening in conjunction with next up appears (only if there is no hide button)",
     showNextupOnOverlay:
       "Show next up card when overlay display is enabled (only if there is no hide button)",
+    hideReactions: "Hide reactions (like/not for me)",
+    showReactionsOnOverlay:
+      "Show Reactions when overlay display is enabled (only if next up card exists in the DOM.)",
+    showReactionsOnOverlay_Tooltip:
+      "If hide next up card is enabled, auto-clicking the hide button will remove next up card and reactions from the DOM",
     preventsTransitionsToRecommendedVideos:
       "Prevent transition to suggested content when video ends (if autoplay is enabled)",
     preventsTransitionsToRecommendedVideos_Tooltip:
@@ -383,6 +395,20 @@ const createOptionDialog = (scriptVersion) => {
                   options.showNextupOnOverlay ? "checked" : ""
                 } />
                 <p>${messages.showNextupOnOverlay}</p>
+            </label>
+            <label>
+                <input type="checkbox" id="hide-reactions" name="hide-reactions" ${
+                  options.hideReactions ? "checked" : ""
+                } />
+                <p>${messages.hideReactions}</p>
+            </label>
+            <label class="indent1" title="${
+              messages.showReactionsOnOverlay_Tooltip
+            }">
+                <input type="checkbox" id="show-reactions" name="show-reactions" ${
+                  options.showReactionsOnOverlay ? "checked" : ""
+                } />
+                <p>${messages.showReactionsOnOverlay}</p>
             </label>
             <label title=${
               messages.preventsTransitionsToRecommendedVideos_Tooltip
@@ -549,6 +575,12 @@ const createOptionDialog = (scriptVersion) => {
         case "show-nextup":
           saveOptions({ showNextupOnOverlay: e.target.checked });
           break;
+        case "hide-reactions":
+          saveOptions({ hideReactions: e.target.checked });
+          break;
+        case "show-reactions":
+          saveOptions({ showReactionsOnOverlay: e.target.checked });
+          break;
         case "prevents-transitions-to-recommended-videos":
           saveOptions({
             preventsTransitionsToRecommendedVideos: e.target.checked,
@@ -664,6 +696,16 @@ class ElementController {
         optDialog.showModal();
       });
     }).observe(this.player, observeConfig);
+  }
+
+  // Preparation for detecting the display state of the overlay.
+  markingCenterOverlaysWrapper() {
+    const playPauseButton = this.player.querySelector(
+      ".atvwebplayersdk-playpause-button"
+    );
+    const centerOverlaysWrapper =
+      playPauseButton.parentNode.parentNode.parentNode.parentNode;
+    centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
   }
 
   hideSkipIntroBtn(options = getDefaultOptions()) {
@@ -808,6 +850,55 @@ class ElementController {
           });
         }).observe(this.player, observeConfig);
       }
+    }).observe(this.player, observeConfig);
+  }
+
+  hideReactions(options = getDefaultOptions()) {
+    if (!options.hideReactions) {
+      return;
+    }
+
+    new MutationObserver((_, outerObserver) => {
+      const reactionsBtnContainer = this.player.querySelector(
+        ".atvwebplayersdk-player-container div:has(> button:nth-child(2):last-child)"
+      );
+      if (!reactionsBtnContainer) {
+        return;
+      }
+      const btnIcons = reactionsBtnContainer.querySelectorAll(
+        "button div[style*='center center no-repeat']"
+      );
+      if (!btnIcons.length) {
+        return;
+      }
+
+      // The content may disappear, but the wrapper remains,
+      // so the setting of display:none is likely sufficient to do only once.
+      outerObserver.disconnect();
+      const reactionsWrapper = reactionsBtnContainer.parentNode.parentNode;
+      reactionsWrapper.style.display = "none";
+
+      if (!options.showReactionsOnOverlay) {
+        return;
+      }
+      const centerOverlaysWrapper = this.player.querySelector(
+        "[data-ident='center-overlays-wrapper']"
+      );
+      const changeReactionsStyle = (_) => {
+        const computedStyle = getComputedStyle(centerOverlaysWrapper);
+        if (computedStyle.cursor === "pointer") {
+          reactionsWrapper.style.display = "";
+        } else {
+          reactionsWrapper.style.display = "none";
+        }
+      };
+      changeReactionsStyle();
+      new MutationObserver(changeReactionsStyle).observe(
+        centerOverlaysWrapper,
+        {
+          attributes: true,
+        }
+      );
     }).observe(this.player, observeConfig);
   }
 
@@ -1046,6 +1137,12 @@ const main = () => {
         const controller = new ElementController(player);
 
         try {
+          controller.markingCenterOverlaysWrapper();
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
           controller.createOptionBtn();
         } catch (e) {
           console.log(e);
@@ -1059,6 +1156,12 @@ const main = () => {
 
         try {
           controller.hideNextupCard(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.hideReactions(options);
         } catch (e) {
           console.log(e);
         }
