@@ -725,30 +725,40 @@ class ElementController {
     if (!options.showSkipIntroBtnOnOverlay) {
       return;
     }
-    new MutationObserver((_, outerObserver) => {
-      const btnsContainer = this.player.querySelector(
-        ".atvwebplayersdk-hideabletopbuttons-container"
+    const overlaysContainer = this.player.querySelector(
+      ".atvwebplayersdk-overlays-container"
+    );
+    const centerOverlaysWrapper = this.player.querySelector(
+      "[data-ident='center-overlays-wrapper']"
+    );
+    new MutationObserver((_) => {
+      // Supports situations where a skip intro button is present immediately after the start or where the seek bar jumps to the OP
+      const skipIntroBtn = this.player.querySelector(
+        ".atvwebplayersdk-skipelement-button"
       );
-      if (!btnsContainer) {
+      if (!skipIntroBtn) {
+        centerOverlaysWrapper.dataset.existsSkipIntroBtn = false;
+      } else {
+        centerOverlaysWrapper.dataset.existsSkipIntroBtn = true;
+      }
+    }).observe(overlaysContainer, observeConfig);
+
+    new MutationObserver((_) => {
+      const skipIntroBtn = this.player.querySelector(
+        ".atvwebplayersdk-skipelement-button"
+      );
+      if (!skipIntroBtn) {
         return;
       }
-      outerObserver.disconnect();
-      new MutationObserver((_) => {
-        const skipIntroBtn = this.player.querySelector(
-          ".atvwebplayersdk-skipelement-button"
-        );
-        if (!skipIntroBtn) {
-          return;
-        }
-        if (btnsContainer.classList.contains("hide")) {
-          skipIntroBtn.style.setProperty("display", "none", "important");
-        } else {
-          skipIntroBtn.style.setProperty("display", "block", "important");
-        }
-      }).observe(btnsContainer, {
-        attributes: true,
-      });
-    }).observe(this.player, observeConfig);
+      const computedStyle = getComputedStyle(centerOverlaysWrapper);
+      if (computedStyle.cursor === "pointer") {
+        skipIntroBtn.style.setProperty("display", "block", "important");
+      } else {
+        skipIntroBtn.style.setProperty("display", "none", "important");
+      }
+    }).observe(centerOverlaysWrapper, {
+      attributes: true,
+    });
   }
 
   preventsDarkeningInConjunctionWithNextup(options = getDefaultOptions()) {
@@ -826,29 +836,33 @@ class ElementController {
       this.preventsDarkeningInConjunctionWithNextup(options);
 
       if (options.showNextupOnOverlay) {
-        new MutationObserver((_, outerObserver2) => {
-          const btnsContainer = this.player.querySelector(
-            ".atvwebplayersdk-hideabletopbuttons-container"
-          );
-          if (!btnsContainer) {
+        const centerOverlaysWrapper = this.player.querySelector(
+          "[data-ident='center-overlays-wrapper']"
+        );
+        new MutationObserver((_) => {
+          const img = wrapper.querySelector("img");
+          if (!img || !img.getAttribute("src")) {
+            centerOverlaysWrapper.dataset.existsNextup = false;
+          } else {
+            centerOverlaysWrapper.dataset.existsNextup = true;
+          }
+        }).observe(wrapper, observeConfig);
+
+        new MutationObserver((_) => {
+          const img = wrapper.querySelector("img");
+          if (!img || !img.getAttribute("src")) {
+            wrapper.style.setProperty("display", "none", "important");
             return;
           }
-          outerObserver2.disconnect();
-          new MutationObserver((_) => {
-            const img = wrapper.querySelector("img");
-            if (!img || !img.getAttribute("src")) {
-              wrapper.style.setProperty("display", "none", "important");
-              return;
-            }
-            if (btnsContainer.classList.contains("hide")) {
-              wrapper.style.setProperty("display", "none", "important");
-            } else {
-              wrapper.style.setProperty("display", "block", "important");
-            }
-          }).observe(btnsContainer, {
-            attributes: true,
-          });
-        }).observe(this.player, observeConfig);
+          const computedStyle = getComputedStyle(centerOverlaysWrapper);
+          if (computedStyle.cursor === "pointer") {
+            wrapper.style.setProperty("display", "block", "important");
+          } else {
+            wrapper.style.setProperty("display", "none", "important");
+          }
+        }).observe(centerOverlaysWrapper, {
+          attributes: true,
+        });
       }
     }).observe(this.player, observeConfig);
   }
@@ -885,6 +899,11 @@ class ElementController {
         "[data-ident='center-overlays-wrapper']"
       );
       const changeReactionsStyle = (_) => {
+        const reactionsBtns = reactionsWrapper.querySelectorAll("button");
+        if (!reactionsBtns.length) {
+          reactionsWrapper.style.display = "none";
+          return;
+        }
         const computedStyle = getComputedStyle(centerOverlaysWrapper);
         if (computedStyle.cursor === "pointer") {
           reactionsWrapper.style.display = "";
