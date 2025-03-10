@@ -892,9 +892,19 @@ class ElementController {
       if (!options.showReactionsOnOverlay) {
         return;
       }
+
       const centerOverlaysWrapper = this.player.querySelector(
         "[data-ident='center-overlays-wrapper']"
       );
+      new MutationObserver((_) => {
+        const reactionsBtns = reactionsWrapper.querySelectorAll("button");
+        if (!reactionsBtns.length) {
+          centerOverlaysWrapper.dataset.existsReactions = false;
+        } else {
+          centerOverlaysWrapper.dataset.existsReactions = true;
+        }
+      }).observe(reactionsWrapper, observeConfig);
+
       const changeReactionsStyle = (_) => {
         const reactionsBtns = reactionsWrapper.querySelectorAll("button");
         if (!reactionsBtns.length) {
@@ -908,6 +918,7 @@ class ElementController {
           reactionsWrapper.style.display = "none";
         }
       };
+
       changeReactionsStyle();
       new MutationObserver(changeReactionsStyle).observe(
         centerOverlaysWrapper,
