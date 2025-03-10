@@ -647,6 +647,7 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
 class ElementController {
   constructor(player) {
     this.player = player;
+    this.centerOverlaysWrapperIsMarked = false;
   }
 
   createOptionBtn() {
@@ -697,12 +698,24 @@ class ElementController {
 
   // Preparation for detecting the display state of the overlay.
   markingCenterOverlaysWrapper() {
+    if (this.centerOverlaysWrapperIsMarked) {
+      return;
+    }
+
     const playPauseButton = this.player.querySelector(
       ".atvwebplayersdk-playpause-button"
     );
-    const centerOverlaysWrapper =
-      playPauseButton.parentNode.parentNode.parentNode.parentNode;
-    centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
+    if (!playPauseButton) {
+      return;
+    }
+    try {
+      const centerOverlaysWrapper =
+        playPauseButton.parentNode.parentNode.parentNode.parentNode;
+      centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
+      this.centerOverlaysWrapperIsMarked = true;
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   hideSkipIntroBtn(options = getDefaultOptions()) {
@@ -1138,7 +1151,11 @@ const main = () => {
     );
     players.forEach((player) => {
       player.dataset.detectedFromExt = "true";
+      const controller = new ElementController(player);
+
       new MutationObserver((_, observer) => {
+        controller.markingCenterOverlaysWrapper();
+
         const video = player.querySelector("video");
         if (!video || !video.checkVisibility()) {
           return;
@@ -1152,13 +1169,7 @@ const main = () => {
           addEventListenerForShortcutKey(options);
         }
 
-        const controller = new ElementController(player);
-
-        try {
-          controller.markingCenterOverlaysWrapper();
-        } catch (e) {
-          console.log(e);
-        }
+        controller.markingCenterOverlaysWrapper();
 
         try {
           controller.createOptionBtn();
