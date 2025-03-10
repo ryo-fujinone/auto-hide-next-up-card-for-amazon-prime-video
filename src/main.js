@@ -33,11 +33,11 @@ const getScriptInfo = () => {
    * it sometimes became undefined for some reason, so I implemented it using try-catch.
    */
   try {
-    const gmVer = window.GM_info.script.version;
-    if (typeof gmVer === "string") {
+    const scriptVer = window.GM_info.script.version;
+    if (typeof scriptVer === "string") {
       return {
         scriptType: "user-script",
-        scriptVersion: gmVer,
+        scriptVersion: scriptVer,
       };
     }
   } catch (e) {
