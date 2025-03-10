@@ -1011,7 +1011,6 @@ class ElementController {
             filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);
           }
           .atvwebplayersdk-hideabletopbuttons-container button + div div,
-          .nextup-ext-opt-btn + div div,
           .atvwebplayersdk-playerclose-button + div div {
             -webkit-text-stroke: 0.015em black;
           }
