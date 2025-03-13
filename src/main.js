@@ -693,7 +693,7 @@ class ElementController {
         worksWithDialog.whenOpening();
         optDialog.showModal();
       });
-    }).observe(this.player, observeConfig);
+    }).observe(this.player, { ...observeConfig, attributes: true });
   }
 
   // Preparation for detecting the display state of the overlay.
