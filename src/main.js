@@ -1104,7 +1104,7 @@ class ElementController {
       titleObserver.observe(titleText, observeConfig);
     });
 
-    parentObserver.observe(this.player, observeConfig);
+    parentObserver.observe(this.player, { ...observeConfig, attributes: true });
 
     // Stops parentObserver and titleObserver when the video is closed.
     new MutationObserver((_, outerObserver) => {
