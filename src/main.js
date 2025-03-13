@@ -874,7 +874,7 @@ class ElementController {
           attributes: true,
         });
       }
-    }).observe(this.player, observeConfig);
+    }).observe(this.player, { ...observeConfig, attributes: true });
   }
 
   hideReactions(options = getDefaultOptions()) {
