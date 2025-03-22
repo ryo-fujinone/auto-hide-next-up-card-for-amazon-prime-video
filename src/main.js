@@ -29,12 +29,9 @@ const getDefaultOptions = () => {
 
 const getScriptInfo = () => {
   // user script
-  /**
-   * When using optional chaining with window.GM_info in tampermonkey,
-   * it sometimes became undefined for some reason, so I implemented it using try-catch.
-   */
   try {
-    const scriptVer = window.GM_info.script.version;
+    const gmInfo = window.GM_info || GM_info;
+    const scriptVer = gmInfo.script.version;
     if (typeof scriptVer === "string") {
       return {
         scriptType: "user-script",
