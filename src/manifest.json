@@ -37,7 +37,8 @@
         "https://*.amazon.cn/*",
         "https://*.primevideo.com/*"
       ],
-      "js": ["xhook.min.js", "main.js"]
+      "js": ["xhook.min.js", "main.js"],
+      "world": "MAIN"
     }
   ]
 }
