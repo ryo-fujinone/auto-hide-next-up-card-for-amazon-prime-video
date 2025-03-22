@@ -5,6 +5,7 @@ const getDefaultOptions = () => {
     hideSkipIntroBtn: true,
     showSkipIntroBtnOnOverlay: false,
     hideNextup: true,
+    disableNextup: true,
     temporarilyDisableOverlay: true,
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
@@ -284,6 +285,7 @@ const createOptionMessages = () => {
     showSkipIntroBtnOnOverlay:
       "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
     hideNextup: "Next upを非表示にする",
+    disableNextup: "通信を監視してNext upの表示フラグを無効化する",
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
     preventsDarkeningInConjunctionWithNextup:
@@ -316,6 +318,8 @@ const createOptionMessages = () => {
     showSkipIntroBtnOnOverlay:
       "Show skip intro button when overlay display is enabled",
     hideNextup: "Hide next up card",
+    disableNextup:
+      "Monitor network activity to disable the next up card appear flag",
     temporarilyDisableOverlay:
       "Disable overlay for 5 seconds when auto-clicking hide button",
     preventsDarkeningInConjunctionWithNextup:
@@ -375,6 +379,12 @@ const createOptionDialog = (scriptVersion) => {
                   options.hideNextup ? "checked" : ""
                 } />
                 <p>${messages.hideNextup}</p>
+            </label>
+            <label class="indent1">
+                <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
+                  options.disableNextup ? "checked" : ""
+                } />
+                <p>${messages.disableNextup}</p>
             </label>
             <label class="indent1">
                 <input type="checkbox" id="temporarily-disable-overlay" name="temporarily-disable-overlay" ${
@@ -560,6 +570,9 @@ const createOptionDialog = (scriptVersion) => {
         case "hide-nextup":
           saveOptions({ hideNextup: e.target.checked });
           break;
+        case "disable-nextup":
+          saveOptions({ disableNextup: e.target.checked });
+          break;
         case "temporarily-disable-overlay":
           saveOptions({ temporarilyDisableOverlay: e.target.checked });
           break;
@@ -640,6 +653,38 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
         worksWithDialog.whenOpening();
         optDialog.showModal();
       }
+    }
+  });
+};
+
+const runXhook = (options = getDefaultOptions()) => {
+  if (!options.disableNextup) {
+    return;
+  }
+
+  xhook.after(function (request, response) {
+    if (!request.url.includes("GetSections")) {
+      return;
+    }
+    if (request.headers?.accept !== "application/json") {
+      return;
+    }
+    if (response.status !== 200) {
+      return;
+    }
+
+    try {
+      const data = JSON.parse(response.text);
+      const autoplayConfig =
+        data?.sections?.bottom?.collections?.collectionList?.[0]
+          ?.autoplayConfig;
+      if (!autoplayConfig) {
+        return;
+      }
+      autoplayConfig.showAutoplayCard = false;
+      response.text = JSON.stringify(data);
+    } catch (e) {
+      console.log(e);
     }
   });
 };
@@ -1142,6 +1187,7 @@ const main = () => {
   updateOptionVersion(scriptInfo);
 
   const options = getOptions();
+  let canRunXhook = true;
   let isFirstPlayer = true;
 
   new MutationObserver((_) => {
@@ -1150,8 +1196,17 @@ const main = () => {
     );
     players.forEach((player) => {
       player.dataset.detectedFromExt = "true";
-      const controller = new ElementController(player);
 
+      if (canRunXhook) {
+        canRunXhook = false;
+        try {
+          runXhook(options);
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      const controller = new ElementController(player);
       new MutationObserver((_, observer) => {
         controller.markingCenterOverlaysWrapper();
 
