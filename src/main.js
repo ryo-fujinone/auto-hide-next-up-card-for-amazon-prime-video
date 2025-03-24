@@ -1204,6 +1204,20 @@ const main = () => {
       }
 
       const controller = new ElementController(player);
+
+      try {
+        controller.createOptionBtn();
+      } catch (e) {
+        console.log(e);
+      }
+
+      if (isFirstPlayer) {
+        isFirstPlayer = false;
+        createOptionDialog(scriptInfo.scriptVersion);
+        // The shortcut keys for opening the dialog will only work if the video is open.
+        addEventListenerForShortcutKey(options);
+      }
+
       new MutationObserver((_, observer) => {
         controller.markingCenterOverlaysWrapper();
 
@@ -1214,19 +1228,7 @@ const main = () => {
 
         observer.disconnect();
 
-        if (isFirstPlayer) {
-          isFirstPlayer = false;
-          createOptionDialog(scriptInfo.scriptVersion);
-          addEventListenerForShortcutKey(options);
-        }
-
         controller.markingCenterOverlaysWrapper();
-
-        try {
-          controller.createOptionBtn();
-        } catch (e) {
-          console.log(e);
-        }
 
         try {
           controller.hideSkipIntroBtn(options);
