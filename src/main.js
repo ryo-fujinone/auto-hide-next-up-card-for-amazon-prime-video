@@ -786,7 +786,7 @@ const createOptionBtnOnNavbar = () => {
     });
   }
 
-  // Repeated scrolling immediately after page load may cause the Navbar to regenerate.
+  // The navbar may regenerate once after page load.
   // Therefore, monitor the regenerating of Navbar for 10 seconds.
   const detectNavbarRemove = new MutationObserver(
     (mutationRecords, detectNavbarRemove) => {
