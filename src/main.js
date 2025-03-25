@@ -402,23 +402,29 @@ const createOptionDialog = (scriptVersion) => {
                 } />
                 <p>${messages.hideReactions}</p>
             </label>
-            <label class="indent1" title="${
-              messages.showReactionsOnOverlay_Tooltip
-            }">
+            <label class="indent1">
                 <input type="checkbox" id="show-reactions" name="show-reactions" ${
                   options.showReactionsOnOverlay ? "checked" : ""
                 } />
-                <p>${messages.showReactionsOnOverlay}</p>
+                <p>
+                  ${messages.showReactionsOnOverlay}
+                  <span class="nextup-ext-opt-dialog-tooltip" title="${
+                    messages.showReactionsOnOverlay_Tooltip
+                  }"></span>
+                </p>
             </label>
-            <label title=${
-              messages.preventsTransitionsToRecommendedVideos_Tooltip
-            }>
+            <label>
                 <input type="checkbox" id="prevents-transitions-to-recommended-videos" name="prevents-transitions-to-recommended-videos" ${
                   options.preventsTransitionsToRecommendedVideos
                     ? "checked"
                     : ""
                 } />
-                <p>${messages.preventsTransitionsToRecommendedVideos}</p>
+                <p>
+                  ${messages.preventsTransitionsToRecommendedVideos}
+                  <span class="nextup-ext-opt-dialog-tooltip" title="${
+                    messages.preventsTransitionsToRecommendedVideos_Tooltip
+                  }"></span>
+                </p>
             </label>
             <label>
                 <input type="checkbox" id="hide-rationg" name="hide-rationg" ${
@@ -452,11 +458,14 @@ const createOptionDialog = (scriptVersion) => {
             </label>
             <ul>
                 <li>
-                    <label title="${messages.shortcutKeyForDialog_Tooltip}">
+                    <label>
                         <span style="margin-right: 4px;">${
                           messages.shortcutKeyForDialog
                         }</span>
                         <input type="text" id="shortcutkey-for-dialog" name="shortcutkey-for-dialog" />
+                        <span class="nextup-ext-opt-dialog-tooltip" title="${
+                          messages.shortcutKeyForDialog_Tooltip
+                        }"></span>
                     </label>
                 </li>
             </ul>
@@ -514,6 +523,16 @@ const createOptionDialog = (scriptVersion) => {
     .nextup-ext-opt-dialog label input[type='text'] {
       height: 20px;
     }
+    .nextup-ext-opt-dialog-tooltip {
+      color: darkviolet;
+      text-decoration: underline;
+    }
+    .nextup-ext-opt-dialog-tooltip:before {
+      content: "\\0028";
+    }
+    .nextup-ext-opt-dialog-tooltip:after {
+      content: "\\0029";
+    }
 
     .nextup-ext-opt-dialog-network-activity-monitoring {
       border-top: 1px dotted;
@@ -553,6 +572,14 @@ const createOptionDialog = (scriptVersion) => {
     }
   `;
   addStyle(css);
+
+  //
+  const tooltipElements = document.querySelectorAll(
+    ".nextup-ext-opt-dialog-tooltip"
+  );
+  for (const elem of tooltipElements) {
+    elem.textContent = " ? ";
+  }
 
   const optDialog = getOptionDialog();
 
