@@ -282,7 +282,6 @@ const createOptionMessages = () => {
     showSkipIntroBtnOnOverlay:
       "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
     hideNextup: "Next upを非表示にする",
-    disableNextup: "通信を監視してNext upの表示フラグを無効化する",
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
     preventsDarkeningInConjunctionWithNextup:
@@ -307,6 +306,7 @@ const createOptionMessages = () => {
       "ショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
+    disableNextup: "Next upの表示フラグをfalseに変更する",
     close: "閉じる",
   };
   const enMessages = {
@@ -315,8 +315,6 @@ const createOptionMessages = () => {
     showSkipIntroBtnOnOverlay:
       "Show skip intro button when overlay display is enabled",
     hideNextup: "Hide next up card",
-    disableNextup:
-      "Monitor network activity to disable the next up card appear flag",
     temporarilyDisableOverlay:
       "Disable overlay for 5 seconds when auto-clicking hide button",
     preventsDarkeningInConjunctionWithNextup:
@@ -340,6 +338,7 @@ const createOptionMessages = () => {
     enableShortcutKey: "Enable shortcut key to open the options dialog",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
+    disableNextup: "Change the next up card appear flag to false",
     close: "Close",
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
@@ -356,7 +355,7 @@ const createOptionDialog = (scriptVersion) => {
   const dialogHtmlStr = `
     <dialog class="nextup-ext-opt-dialog">
         <div class="dialog-inner">
-            <div class="nextup-ext-opt-dialog-note">
+            <div class="group-title nextup-ext-opt-dialog-note">
               <p>${messages.promptReloadPage}</p>            
             </div>
             <label>
@@ -376,12 +375,6 @@ const createOptionDialog = (scriptVersion) => {
                   options.hideNextup ? "checked" : ""
                 } />
                 <p>${messages.hideNextup}</p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
-                  options.disableNextup ? "checked" : ""
-                } />
-                <p>${messages.disableNextup}</p>
             </label>
             <label class="indent1">
                 <input type="checkbox" id="temporarily-disable-overlay" name="temporarily-disable-overlay" ${
@@ -467,6 +460,17 @@ const createOptionDialog = (scriptVersion) => {
                     </label>
                 </li>
             </ul>
+            <div class="nextup-ext-opt-dialog-network-activity-monitoring">
+                <div class="group-title">
+                    <p>通信の監視と改変</p>
+                </div>
+                <label>
+                    <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
+                      options.disableNextup ? "checked" : ""
+                    } />
+                    <p>${messages.disableNextup}</p>
+                </label>
+            </div>
             <div class="nextup-ext-opt-dialog-btn-wrapper">
                 <button id="nextup-ext-opt-dialog-close">${
                   messages.close
@@ -486,11 +490,13 @@ const createOptionDialog = (scriptVersion) => {
     .dialog-inner {
       padding: 14px;
     }
-    .nextup-ext-opt-dialog-note {
+    .group-title {
       text-align: center;
-      color: green;
-      margin-bottom: 10px;
+      margin-bottom: 7px;
       font-weight: 700;
+    }
+    .nextup-ext-opt-dialog-note {
+      color: green;
     }
     .nextup-ext-opt-dialog label:has(input[type='checkbox']){
       display: flex;
@@ -508,6 +514,19 @@ const createOptionDialog = (scriptVersion) => {
     .nextup-ext-opt-dialog label input[type='text'] {
       height: 20px;
     }
+
+    .nextup-ext-opt-dialog-network-activity-monitoring {
+      border-top: 1px dotted;
+      margin-top: 10px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px dotted;
+    }
+    .nextup-ext-opt-dialog-network-activity-monitoring > .group-title {
+      color: blue;
+    }
+
+
     .nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {
       margin-top: 12px;
       position: relative;
@@ -848,7 +867,6 @@ const createOptionBtnOnNavbar = () => {
 // The runXhook function is executed as an inline script.
 const runXhook = () => {
   const xhookUrl = document.documentElement.dataset.xhookUrl;
-  console.log(xhookUrl);
   const script = document.createElement("script");
   script.src = xhookUrl;
   script.addEventListener("load", () => {
@@ -885,7 +903,7 @@ const injectXhook = (
   scriptInfo = getScriptInfo(),
   options = getDefaultOptions()
 ) => {
-  if (!options.hideNextup || !options.disableNextup) {
+  if (!options.disableNextup) {
     return;
   }
 
