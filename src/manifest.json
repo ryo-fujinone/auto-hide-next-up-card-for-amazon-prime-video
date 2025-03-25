@@ -37,8 +37,37 @@
         "https://*.amazon.cn/*",
         "https://*.primevideo.com/*"
       ],
-      "js": ["xhook.min.js", "main.js"],
-      "world": "MAIN"
+      "js": ["main.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["xhook.min.js"],
+      "matches": [
+        "https://*.amazon.co.jp/*",
+        "https://*.amazon.com/*",
+        "https://*.amazon.ae/*",
+        "https://*.amazon.co.uk/*",
+        "https://*.amazon.it/*",
+        "https://*.amazon.in/*",
+        "https://*.amazon.eg/*",
+        "https://*.amazon.com.au/*",
+        "https://*.amazon.nl/*",
+        "https://*.amazon.ca/*",
+        "https://*.amazon.sa/*",
+        "https://*.amazon.sg/*",
+        "https://*.amazon.se/*",
+        "https://*.amazon.es/*",
+        "https://*.amazon.de/*",
+        "https://*.amazon.com.tr/*",
+        "https://*.amazon.com.br/*",
+        "https://*.amazon.fr/*",
+        "https://*.amazon.com.be/*",
+        "https://*.amazon.pl/*",
+        "https://*.amazon.com.mx/*",
+        "https://*.amazon.cn/*",
+        "https://*.primevideo.com/*"
+      ]
     }
   ]
 }

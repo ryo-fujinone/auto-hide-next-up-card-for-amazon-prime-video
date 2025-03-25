@@ -5,7 +5,7 @@ const getDefaultOptions = () => {
     hideSkipIntroBtn: true,
     showSkipIntroBtnOnOverlay: false,
     hideNextup: true,
-    disableNextup: true,
+    disableNextup: false,
     temporarilyDisableOverlay: true,
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
@@ -845,36 +845,73 @@ const createOptionBtnOnNavbar = () => {
   optionBtn.main();
 };
 
-const runXhook = (options = getDefaultOptions()) => {
-  if (!options.disableNextup) {
+// The runXhook function is executed as an inline script.
+const runXhook = () => {
+  const xhookUrl = document.documentElement.dataset.xhookUrl;
+  console.log(xhookUrl);
+  const script = document.createElement("script");
+  script.src = xhookUrl;
+  script.addEventListener("load", () => {
+    xhook.after(function (request, response) {
+      if (!request.url.includes("GetSections")) {
+        return;
+      }
+      if (request.headers?.accept !== "application/json") {
+        return;
+      }
+      if (response.status !== 200) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(response.text);
+        const autoplayConfig =
+          data?.sections?.bottom?.collections?.collectionList?.[0]
+            ?.autoplayConfig;
+        if (!autoplayConfig) {
+          return;
+        }
+        autoplayConfig.showAutoplayCard = false;
+        response.text = JSON.stringify(data);
+      } catch (e) {
+        console.log(e);
+      }
+    });
+  });
+  document.head.appendChild(script);
+};
+
+const injectXhook = (
+  scriptInfo = getScriptInfo(),
+  options = getDefaultOptions()
+) => {
+  if (!options.hideNextup || !options.disableNextup) {
     return;
   }
 
-  xhook.after(function (request, response) {
-    if (!request.url.includes("GetSections")) {
-      return;
-    }
-    if (request.headers?.accept !== "application/json") {
-      return;
-    }
-    if (response.status !== 200) {
+  const injectScript = (fn) => {
+    // https://stackoverflow.com/questions/9515704/access-variables-and-functions-defined-in-page-context-from-an-extension
+    // https://github.com/logore/amazon-prime-video-1080p
+    if (typeof fn !== "function") {
       return;
     }
 
-    try {
-      const data = JSON.parse(response.text);
-      const autoplayConfig =
-        data?.sections?.bottom?.collections?.collectionList?.[0]
-          ?.autoplayConfig;
-      if (!autoplayConfig) {
-        return;
-      }
-      autoplayConfig.showAutoplayCard = false;
-      response.text = JSON.stringify(data);
-    } catch (e) {
-      console.log(e);
+    let match = fn.toString().match(/{.*}/s);
+    let fnStr = match[0].slice(1, match[0].length - 1);
+
+    document.documentElement.setAttribute("onreset", fnStr);
+    document.documentElement.dispatchEvent(new CustomEvent("reset"));
+    document.documentElement.removeAttribute("onreset");
+  };
+
+  let xhookUrl = "https://unpkg.com/xhook@latest/dist/xhook.min.js";
+  try {
+    if (scriptInfo.scriptType === "chrome-extension") {
+      xhookUrl = chrome?.runtime?.getURL("xhook.min.js");
     }
-  });
+  } catch (e) {}
+  document.documentElement.dataset.xhookUrl = xhookUrl;
+  injectScript(runXhook);
 };
 
 class ElementController {
@@ -1388,7 +1425,7 @@ const main = () => {
       if (canRunXhook) {
         canRunXhook = false;
         try {
-          runXhook(options);
+          injectXhook(scriptInfo, options);
         } catch (e) {
           console.log(e);
         }
