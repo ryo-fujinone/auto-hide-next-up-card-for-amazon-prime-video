@@ -523,7 +523,7 @@ const createOptionDialog = (scriptVersion) => {
       border-bottom: 1px dotted;
     }
     .nextup-ext-opt-dialog-network-activity-monitoring > .group-title {
-      color: blue;
+      color: darkslateblue;
     }
 
 
