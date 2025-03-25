@@ -303,7 +303,7 @@ const createOptionMessages = () => {
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     enableShortcutKey:
-      "ショートカットキーでオプションダイアログを開けるようにする",
+      "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
     monitorNetworkActivity: "通信の監視と改変",
@@ -336,7 +336,8 @@ const createOptionMessages = () => {
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
-    enableShortcutKey: "Enable shortcut key to open the options dialog",
+    enableShortcutKey:
+      "Enable shortcut key to open the options dialog during video playback",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
     monitorNetworkActivity: "Monitor and modify network activity",
