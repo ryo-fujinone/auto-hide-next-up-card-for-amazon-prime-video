@@ -529,6 +529,7 @@ const createOptionDialog = (scriptVersion) => {
     .nextup-ext-opt-dialog-tooltip {
       color: darkviolet;
       text-decoration: underline;
+      cursor: help;
     }
     .nextup-ext-opt-dialog-tooltip:before {
       content: "\\0028";
