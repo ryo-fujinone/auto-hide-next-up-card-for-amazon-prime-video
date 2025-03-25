@@ -22,6 +22,7 @@ const getDefaultOptions = () => {
       charCode: "KeyP",
     },
     shortcutKeyIsEnabled: true,
+    forceHighestResolution_xhook: false,
     disableNextup_xhook: false,
     scriptVersion: "2.6.0",
   };
@@ -306,7 +307,15 @@ const createOptionMessages = () => {
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
-    monitorNetworkActivity: "通信の監視と改変",
+    monitorNetworkActivity: "通信の監視・改変",
+    forceHighestResolution: "強制的に最高画質で再生する",
+    forceHighestResolution_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
+        プライムビデオの挙動に支障をきたす可能性があるため、ご理解の上ご活用ください。
+
+        [強制的に最高画質で再生する] は他の監視・改変オプションを有効にする場合にセットで有効にすることを推奨します。
+        通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出ることが確認されています。
+        先読みで最低画質の動画が取得され、少しの間だけそれが再生されるようです。
+        [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
     disableNextup: "Next upの表示フラグをfalseに変更する",
     close: "閉じる",
   };
@@ -341,6 +350,14 @@ const createOptionMessages = () => {
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
     monitorNetworkActivity: "Monitor and modify network activity",
+    forceHighestResolution: "Force playback at highest resolution",
+    forceHighestResolution_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
+          Please understand that this may interfere with the behavior of Prime Video.
+
+          It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
+          We employ a library called xhook for communication monitoring and modification, and it has been confirmed that when xhook is enabled, the preloading behavior is affected for a short period of time after the start of playback.
+          It seems that the lowest quality video is retrieved during preloading and that is what is played for a short period of time.
+          It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
     disableNextup: "Change the next up card appear flag to false",
     close: "Close",
   };
@@ -474,8 +491,20 @@ const createOptionDialog = (scriptVersion) => {
             </ul>
             <div class="nextup-ext-opt-dialog-network-activity-monitoring">
                 <div class="group-title">
-                    <p>${messages.monitorNetworkActivity}</p>
+                    <p>
+                        ${messages.monitorNetworkActivity}
+                        <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolution_Tooltip.replaceAll(
+                          /^\s*/gm,
+                          ""
+                        )}"></span>
+                    </p>
                 </div>
+                <label>
+                    <input type="checkbox" id="force-highest-resolution" name="force-highest-resolution" ${
+                      options.forceHighestResolution_xhook ? "checked" : ""
+                    } />
+                    <p>${messages.forceHighestResolution}</p>
+                </label>
                 <label>
                     <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
                       options.disableNextup_xhook ? "checked" : ""
@@ -530,6 +559,7 @@ const createOptionDialog = (scriptVersion) => {
       color: darkviolet;
       text-decoration: underline;
       cursor: help;
+      margin-left: 2px;
     }
     .nextup-ext-opt-dialog-tooltip:before {
       content: "\\0028";
@@ -653,6 +683,9 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "enable-shortcutkey":
           saveOptions({ shortcutKeyIsEnabled: e.target.checked });
+          break;
+        case "force-highest-resolution":
+          saveOptions({ forceHighestResolution_xhook: e.target.checked });
           break;
         case "disable-nextup":
           saveOptions({ disableNextup_xhook: e.target.checked });
@@ -898,43 +931,106 @@ const createOptionBtnOnNavbar = () => {
 // The runXhook function is executed as an inline script.
 const runXhook = () => {
   const xhookUrl = document.documentElement.dataset.xhookUrl;
+  const options = JSON.parse(document.documentElement.dataset.options);
   const script = document.createElement("script");
   script.src = xhookUrl;
   script.addEventListener("load", () => {
     xhook.after(function (request, response) {
-      if (!request.url.includes("GetSections")) {
-        return;
-      }
-      if (request.headers?.accept !== "application/json") {
-        return;
-      }
-      if (response.status !== 200) {
-        return;
-      }
-
-      try {
-        const data = JSON.parse(response.text);
-        const autoplayConfig =
-          data?.sections?.bottom?.collections?.collectionList?.[0]
-            ?.autoplayConfig;
-        if (!autoplayConfig) {
+      if (options.forceHighestResolution_xhook) {
+        if (!request.url.match(/\.mpd/)) {
           return;
         }
-        autoplayConfig.showAutoplayCard = false;
-        response.text = JSON.stringify(data);
-      } catch (e) {
-        console.log(e);
+        if (response.status !== 200) {
+          return;
+        }
+        if (response.headers?.["content-type"] !== "text/xml") {
+          return;
+        }
+
+        try {
+          const mpd = response.text;
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(mpd, "text/xml");
+
+          const representations = dom.querySelectorAll(
+            'AdaptationSet[contentType="video"] > Representation'
+          );
+
+          const highestRepresentation = Array.from(representations).reduce(
+            (acc, cur) => {
+              return parseInt(acc.getAttribute("bandwidth")) >
+                parseInt(cur.getAttribute("bandwidth"))
+                ? acc
+                : cur;
+            }
+          );
+
+          highestRepresentation.setAttribute("highestRepresentation", "true");
+          for (const rep of representations) {
+            if (!rep.hasAttribute("highestRepresentation")) {
+              rep.remove();
+            }
+          }
+
+          const newMpd = dom.documentElement.outerHTML;
+          response.text = newMpd;
+
+          console.log("force highest resolution", request.url);
+          console.log({
+            height: highestRepresentation.getAttribute("height"),
+            width: highestRepresentation.getAttribute("width"),
+            bandwidth: highestRepresentation.getAttribute("bandwidth"),
+            baseURL:
+              highestRepresentation.querySelector("BaseURL")?.textContent,
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      if (options.disableNextup_xhook) {
+        if (!request.url.includes("GetSections")) {
+          return;
+        }
+        if (request.headers?.accept !== "application/json") {
+          return;
+        }
+        if (response.status !== 200) {
+          return;
+        }
+
+        try {
+          const data = JSON.parse(response.text);
+          const autoplayConfig =
+            data?.sections?.bottom?.collections?.collectionList?.[0]
+              ?.autoplayConfig;
+          if (!autoplayConfig) {
+            return;
+          }
+          autoplayConfig.showAutoplayCard = false;
+          response.text = JSON.stringify(data);
+        } catch (e) {
+          console.log(e);
+        }
       }
     });
   });
   document.head.appendChild(script);
+
+  delete document.documentElement.dataset.xhookUrl;
+  delete document.documentElement.dataset.options;
 };
 
 const injectXhook = (
   scriptInfo = getScriptInfo(),
   options = getDefaultOptions()
 ) => {
-  if (!options.disableNextup_xhook) {
+  const xhookOptions = [
+    options.forceHighestResolution_xhook,
+    options.disableNextup_xhook,
+  ];
+  const shouldInjectXhook = xhookOptions.some((opt) => opt);
+  if (!shouldInjectXhook) {
     return;
   }
 
@@ -952,6 +1048,8 @@ const injectXhook = (
     document.documentElement.dispatchEvent(new CustomEvent("reset"));
     document.documentElement.removeAttribute("onreset");
   };
+
+  document.documentElement.dataset.options = JSON.stringify(options);
 
   let xhookUrl = "https://unpkg.com/xhook@latest/dist/xhook.min.js";
   try {
