@@ -677,9 +677,9 @@ const createOptionBtnOnNavbar = () => {
     if (!accountDropdownBtn) {
       return;
     }
-    const ImgContainer =
+    const imgContainer =
       accountDropdownContainer.querySelector("button > span");
-    if (!ImgContainer) {
+    if (!imgContainer) {
       return;
     }
     disconnect(observer);
@@ -714,7 +714,7 @@ const createOptionBtnOnNavbar = () => {
     optBtnElement.style.backgroundColor = "rgba(0, 0, 0, 0)";
     optBtnElement.setAttribute("title", "Option - Auto hide next up card");
 
-    const cloneImgContainer = ImgContainer.cloneNode();
+    const cloneImgContainer = imgContainer.cloneNode();
     optBtnElement.appendChild(cloneImgContainer);
 
     const imgDataUrl = [
