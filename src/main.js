@@ -655,141 +655,14 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
 };
 
 const createOptionBtnOnNavbar = () => {
-  const disconnect = (observer) => {
-    if (observer) {
-      observer.disconnect();
-    }
-  };
-
-  const observerCallback = (_, observer) => {
-    if (document.querySelector("#pv-nav-option-btn-container")) {
-      disconnect(observer);
-      return;
+  class OptionBtnOnNavbar {
+    constructor() {
+      this.isFirstCreate = true;
+      this.create = this._create.bind(this);
+      this.detectNavbarRemove = this._detectNavbarRemove.bind(this);
     }
 
-    const accountDropdownContainer = document.querySelector(
-      "#pv-nav-container [data-testid='pv-nav-account-dropdown-container']"
-    );
-    if (!accountDropdownContainer) {
-      return;
-    }
-    const accountDropdownBtn = accountDropdownContainer.querySelector("button");
-    if (!accountDropdownBtn) {
-      return;
-    }
-    const imgContainer =
-      accountDropdownContainer.querySelector("button > span");
-    if (!imgContainer) {
-      return;
-    }
-    disconnect(observer);
-
-    const liElement = accountDropdownContainer.parentNode;
-    const cloneLi = liElement.cloneNode();
-    cloneLi.setAttribute("id", "pv-nav-option-btn-container");
-    liElement.after(cloneLi);
-
-    const cloneLiStyle = cloneLi.getAttribute("style");
-    const cloneLiStyleRegex = /--nav-list-child-index:(\d+)/;
-    const cloneLiStyleFound = cloneLiStyle?.match(cloneLiStyleRegex);
-    if (cloneLiStyleFound) {
-      let idx = parseInt(cloneLiStyleFound[1]);
-      idx++;
-      const newStyle = cloneLiStyle.replace(
-        cloneLiStyleRegex,
-        `--nav-list-child-index:${idx}`
-      );
-      // cloneLi.style = newStyle;
-      // Use setAttribute to align style formats.
-      cloneLi.setAttribute("style", newStyle);
-    }
-
-    const cloneContainer = accountDropdownContainer.cloneNode();
-    cloneContainer.removeAttribute("data-testid");
-    cloneLi.appendChild(cloneContainer);
-
-    const optBtnElement = document.createElement("button");
-    optBtnElement.classList.add(...accountDropdownBtn.classList);
-    cloneContainer.appendChild(optBtnElement);
-    optBtnElement.style.backgroundColor = "rgba(0, 0, 0, 0)";
-    optBtnElement.setAttribute("title", "Option - Auto hide next up card");
-
-    const cloneImgContainer = imgContainer.cloneNode();
-    optBtnElement.appendChild(cloneImgContainer);
-
-    const imgDataUrl = [
-      "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2",
-      "h0PSIyNSIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI1IDI1Ij48cGF0aCBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZG",
-      "QiIGQ9Ik04LjYgNC45OTRjLS4zMzcuMTY2LS42Ni4zNTMtLjk3LjU2bC0xLjk0Ny0uODEyYTEuNSAxLjUgMCAwIDAtMS44NzcuNj",
-      "M0TDEuODIyIDguODEyYTEuNSAxLjUgMCAwIDAgLjM5IDEuOTQzbDEuNjc4IDEuMjhhOC41OTYgOC41OTYgMCAwIDAgMCAxLjExOG",
-      "wtMS42NzggMS4yOGExLjUgMS41IDAgMCAwLS4zOSAxLjk0M2wxLjk4NCAzLjQzNmExLjUgMS41IDAgMCAwIDEuODc3LjYzNGwxLj",
-      "k0Ny0uODEzYy4zMS4yMDcuNjMzLjM5NS45Ny41NmwuMjY5IDIuMDkyYTEuNSAxLjUgMCAwIDAgMS40ODggMS4zMDloMy45NjdhMS",
-      "41IDEuNSAwIDAgMCAxLjQ4OC0xLjMwOWwuMjY5LTIuMDkxYy4zMzYtLjE2Ni42Ni0uMzU0Ljk3LS41NjFsMS45NDcuODEzYTEuNS",
-      "AxLjUgMCAwIDAgMS44NzctLjYzNGwxLjk4My0zLjQzNmExLjUgMS41IDAgMCAwLS4zODktMS45NDNsLTEuNjc4LTEuMjhhOC42My",
-      "A4LjYzIDAgMCAwIDAtMS4xMThsMS42NzgtMS4yOGExLjUgMS41IDAgMCAwIC4zOS0xLjk0M2wtMS45ODQtMy40MzZhMS41IDEuNS",
-      "AwIDAgMC0xLjg3Ny0uNjM0bC0xLjk0OC44MTNhOC40NTQgOC40NTQgMCAwIDAtLjk2OS0uNTYxbC0uMjctMi4wOTJhMS41IDEuNS",
-      "AwIDAgMC0xLjQ4Ny0xLjMwOGgtMy45NjdhMS41IDEuNSAwIDAgMC0xLjQ4OCAxLjMwOGwtLjI3IDIuMDkyem0xLjgzNCAxLjQxNk",
-      "E2LjQ4IDYuNDggMCAwIDAgNy45NCA3Ljg1Mkw1LjMxOCA2Ljc1NyAzLjc3NCA5LjQzbDIuMjU4IDEuNzIyYTYuNDkgNi40OSAwID",
-      "AgMCAwIDIuODgxbC0yLjI1OCAxLjcyMyAxLjU0NCAyLjY3NCAyLjYyMi0xLjA5NWE2LjQ2MiA2LjQ2MiAwIDAgMCAyLjQ5NCAxLj",
-      "Q0MWwuMzYyIDIuODE3aDMuMDg4bC4zNjMtMi44MTdjLjk0LS4yOSAxLjc5LS43ODggMi40OTMtMS40NDFsMi42MjMgMS4wOTUgMS",
-      "41NDQtMi42NzQtMi4yNTktMS43MjNhNi40ODkgNi40ODkgMCAwIDAgMC0yLjg4bDIuMjU5LTEuNzIzLTEuNTQ0LTIuNjc0LTIuNj",
-      "IzIDEuMDk1YTYuNDYxIDYuNDYxIDAgMCAwLTIuNDkzLTEuNDQxbC0uMzYzLTIuODE3aC0zLjA4OGwtLjM2MiAyLjgxNnptMS45MD",
-      "YgMTAuMTg0YTQgNCAwIDEgMCAwLTggNCA0IDAgMCAwIDAgOHptMC0yYTIgMiAwIDEgMCAwLTQgMiAyIDAgMCAwIDAgNHoiIGNsaX",
-      "AtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==",
-    ].join("");
-    const optBtnImgElement = document.createElement("img");
-    optBtnImgElement.setAttribute("src", imgDataUrl);
-    optBtnImgElement.style.filter =
-      "sepia(100%) saturate(2000%) hue-rotate(120deg)";
-    cloneImgContainer.appendChild(optBtnImgElement);
-
-    const profileImgElement = accountDropdownBtn.querySelector(
-      "[data-testid*='profile']"
-    );
-    if (profileImgElement) {
-      const adjustOptBtnSize = () => {
-        const profileComputedStyle = window.getComputedStyle(profileImgElement);
-        const width = parseFloat(profileComputedStyle.width);
-        const height = parseFloat(profileComputedStyle.height);
-        optBtnImgElement.style.width = width + "px";
-        optBtnImgElement.style.height = height + "px";
-      };
-      adjustOptBtnSize();
-      window.addEventListener("resize", () => {
-        optBtnImgElement.style.width = "";
-        optBtnImgElement.style.height = "";
-        adjustOptBtnSize();
-      });
-    }
-
-    if (!document.querySelector("#optionBtnOnNavbar")) {
-      const css = `
-        body:has(.nextup-ext-opt-dialog[open]):not(:has(.dv-player-fullscreen)) {
-          overflow: hidden;
-        }
-      `;
-      addStyle(css, "optionBtnOnNavbar");
-    }
-
-    optBtnElement.addEventListener("click", (_) => {
-      const optDialog = getOptionDialog();
-      worksWithDialog.whenOpening();
-      optDialog.showModal();
-    });
-  };
-
-  observerCallback();
-  if (!document.querySelector("#pv-nav-option-btn-container")) {
-    new MutationObserver(observerCallback).observe(document, {
-      ...observeConfig,
-      attributes: true,
-    });
-  }
-
-  // The navbar may regenerate once after page load.
-  // Therefore, monitor the regenerating of Navbar for 10 seconds.
-  const detectNavbarRemove = new MutationObserver(
-    (mutationRecords, detectNavbarRemove) => {
+    _detectNavbarRemove(mutationRecords, detectNavbarRemove) {
       try {
         let filtered = mutationRecords.filter((m) => m.removedNodes.length > 0);
         if (filtered.length === 0) {
@@ -814,16 +687,162 @@ const createOptionBtnOnNavbar = () => {
         }
         detectNavbarRemove.disconnect();
         setTimeout(() => {
-          observerCallback();
+          this.create();
         }, 500);
       } catch (e) {}
     }
-  );
 
-  detectNavbarRemove.observe(document, observeConfig);
-  setTimeout(() => {
-    detectNavbarRemove.disconnect();
-  }, 10000);
+    disconnect(observer) {
+      if (observer) {
+        observer.disconnect();
+      }
+    }
+
+    _create(_, observer) {
+      if (document.querySelector("#pv-nav-option-btn-container")) {
+        this.disconnect(observer);
+        return;
+      }
+
+      const accountDropdownContainer = document.querySelector(
+        "#pv-nav-container [data-testid='pv-nav-account-dropdown-container']"
+      );
+      if (!accountDropdownContainer) {
+        return;
+      }
+      const accountDropdownBtn =
+        accountDropdownContainer.querySelector("button");
+      if (!accountDropdownBtn) {
+        return;
+      }
+      const imgContainer =
+        accountDropdownContainer.querySelector("button > span");
+      if (!imgContainer) {
+        return;
+      }
+      this.disconnect(observer);
+
+      if (this.isFirstCreate) {
+        this.isFirstCreate = false;
+        // The navbar may regenerate once after page load.
+        // Therefore, monitor the regenerating of Navbar for 10 seconds.
+        const detectNavbarRemove = new MutationObserver(
+          this.detectNavbarRemove
+        );
+        detectNavbarRemove.observe(document, observeConfig);
+        setTimeout(() => {
+          detectNavbarRemove.disconnect();
+        }, 10000);
+      }
+
+      const liElement = accountDropdownContainer.parentNode;
+      const cloneLi = liElement.cloneNode();
+      cloneLi.setAttribute("id", "pv-nav-option-btn-container");
+      liElement.after(cloneLi);
+
+      const cloneLiStyle = cloneLi.getAttribute("style");
+      const cloneLiStyleRegex = /--nav-list-child-index:(\d+)/;
+      const cloneLiStyleFound = cloneLiStyle?.match(cloneLiStyleRegex);
+      if (cloneLiStyleFound) {
+        let idx = parseInt(cloneLiStyleFound[1]);
+        idx++;
+        const newStyle = cloneLiStyle.replace(
+          cloneLiStyleRegex,
+          `--nav-list-child-index:${idx}`
+        );
+        // cloneLi.style = newStyle;
+        // Use setAttribute to align style formats.
+        cloneLi.setAttribute("style", newStyle);
+      }
+
+      const cloneContainer = accountDropdownContainer.cloneNode();
+      cloneContainer.removeAttribute("data-testid");
+      cloneLi.appendChild(cloneContainer);
+
+      const optBtnElement = document.createElement("button");
+      optBtnElement.classList.add(...accountDropdownBtn.classList);
+      cloneContainer.appendChild(optBtnElement);
+      optBtnElement.style.backgroundColor = "rgba(0, 0, 0, 0)";
+      optBtnElement.setAttribute("title", "Option - Auto hide next up card");
+
+      const cloneImgContainer = imgContainer.cloneNode();
+      optBtnElement.appendChild(cloneImgContainer);
+
+      const imgDataUrl = [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2",
+        "h0PSIyNSIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI1IDI1Ij48cGF0aCBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZG",
+        "QiIGQ9Ik04LjYgNC45OTRjLS4zMzcuMTY2LS42Ni4zNTMtLjk3LjU2bC0xLjk0Ny0uODEyYTEuNSAxLjUgMCAwIDAtMS44NzcuNj",
+        "M0TDEuODIyIDguODEyYTEuNSAxLjUgMCAwIDAgLjM5IDEuOTQzbDEuNjc4IDEuMjhhOC41OTYgOC41OTYgMCAwIDAgMCAxLjExOG",
+        "wtMS42NzggMS4yOGExLjUgMS41IDAgMCAwLS4zOSAxLjk0M2wxLjk4NCAzLjQzNmExLjUgMS41IDAgMCAwIDEuODc3LjYzNGwxLj",
+        "k0Ny0uODEzYy4zMS4yMDcuNjMzLjM5NS45Ny41NmwuMjY5IDIuMDkyYTEuNSAxLjUgMCAwIDAgMS40ODggMS4zMDloMy45NjdhMS",
+        "41IDEuNSAwIDAgMCAxLjQ4OC0xLjMwOWwuMjY5LTIuMDkxYy4zMzYtLjE2Ni42Ni0uMzU0Ljk3LS41NjFsMS45NDcuODEzYTEuNS",
+        "AxLjUgMCAwIDAgMS44NzctLjYzNGwxLjk4My0zLjQzNmExLjUgMS41IDAgMCAwLS4zODktMS45NDNsLTEuNjc4LTEuMjhhOC42My",
+        "A4LjYzIDAgMCAwIDAtMS4xMThsMS42NzgtMS4yOGExLjUgMS41IDAgMCAwIC4zOS0xLjk0M2wtMS45ODQtMy40MzZhMS41IDEuNS",
+        "AwIDAgMC0xLjg3Ny0uNjM0bC0xLjk0OC44MTNhOC40NTQgOC40NTQgMCAwIDAtLjk2OS0uNTYxbC0uMjctMi4wOTJhMS41IDEuNS",
+        "AwIDAgMC0xLjQ4Ny0xLjMwOGgtMy45NjdhMS41IDEuNSAwIDAgMC0xLjQ4OCAxLjMwOGwtLjI3IDIuMDkyem0xLjgzNCAxLjQxNk",
+        "E2LjQ4IDYuNDggMCAwIDAgNy45NCA3Ljg1Mkw1LjMxOCA2Ljc1NyAzLjc3NCA5LjQzbDIuMjU4IDEuNzIyYTYuNDkgNi40OSAwID",
+        "AgMCAwIDIuODgxbC0yLjI1OCAxLjcyMyAxLjU0NCAyLjY3NCAyLjYyMi0xLjA5NWE2LjQ2MiA2LjQ2MiAwIDAgMCAyLjQ5NCAxLj",
+        "Q0MWwuMzYyIDIuODE3aDMuMDg4bC4zNjMtMi44MTdjLjk0LS4yOSAxLjc5LS43ODggMi40OTMtMS40NDFsMi42MjMgMS4wOTUgMS",
+        "41NDQtMi42NzQtMi4yNTktMS43MjNhNi40ODkgNi40ODkgMCAwIDAgMC0yLjg4bDIuMjU5LTEuNzIzLTEuNTQ0LTIuNjc0LTIuNj",
+        "IzIDEuMDk1YTYuNDYxIDYuNDYxIDAgMCAwLTIuNDkzLTEuNDQxbC0uMzYzLTIuODE3aC0zLjA4OGwtLjM2MiAyLjgxNnptMS45MD",
+        "YgMTAuMTg0YTQgNCAwIDEgMCAwLTggNCA0IDAgMCAwIDAgOHptMC0yYTIgMiAwIDEgMCAwLTQgMiAyIDAgMCAwIDAgNHoiIGNsaX",
+        "AtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==",
+      ].join("");
+      const optBtnImgElement = document.createElement("img");
+      optBtnImgElement.setAttribute("src", imgDataUrl);
+      optBtnImgElement.style.filter =
+        "sepia(100%) saturate(2000%) hue-rotate(120deg)";
+      cloneImgContainer.appendChild(optBtnImgElement);
+
+      const profileImgElement = accountDropdownBtn.querySelector(
+        "[data-testid*='profile']"
+      );
+      if (profileImgElement) {
+        const adjustOptBtnSize = () => {
+          const profileComputedStyle =
+            window.getComputedStyle(profileImgElement);
+          const width = parseFloat(profileComputedStyle.width);
+          const height = parseFloat(profileComputedStyle.height);
+          optBtnImgElement.style.width = width + "px";
+          optBtnImgElement.style.height = height + "px";
+        };
+        adjustOptBtnSize();
+        window.addEventListener("resize", () => {
+          optBtnImgElement.style.width = "";
+          optBtnImgElement.style.height = "";
+          adjustOptBtnSize();
+        });
+      }
+
+      if (!document.querySelector("#optionBtnOnNavbar")) {
+        const css = `
+        body:has(.nextup-ext-opt-dialog[open]):not(:has(.dv-player-fullscreen)) {
+          overflow: hidden;
+        }
+      `;
+        addStyle(css, "optionBtnOnNavbar");
+      }
+
+      optBtnElement.addEventListener("click", (_) => {
+        const optDialog = getOptionDialog();
+        worksWithDialog.whenOpening();
+        optDialog.showModal();
+      });
+    }
+
+    main() {
+      this._create();
+      if (!document.querySelector("#pv-nav-option-btn-container")) {
+        new MutationObserver(this.create).observe(document, {
+          ...observeConfig,
+          attributes: true,
+        });
+      }
+    }
+  }
+
+  const optionBtn = new OptionBtnOnNavbar();
+  optionBtn.main();
 };
 
 const runXhook = (options = getDefaultOptions()) => {
