@@ -306,6 +306,7 @@ const createOptionMessages = () => {
       "ショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
+    monitorNetworkActivity: "通信の監視と改変",
     disableNextup: "Next upの表示フラグをfalseに変更する",
     close: "閉じる",
   };
@@ -338,6 +339,7 @@ const createOptionMessages = () => {
     enableShortcutKey: "Enable shortcut key to open the options dialog",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
+    monitorNetworkActivity: "Monitor and modify network activity",
     disableNextup: "Change the next up card appear flag to false",
     close: "Close",
   };
@@ -471,7 +473,7 @@ const createOptionDialog = (scriptVersion) => {
             </ul>
             <div class="nextup-ext-opt-dialog-network-activity-monitoring">
                 <div class="group-title">
-                    <p>通信の監視と改変</p>
+                    <p>${messages.monitorNetworkActivity}</p>
                 </div>
                 <label>
                     <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
