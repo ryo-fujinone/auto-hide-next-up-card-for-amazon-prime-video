@@ -40,7 +40,6 @@
       "js": ["main.js"]
     }
   ],
-
   "web_accessible_resources": [
     {
       "resources": ["xhook.min.js"],
