@@ -5,7 +5,6 @@ const getDefaultOptions = () => {
     hideSkipIntroBtn: true,
     showSkipIntroBtnOnOverlay: false,
     hideNextup: true,
-    disableNextup: false,
     temporarilyDisableOverlay: true,
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
@@ -23,6 +22,7 @@ const getDefaultOptions = () => {
       charCode: "KeyP",
     },
     shortcutKeyIsEnabled: true,
+    disableNextup_xhook: false,
     scriptVersion: "2.6.0",
   };
 };
@@ -466,7 +466,7 @@ const createOptionDialog = (scriptVersion) => {
                 </div>
                 <label>
                     <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
-                      options.disableNextup ? "checked" : ""
+                      options.disableNextup_xhook ? "checked" : ""
                     } />
                     <p>${messages.disableNextup}</p>
                 </label>
@@ -586,9 +586,6 @@ const createOptionDialog = (scriptVersion) => {
         case "hide-nextup":
           saveOptions({ hideNextup: e.target.checked });
           break;
-        case "disable-nextup":
-          saveOptions({ disableNextup: e.target.checked });
-          break;
         case "temporarily-disable-overlay":
           saveOptions({ temporarilyDisableOverlay: e.target.checked });
           break;
@@ -625,6 +622,9 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "enable-shortcutkey":
           saveOptions({ shortcutKeyIsEnabled: e.target.checked });
+          break;
+        case "disable-nextup":
+          saveOptions({ disableNextup_xhook: e.target.checked });
           break;
         case "nextup-ext-opt-dialog-close":
           optDialog.close();
@@ -903,7 +903,7 @@ const injectXhook = (
   scriptInfo = getScriptInfo(),
   options = getDefaultOptions()
 ) => {
-  if (!options.disableNextup) {
+  if (!options.disableNextup_xhook) {
     return;
   }
 
