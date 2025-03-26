@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Auto hide next up card for Amazon Prime Video",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "default_locale": "en",
   "description": "__MSG_desc__",
   "icons": {
@@ -104,7 +104,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "auto-hide-next-up-card-for-amazon-prime-video@ryo-fujinone.nett",
+      "id": "auto-hide-next-up-card-for-amazon-prime-video@ryo-fujinone.net",
       "strict_min_version": "121.0"
     }
   }

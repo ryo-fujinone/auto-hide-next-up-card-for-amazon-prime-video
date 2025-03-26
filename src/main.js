@@ -25,7 +25,7 @@ const getDefaultOptions = () => {
     forceHighestResolution_xhook: false,
     disableNextup_xhook: false,
     enableAutoplay_xhook: false,
-    scriptVersion: "2.6.0",
+    scriptVersion: "2.7.0",
   };
 };
 
