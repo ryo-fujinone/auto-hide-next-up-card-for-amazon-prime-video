@@ -38,7 +38,6 @@ chrome.runtime.onInstalled.addListener(function () {
 chrome.runtime.onMessage.addListener((mes) => {
   const type = mes.type;
   if (type === "context-menu") {
-    console.log();
     const target = mes.payload.target;
     if (target === "visible") {
       chrome.contextMenus.update("auto-hide-next-up", mes.payload.state);
