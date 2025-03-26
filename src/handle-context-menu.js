@@ -1,9 +1,13 @@
+const existsOptDialog = () => {
+  return document.documentElement.dataset.nextupExtOptDialogCreated === "true";
+};
+
 const switchContextMenuState = () => {
   const mes = {
     type: "context-menu",
     payload: { target: "visible", state: { visible: true } },
   };
-  if (document.documentElement.dataset.nextupExtOptDialogCreated === "true") {
+  if (existsOptDialog()) {
     chrome.runtime.sendMessage(mes);
   } else {
     mes.payload.state.visible = false;
@@ -14,7 +18,7 @@ const switchContextMenuState = () => {
 switchContextMenuState();
 
 new MutationObserver((_, observer) => {
-  if (document.documentElement.dataset.nextupExtOptDialogCreated === "true") {
+  if (existsOptDialog()) {
     observer.disconnect();
     switchContextMenuState();
   }
