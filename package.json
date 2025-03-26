@@ -23,7 +23,7 @@
     "rollup": "^4.18.1",
     "rollup-plugin-auto-reload": "^1.0.3",
     "userscript-metadata-generator": "^0.2.4",
-    "web-ext": "^7.11.0"
+    "web-ext": "^8.5.0"
   },
   "packageManager": "pnpm@9.5.0"
 }
