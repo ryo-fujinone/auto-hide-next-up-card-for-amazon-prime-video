@@ -24,6 +24,7 @@ const getDefaultOptions = () => {
     shortcutKeyIsEnabled: true,
     forceHighestResolution_xhook: false,
     disableNextup_xhook: false,
+    enableAutoplay_xhook: false,
     scriptVersion: "2.6.0",
   };
 };
@@ -317,6 +318,9 @@ const createOptionMessages = () => {
         先読みで最低画質の動画が取得され、少しの間だけそれが再生されるようです。
         [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
     disableNextup: "Next upの表示フラグをfalseに変更する",
+    enableAutoplay: "自動再生のフラグをtrueに変更する",
+    enableAutoplay_Tooltip:
+      "この機能を使用してもプライムビデオの自動再生の設定は変更されません",
     close: "閉じる",
   };
   const enMessages = {
@@ -359,6 +363,9 @@ const createOptionMessages = () => {
           It seems that the lowest quality video is retrieved during preloading and that is what is played for a short period of time.
           It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
     disableNextup: "Change the next up card appear flag to false",
+    enableAutoplay: "Change autoplay flag to true",
+    enableAutoplay_Tooltip:
+      "Enabling this will not change the autoplay setting for Prime Video",
     close: "Close",
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
@@ -510,6 +517,17 @@ const createOptionDialog = (scriptVersion) => {
                       options.disableNextup_xhook ? "checked" : ""
                     } />
                     <p>${messages.disableNextup}</p>
+                </label>
+                <label>
+                    <input type="checkbox" id="enable-autoplay" name="enable-autoplay" ${
+                      options.enableAutoplay_xhook ? "checked" : ""
+                    } />
+                    <p>
+                        ${messages.enableAutoplay}
+                        <span class="nextup-ext-opt-dialog-tooltip" title="${
+                          messages.enableAutoplay_Tooltip
+                        }"></span>
+                    </p>
                 </label>
             </div>
             <div class="nextup-ext-opt-dialog-btn-wrapper">
@@ -698,6 +716,9 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "disable-nextup":
           saveOptions({ disableNextup_xhook: e.target.checked });
+          break;
+        case "enable-autoplay":
+          saveOptions({ enableAutoplay_xhook: e.target.checked });
           break;
         case "nextup-ext-opt-dialog-close":
           optDialog.close();
@@ -961,7 +982,10 @@ const runXhook = () => {
   script.src = xhookUrl;
   script.addEventListener("load", () => {
     xhook.after(function (request, response) {
-      if (options.forceHighestResolution_xhook) {
+      (() => {
+        if (!options.forceHighestResolution_xhook) {
+          return;
+        }
         if (!request.url.match(/\.mpd/)) {
           return;
         }
@@ -1011,9 +1035,12 @@ const runXhook = () => {
         } catch (e) {
           console.log(e);
         }
-      }
+      })();
 
-      if (options.disableNextup_xhook) {
+      (() => {
+        if (!options.disableNextup_xhook) {
+          return;
+        }
         if (!request.url.includes("GetSections")) {
           return;
         }
@@ -1037,7 +1064,36 @@ const runXhook = () => {
         } catch (e) {
           console.log(e);
         }
-      }
+      })();
+
+      (() => {
+        if (!options.enableAutoplay_xhook) {
+          return;
+        }
+        if (!request.url.includes("GetSections")) {
+          return;
+        }
+        if (request.headers?.accept !== "application/json") {
+          return;
+        }
+        if (response.status !== 200) {
+          return;
+        }
+
+        try {
+          const data = JSON.parse(response.text);
+          const autoplayConfig =
+            data?.sections?.bottom?.collections?.collectionList?.[0]
+              ?.autoplayConfig;
+          if (!autoplayConfig) {
+            return;
+          }
+          autoplayConfig.autoplayEnabled = true;
+          response.text = JSON.stringify(data);
+        } catch (e) {
+          console.log(e);
+        }
+      })();
     });
   });
   document.head.appendChild(script);
@@ -1053,6 +1109,7 @@ const injectXhook = (
   const xhookOptions = [
     options.forceHighestResolution_xhook,
     options.disableNextup_xhook,
+    options.enableAutoplay_xhook,
   ];
   const shouldInjectXhook = xhookOptions.some((opt) => opt);
   if (!shouldInjectXhook) {
