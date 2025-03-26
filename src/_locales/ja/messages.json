@@ -1,5 +1,8 @@
 {
   "desc": {
     "message": "Amazon Prime Video の Next up 等の邪魔な要素を非表示にします。"
+  },
+  "openOptionDialog": {
+    "message": "オプションダイアログを開く"
   }
 }

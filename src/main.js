@@ -523,6 +523,8 @@ const createOptionDialog = (scriptVersion) => {
     `;
   document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
 
+  document.documentElement.dataset.nextupExtOptDialogCreated = true;
+
   const css = `
     .nextup-ext-opt-dialog {
       padding: 0;
@@ -629,6 +631,14 @@ const createOptionDialog = (scriptVersion) => {
   optDialog.toggleAttribute("open");
   optDialog.style.setProperty("visibility", "");
 
+  new MutationObserver((_) => {
+    if (optDialog.hasAttribute("open")) {
+      worksWithDialog.whenOpening();
+    } else {
+      worksWithDialog.whenClosed();
+    }
+  }).observe(optDialog, { attributes: true, attributeFilter: ["open"] });
+
   optDialog.addEventListener(
     "click",
     (e) => {
@@ -692,7 +702,6 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "nextup-ext-opt-dialog-close":
           optDialog.close();
-          worksWithDialog.whenClosed();
           break;
         default:
           break;
@@ -728,9 +737,7 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
       const optDialog = getOptionDialog();
       if (optDialog.hasAttribute("open")) {
         optDialog.close();
-        worksWithDialog.whenClosed();
       } else {
-        worksWithDialog.whenOpening();
         optDialog.showModal();
       }
     }
@@ -908,7 +915,6 @@ const createOptionBtnOnNavbar = () => {
 
       optBtnElement.addEventListener("click", (_) => {
         const optDialog = getOptionDialog();
-        worksWithDialog.whenOpening();
         optDialog.showModal();
       });
     }
@@ -926,6 +932,14 @@ const createOptionBtnOnNavbar = () => {
 
   const optionBtn = new OptionBtnOnNavbar();
   optionBtn.main();
+};
+
+const createUserscriptMenu = (scriptInfo = getScriptInfo()) => {
+  const scriptType = scriptInfo.scriptType;
+  if (scriptType !== "user-script") {
+    return;
+  }
+  // TODO
 };
 
 // The runXhook function is executed as an inline script.
@@ -1107,7 +1121,6 @@ class ElementController {
 
       cloneOptBtn.addEventListener("click", (_) => {
         const optDialog = getOptionDialog();
-        worksWithDialog.whenOpening();
         optDialog.showModal();
       });
     }).observe(this.player, { ...observeConfig, attributes: true });
@@ -1593,11 +1606,19 @@ const main = () => {
         } catch (e) {
           console.log(e);
         }
+
         try {
           createOptionDialog(scriptInfo.scriptVersion);
         } catch (e) {
           console.log(e);
         }
+
+        try {
+          createUserscriptMenu(scriptInfo);
+        } catch (e) {
+          console.log(e);
+        }
+
         // The shortcut keys for opening the dialog will only work if the video is open.
         addEventListenerForShortcutKey(options);
       }
