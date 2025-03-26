@@ -975,14 +975,14 @@ const runXhook = () => {
           const newMpd = dom.documentElement.outerHTML;
           response.text = newMpd;
 
-          console.log("force highest resolution", request.url);
-          console.log({
-            height: highestRepresentation.getAttribute("height"),
-            width: highestRepresentation.getAttribute("width"),
-            bandwidth: highestRepresentation.getAttribute("bandwidth"),
-            baseURL:
-              highestRepresentation.querySelector("BaseURL")?.textContent,
-          });
+          // console.log("force highest resolution", request.url);
+          // console.log({
+          //   height: highestRepresentation.getAttribute("height"),
+          //   width: highestRepresentation.getAttribute("width"),
+          //   bandwidth: highestRepresentation.getAttribute("bandwidth"),
+          //   baseURL:
+          //     highestRepresentation.querySelector("BaseURL")?.textContent,
+          // });
         } catch (e) {
           console.log(e);
         }
