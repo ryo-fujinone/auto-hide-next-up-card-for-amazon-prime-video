@@ -609,7 +609,6 @@ const createOptionDialog = (scriptVersion) => {
   `;
   addStyle(css);
 
-  //
   const tooltipElements = document.querySelectorAll(
     ".nextup-ext-opt-dialog-tooltip"
   );
