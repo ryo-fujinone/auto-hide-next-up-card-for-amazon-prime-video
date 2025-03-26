@@ -29,6 +29,6 @@
     "https://*.amazon.cn/*",
     "https://*.primevideo.com/*"
   ],
-  "grant": "none",
+  "grant": ["GM_registerMenuCommand"],
   "license": "MIT; https://github.com/ryo-fujinone/auto-hide-next-up-card-for-amazon-prime-video/blob/main/LICENSE"
 }

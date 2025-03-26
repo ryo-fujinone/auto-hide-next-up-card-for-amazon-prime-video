@@ -935,11 +935,23 @@ const createOptionBtnOnNavbar = () => {
 };
 
 const createUserscriptMenu = (scriptInfo = getScriptInfo()) => {
-  const scriptType = scriptInfo.scriptType;
-  if (scriptType !== "user-script") {
+  if (scriptInfo.scriptType !== "user-script") {
     return;
   }
-  // TODO
+  let name = "Open Options Dialog";
+  if (/ja|ja-JP/.test(window.navigator.language)) {
+    name = "オプションダイアログを開く";
+  }
+  GM_registerMenuCommand(
+    name,
+    () => {
+      const optDialog = getOptionDialog();
+      if (optDialog && !optDialog.hasAttribute("open")) {
+        optDialog.showModal();
+      }
+    },
+    {}
+  );
 };
 
 // The runXhook function is executed as an inline script.
