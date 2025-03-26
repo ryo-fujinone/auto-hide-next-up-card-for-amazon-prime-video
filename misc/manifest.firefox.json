@@ -10,7 +10,39 @@
     "48": "icons/48.png",
     "128": "icons/128.png"
   },
+  "permissions": ["contextMenus"],
+  "background": {
+    "scripts": ["background.js"]
+  },
   "content_scripts": [
+    {
+      "matches": [
+        "https://*.amazon.co.jp/*",
+        "https://*.amazon.com/*",
+        "https://*.amazon.ae/*",
+        "https://*.amazon.co.uk/*",
+        "https://*.amazon.it/*",
+        "https://*.amazon.in/*",
+        "https://*.amazon.eg/*",
+        "https://*.amazon.com.au/*",
+        "https://*.amazon.nl/*",
+        "https://*.amazon.ca/*",
+        "https://*.amazon.sa/*",
+        "https://*.amazon.sg/*",
+        "https://*.amazon.se/*",
+        "https://*.amazon.es/*",
+        "https://*.amazon.de/*",
+        "https://*.amazon.com.tr/*",
+        "https://*.amazon.com.br/*",
+        "https://*.amazon.fr/*",
+        "https://*.amazon.com.be/*",
+        "https://*.amazon.pl/*",
+        "https://*.amazon.com.mx/*",
+        "https://*.amazon.cn/*",
+        "https://*.primevideo.com/*"
+      ],
+      "js": ["handle-context-menu.js"]
+    },
     {
       "matches": [
         "https://*.amazon.co.jp/*",
@@ -72,7 +104,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "auto-hide-next-up-card-for-amazon-prime-video@ryo-fujinone.net",
+      "id": "auto-hide-next-up-card-for-amazon-prime-video@ryo-fujinone.nett",
       "strict_min_version": "121.0"
     }
   }

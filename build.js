@@ -57,11 +57,26 @@ const buildFirefoxExt = async () => {
   archive.pipe(output);
   await archive.finalize();
   console.log(`created ${archivePath}`);
+
+  const debugDir = path.join(firefoxExtDir, "ext_debug");
+  const debugManifestPath = path.join(debugDir, "manifest.json");
+  if (fs.existsSync(debugDir)) {
+    fs.rmSync(debugDir, { recursive: true });
+  }
+  fs.copySync(targetDir, debugDir);
+  const firefoxManifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+  delete firefoxManifest.browser_specific_settings;
+  const debugManifestJson = JSON.stringify(firefoxManifest, undefined, 2);
+  fs.writeFile(debugManifestPath, debugManifestJson);
 };
 
 const main = async () => {
-  await buildChromeExt();
-  await buildFirefoxExt();
+  const extType = process.env.EXT_TYPE;
+  if (extType === "chrome") {
+    await buildChromeExt();
+  } else if (extType === "firefox") {
+    await buildFirefoxExt();
+  }
 };
 
 main();

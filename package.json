@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "build": "run-s build:ext build:userscript",
-    "build:ext": "node build.js",
+    "build:ext": "run-s build:chrome build:firefox",
+    "build:chrome": "env-cmd -f .env.chrome node build.js",
+    "build:firefox": "env-cmd -f .env.firefox node build.js",
     "build:userscript": "rollup --config rollup.config.js",
-    "dev:firefox": "env-cmd -f .env.firefox web-ext run",
-    "dev:chrome": "env-cmd -x -f .env.chrome web-ext run -t chromium --chromium-binary=$CHROMIUM_BINARY_PATH --chromium-profile=$CHROMIUM_PROFILE_PATH",
+    "run:chrome": "env-cmd -x -f .env.chrome web-ext run -t chromium --chromium-binary=$CHROMIUM_BINARY_PATH --chromium-profile=$CHROMIUM_PROFILE_PATH",
+    "run:firefox": "env-cmd -f .env.firefox web-ext run",
+    "dev:chrome": "run-s build:chrome run:chrome",
+    "dev:firefox": "run-s build:firefox run:firefox",
     "dev:userscript": "env-cmd -f .env.userscript rollup --config rollup.config.js --watch"
   },
   "devDependencies": {
