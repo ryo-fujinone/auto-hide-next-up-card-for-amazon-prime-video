@@ -927,7 +927,7 @@ const createOptionBtnOnNavbar = () => {
       if (!document.querySelector("#optionBtnOnNavbar")) {
         const css = `
         body:has(.nextup-ext-opt-dialog[open]):not(:has(.dv-player-fullscreen)) {
-          overflow: hidden;
+          overflow: hidden !important;
         }
       `;
         addStyle(css, "optionBtnOnNavbar");
