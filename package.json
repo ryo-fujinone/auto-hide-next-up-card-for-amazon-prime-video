@@ -11,7 +11,7 @@
     "build:userscript": "rollup --config rollup.config.js",
     "run:chrome": "env-cmd -x -f .env.chrome web-ext run -t chromium --chromium-binary=$CHROMIUM_BINARY_PATH --chromium-profile=$CHROMIUM_PROFILE_PATH",
     "run:firefox": "env-cmd -f .env.firefox web-ext run",
-    "dev:chrome": "run-s build:chrome run:chrome",
+    "dev:chrome": "run-s run:chrome",
     "dev:firefox": "run-s build:firefox run:firefox",
     "dev:userscript": "env-cmd -f .env.userscript rollup --config rollup.config.js --watch"
   },
