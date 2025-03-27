@@ -62,7 +62,7 @@ const createRollupOptions = () => {
   };
 
   const devOptions = {
-    input: "misc/dev.js",
+    input: "misc/userscript.dev.js",
     output: {
       file: devPath,
       format: "iife",
