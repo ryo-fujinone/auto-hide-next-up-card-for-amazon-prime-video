@@ -311,8 +311,7 @@ const createOptionMessages = () => {
     monitorNetworkActivity: "通信の監視・改変",
     forceHighestResolution: "強制的に最高画質で再生する",
     forceHighestResolution_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
-        プライムビデオの挙動に支障をきたす可能性があるため、ご理解の上ご活用ください。
-
+        プライムビデオの挙動に支障をきたす可能性があるため、ご理解の上ご活用ください。\n
         [強制的に最高画質で再生する] は他の監視・改変オプションを有効にする場合にセットで有効にすることを推奨します。
         通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出ることが確認されています。
         先読みで最低画質の動画が取得され、少しの間だけそれが再生されるようです。
@@ -356,12 +355,11 @@ const createOptionMessages = () => {
     monitorNetworkActivity: "Monitor and modify network activity",
     forceHighestResolution: "Force playback at highest resolution",
     forceHighestResolution_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
-          Please understand that this may interfere with the behavior of Prime Video.
-
-          It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
-          We employ a library called xhook for communication monitoring and modification, and it has been confirmed that when xhook is enabled, the preloading behavior is affected for a short period of time after the start of playback.
-          It seems that the lowest quality video is retrieved during preloading and that is what is played for a short period of time.
-          It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
+        Please understand that this may interfere with the behavior of Prime Video.\n
+        It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
+        We employ a library called xhook for communication monitoring and modification, and it has been confirmed that when xhook is enabled, the preloading behavior is affected for a short period of time after the start of playback.
+        It seems that the lowest quality video is retrieved during preloading and that is what is played for a short period of time.
+        It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
     disableNextup: "Change the next up card appear flag to false",
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
@@ -501,7 +499,7 @@ const createOptionDialog = (scriptVersion) => {
                     <p>
                         ${messages.monitorNetworkActivity}
                         <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolution_Tooltip.replaceAll(
-                          /^\s*/gm,
+                          /^[^\S\r\n]*/gm,
                           ""
                         )}"></span>
                     </p>
