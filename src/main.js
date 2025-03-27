@@ -126,7 +126,12 @@ const saveOptions = (_newOptions = {}) => {
 const updateOptionVersion = (scriptInfo) => {
   const options = getOptions();
   if (options.scriptVersion === scriptInfo.scriptVersion) {
-    return;
+    // Developers can force updates to option values.
+    const key = "nextup-ext-force-update-option-version";
+    if (localStorage.getItem(key) !== "true") {
+      return;
+    }
+    console.log(`%c${key}`, "color:yellow; font-weight:bold;");
   }
 
   const defaultOptions = getDefaultOptions();
