@@ -1069,7 +1069,7 @@ const runXhook = () => {
           const dom = parser.parseFromString(mpd, "text/xml");
 
           const representations = dom.querySelectorAll(
-            'AdaptationSet[contentType="video"] > Representation'
+            "AdaptationSet[contentType='video'] > Representation"
           );
 
           const highestRepresentation = Array.from(representations).reduce(
