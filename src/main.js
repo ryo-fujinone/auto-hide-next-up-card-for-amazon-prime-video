@@ -25,6 +25,7 @@ const getDefaultOptions = () => {
     forceHighestResolution_xhook: false,
     disableNextup_xhook: false,
     enableAutoplay_xhook: false,
+    forcePlayNextEpisode_xhook: false,
     scriptVersion: "2.7.0",
   };
 };
@@ -325,6 +326,15 @@ const createOptionMessages = () => {
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
       "この機能を使用してもプライムビデオの自動再生の設定は変更されません",
+    forcePlayNextEpisode:
+      "実験的: 最後まで再生して動画が閉じた場合に次のエピソードを再生する",
+    forcePlayNextEpisode_Tooltip: `以下を必要とする人向けの機能です。
+        ・自動再生の代替手段
+        ・自動再生で6回連続で再生して動画が閉じてしまう挙動への対処\n
+        この機能はサジェストされたコンテンツに遷移した場合の次のエピソードの再生には非対応です。
+        動作の安定性のために [動画終了時にサジェストされたコンテンツに遷移するのを防ぐ] も有効にすることを推奨します。\n
+        次のエピソードがあるかどうかの判定に1500ミリ秒の待機時間を設定しています。
+        最後まで再生して動画が閉じた場合やEscキーの入力で動画を閉じた場合、必要に応じて1500ミリ秒の間は画面を暗くします。`,
     close: "閉じる",
   };
   const enMessages = {
@@ -369,6 +379,15 @@ const createOptionMessages = () => {
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
       "Enabling this will not change the autoplay setting for Prime Video",
+    forcePlayNextEpisode:
+      "Experimental: Open the next episode if the video is closed after playing to the end",
+    forcePlayNextEpisode_Tooltip: `This feature is for those who need the following
+        - An alternative to autoplay
+        - Solution to the behavior of autoplay that closes the video after 6 consecutive plays.\n
+        This feature does not support playback of the next episode after transitioning to the suggested content.
+        For operational stability, it is recommended that [Prevent transition to suggested content when video ends] also be enabled.\n
+        A wait time of 1500 milliseconds is set to determine if the next episode is available.
+        If the video is closed after playing to the end or by entering the Esc key, the screen is darkened for 1500 milliseconds if necessary.`,
     close: "Close",
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
@@ -381,6 +400,8 @@ const createOptionDialog = (scriptVersion) => {
 
   const messages = createOptionMessages();
   const options = getOptions();
+
+  const regexForMultiineTooltips = /^[^\S\r\n]*/gm;
 
   const dialogHtmlStr = `
     <dialog class="nextup-ext-opt-dialog">
@@ -504,7 +525,7 @@ const createOptionDialog = (scriptVersion) => {
                     <p>
                         ${messages.monitorNetworkActivity}
                         <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolution_Tooltip.replaceAll(
-                          /^[^\S\r\n]*/gm,
+                          regexForMultiineTooltips,
                           ""
                         )}"></span>
                     </p>
@@ -530,6 +551,18 @@ const createOptionDialog = (scriptVersion) => {
                         <span class="nextup-ext-opt-dialog-tooltip" title="${
                           messages.enableAutoplay_Tooltip
                         }"></span>
+                    </p>
+                </label>
+                <label>
+                    <input type="checkbox" id="force-play-next-episode" name="force-play-next-episode" ${
+                      options.forcePlayNextEpisode_xhook ? "checked" : ""
+                    } />
+                    <p>
+                        ${messages.forcePlayNextEpisode}
+                        <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forcePlayNextEpisode_Tooltip.replaceAll(
+                          regexForMultiineTooltips,
+                          ""
+                        )}"></span>
                     </p>
                 </label>
             </div>
@@ -722,6 +755,9 @@ const createOptionDialog = (scriptVersion) => {
           break;
         case "enable-autoplay":
           saveOptions({ enableAutoplay_xhook: e.target.checked });
+          break;
+        case "force-play-next-episode":
+          saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
           break;
         case "nextup-ext-opt-dialog-close":
           optDialog.close();
@@ -981,21 +1017,49 @@ const createUserscriptMenu = (scriptInfo = getScriptInfo()) => {
 const runXhook = () => {
   const xhookUrl = document.documentElement.dataset.xhookUrl;
   const options = JSON.parse(document.documentElement.dataset.options);
+  delete document.documentElement.dataset.xhookUrl;
+  delete document.documentElement.dataset.options;
+
   const script = document.createElement("script");
   script.src = xhookUrl;
+
+  const metadataArray = [];
+  const sectionsArray = [];
+  let mpdId;
+
+  const isMpd = (request, response) => {
+    if (!request.url.match(/\.mpd/)) {
+      return false;
+    }
+    if (response.status !== 200) {
+      return;
+    }
+    if (response.headers?.["content-type"] !== "text/xml") {
+      return false;
+    }
+    return true;
+  };
+
+  const isGetSections = (request, response) => {
+    if (!request.url.includes("GetSections")) {
+      return false;
+    }
+    if (request.headers?.accept !== "application/json") {
+      return false;
+    }
+    if (response.status !== 200) {
+      return false;
+    }
+    return true;
+  };
+
   script.addEventListener("load", () => {
     xhook.after(function (request, response) {
       (() => {
         if (!options.forceHighestResolution_xhook) {
           return;
         }
-        if (!request.url.match(/\.mpd/)) {
-          return;
-        }
-        if (response.status !== 200) {
-          return;
-        }
-        if (response.headers?.["content-type"] !== "text/xml") {
+        if (!isMpd(request, response)) {
           return;
         }
 
@@ -1026,15 +1090,6 @@ const runXhook = () => {
 
           const newMpd = dom.documentElement.outerHTML;
           response.text = newMpd;
-
-          // console.log("force highest resolution", request.url);
-          // console.log({
-          //   height: highestRepresentation.getAttribute("height"),
-          //   width: highestRepresentation.getAttribute("width"),
-          //   bandwidth: highestRepresentation.getAttribute("bandwidth"),
-          //   baseURL:
-          //     highestRepresentation.querySelector("BaseURL")?.textContent,
-          // });
         } catch (e) {
           console.log(e);
         }
@@ -1044,13 +1099,7 @@ const runXhook = () => {
         if (!options.disableNextup_xhook) {
           return;
         }
-        if (!request.url.includes("GetSections")) {
-          return;
-        }
-        if (request.headers?.accept !== "application/json") {
-          return;
-        }
-        if (response.status !== 200) {
+        if (!isGetSections(request, response)) {
           return;
         }
 
@@ -1073,13 +1122,7 @@ const runXhook = () => {
         if (!options.enableAutoplay_xhook) {
           return;
         }
-        if (!request.url.includes("GetSections")) {
-          return;
-        }
-        if (request.headers?.accept !== "application/json") {
-          return;
-        }
-        if (response.status !== 200) {
+        if (!isGetSections(request, response)) {
           return;
         }
 
@@ -1097,12 +1140,230 @@ const runXhook = () => {
           console.log(e);
         }
       })();
+
+      (() => {
+        if (!options.forcePlayNextEpisode_xhook) {
+          return;
+        }
+        const url = request.url;
+        if (url.includes(".mp4")) {
+          const pathname = new window.URL(url).pathname;
+          const found = pathname.match(
+            /([0-9a-zA-Z-]+)_(video|audio)_\d+\.mp4$/
+          );
+          if (!found) {
+            return;
+          }
+          mpdId = found[1];
+        } else if (isGetSections(request, response)) {
+          try {
+            const pageId = new window.URL(url).searchParams.get("pageId");
+            if (!pageId) {
+              return;
+            }
+            const data = JSON.parse(response.text);
+            sectionsArray.push({
+              pageId,
+              data,
+            });
+            if (sectionsArray.length > 20) {
+              sectionsArray.shift();
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        } else {
+          if (
+            !url.includes("GetPlaybackResources") ||
+            !url.includes("CatalogMetadata") ||
+            !url.includes("TransitionTimecodes")
+          ) {
+            return;
+          }
+          if (response.status !== 200) {
+            return;
+          }
+
+          try {
+            const data = JSON.parse(response.text);
+            metadataArray.push(data);
+            if (metadataArray.length > 20) {
+              metadataArray.shift();
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      })();
     });
   });
+
   document.head.appendChild(script);
 
-  delete document.documentElement.dataset.xhookUrl;
-  delete document.documentElement.dataset.options;
+  const detectNextEpisodeId = () => {
+    if (!options.forcePlayNextEpisode_xhook) {
+      return;
+    }
+
+    class DetectNextEpisodeId {
+      constructor(player, video) {
+        this.player = player;
+        this.video = video;
+        this.detect = this._detect.bind(this);
+        this.videoSrcObserver = this.createVideoSrcObserver();
+      }
+
+      getSubtitleText() {
+        const subtitle = this.player.querySelector(
+          ".atvwebplayersdk-subtitle-text"
+        );
+        if (!subtitle) {
+          return;
+        }
+        const newSubtitleText = subtitle.textContent;
+        if (!newSubtitleText) {
+          return;
+        }
+        return newSubtitleText;
+      }
+
+      _detect(event) {
+        if (!event) {
+          return;
+        }
+        const subtitleText = this.getSubtitleText();
+        if (!subtitleText) {
+          return;
+        }
+
+        const metadata = metadataArray.find((meta) => {
+          const defaultUrlSetId = meta?.playbackUrls?.defaultUrlSetId;
+          if (!defaultUrlSetId) {
+            return;
+          }
+          const mpdUrl =
+            meta?.playbackUrls?.urlSets[defaultUrlSetId].urls.manifest.url;
+          return mpdUrl.includes(mpdId);
+        });
+        if (!metadata) {
+          return;
+        }
+        if (!subtitleText.includes(metadata.catalogMetadata?.catalog?.title)) {
+          return;
+        }
+
+        const episodeId = metadata.catalogMetadata?.catalog?.id;
+        const sections = sectionsArray.find((s) => s.pageId === episodeId);
+        if (!sections) {
+          return;
+        }
+
+        const nextItem =
+          sections.data?.sections?.bottom?.collections?.collectionList?.[0]
+            ?.items?.itemList?.[0];
+        if (!nextItem) {
+          return;
+        }
+
+        const autoplayConfig =
+          sections.data?.sections?.bottom?.collections?.collectionList?.[0]
+            ?.autoplayConfig;
+        if (nextItem.metadata?.SlotType !== "NEXT_EPISODE_SLOT") {
+          this.player.dataset.nextEpisodeId = "null";
+          this.player.dataset.isNotNextEpisode = "true";
+        } else if (autoplayConfig?.autoplayCardPreferredImage !== "episode") {
+          this.player.dataset.nextEpisodeId = "null";
+          this.player.dataset.isNotNextEpisode = "true";
+        }
+
+        if (this.player.dataset.nextEpisodeId !== "null") {
+          const nextEpisodeId = nextItem.titleId;
+          if (nextEpisodeId) {
+            if (!this.player.dataset.nextEpisodeId) {
+              this.player.dataset.nextEpisodeId = nextEpisodeId;
+            } else if (this.player.dataset.nextEpisodeId !== nextEpisodeId) {
+              this.player.dataset.nextEpisodeId = nextEpisodeId;
+            }
+          }
+        }
+
+        this.video.removeEventListener("timeupdate", this.detect);
+
+        // Detection of auto play
+        this.videoSrc = this.video.getAttribute("src");
+        this.videoSrcObserver.observe(this.video, {
+          attributes: true,
+          attributeFilter: ["src"],
+        });
+      }
+
+      createVideoSrcObserver() {
+        return new MutationObserver((_, observer) => {
+          const newVideoSrc = this.video.getAttribute("src");
+          if (this.videoSrc !== newVideoSrc) {
+            observer.disconnect();
+            this.video.addEventListener("timeupdate", this.detect);
+            delete this.player.dataset.nextEpisodeId;
+          }
+        });
+      }
+
+      runVideoOpenCloseObserver() {
+        new MutationObserver((_, videoOpenObserver) => {
+          if (!this.player.classList.contains("dv-player-fullscreen")) {
+            return;
+          }
+          videoOpenObserver.disconnect();
+
+          this.video.addEventListener("timeupdate", this.detect);
+
+          new MutationObserver((_, videoCloseObserver) => {
+            if (this.player.classList.contains("dv-player-fullscreen")) {
+              return;
+            }
+            videoCloseObserver.disconnect();
+
+            this.video.removeEventListener("timeupdate", this.detect);
+            this.videoSrcObserver.disconnect();
+            delete this.player.dataset.isNotNextEpisode;
+
+            this.runVideoOpenCloseObserver();
+          }).observe(this.player, {
+            attributes: true,
+            attributeFilter: ["class"],
+          });
+        }).observe(this.player, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+      }
+    }
+
+    const random = window.crypto.randomUUID().replaceAll("-", "");
+
+    new MutationObserver((_) => {
+      const players = document.querySelectorAll(
+        `[id*='dv-web-player']:not([data-detected-from-ext${random}='true'])`
+      );
+      players.forEach((player) => {
+        player.dataset[`detectedFromExt${random}`] = "true";
+        new MutationObserver((_, observer) => {
+          const video = player.querySelector("video");
+          if (!video) {
+            return;
+          }
+          observer.disconnect();
+          const d = new DetectNextEpisodeId(player, video);
+          d.runVideoOpenCloseObserver();
+        }).observe(player, {
+          childList: true,
+          subtree: true,
+        });
+      });
+    }).observe(document, { childList: true, subtree: true });
+  };
+
+  detectNextEpisodeId();
 };
 
 const injectXhook = (
@@ -1113,6 +1374,7 @@ const injectXhook = (
     options.forceHighestResolution_xhook,
     options.disableNextup_xhook,
     options.enableAutoplay_xhook,
+    options.forcePlayNextEpisode_xhook,
   ];
   const shouldInjectXhook = xhookOptions.some((opt) => opt);
   if (!shouldInjectXhook) {
@@ -1595,10 +1857,17 @@ class ElementController {
           return;
         }
         console.log(`previous [${title}], current [${newTitle}]`);
+        const closeBtn = this.player.querySelector(
+          ".atvwebplayersdk-playerclose-button"
+        );
+        if (!closeBtn) {
+          return;
+        }
         if (title !== newTitle) {
-          const closeBtn = this.player.querySelector(
-            ".atvwebplayersdk-playerclose-button"
-          );
+          closeBtn.click();
+        } else if (this.player.dataset.isNotNextEpisode === "true") {
+          // Season changes can be detected if "forcePlayNextEpisode_xhook" is enabled.
+          console.log("Prevented transition to another season");
           closeBtn.click();
         }
       });
@@ -1632,6 +1901,255 @@ class ElementController {
       attributes: true,
     });
   }
+
+  forcePlayNextEpisode(options = getDefaultOptions()) {
+    if (!options.forcePlayNextEpisode_xhook) {
+      return;
+    }
+
+    let titleText = null;
+    let titleChanged = false;
+    let subtitleText = null;
+    const subtitleSet = new Set();
+    let existsNextEpisode = false;
+
+    let closeBtn;
+    let videoClosedByUser = false;
+
+    const getTitleText = () => {
+      const title = this.player.querySelector(".atvwebplayersdk-title-text");
+      if (!title) {
+        return;
+      }
+      const newTitleText = title.textContent;
+      if (!newTitleText) {
+        return;
+      }
+      return newTitleText;
+    };
+
+    const getSubtitleText = () => {
+      const subtitle = this.player.querySelector(
+        ".atvwebplayersdk-subtitle-text"
+      );
+      if (!subtitle) {
+        return;
+      }
+      const newSubtitleText = subtitle.textContent;
+      if (!newSubtitleText) {
+        return;
+      }
+      return newSubtitleText;
+    };
+
+    const titleObserver = new MutationObserver((_, observer) => {
+      const newTitleText = getTitleText();
+      if (!newTitleText) {
+        return;
+      }
+      if (!titleText) {
+        titleText = newTitleText;
+      } else if (titleText !== newTitleText) {
+        titleChanged = true;
+        observer.disconnect();
+      }
+    });
+
+    const videoInfoObserver = new MutationObserver((_) => {
+      if (!this.player.classList.contains("dv-player-fullscreen")) {
+        return;
+      }
+      const nextTitleBtn = this.player.querySelector(
+        ".atvwebplayersdk-nexttitle-button"
+      );
+      if (!nextTitleBtn) {
+        const newSubtitleText = getSubtitleText();
+        if (!newSubtitleText) {
+          subtitleText = null;
+          existsNextEpisode = false;
+        } else if (newSubtitleText !== subtitleText) {
+          subtitleText = newSubtitleText;
+          subtitleSet.add(newSubtitleText);
+          existsNextEpisode = false;
+        }
+        return;
+      }
+
+      const newSubtitleText = getSubtitleText();
+      if (!newSubtitleText) {
+        return;
+      }
+
+      subtitleText = newSubtitleText;
+      subtitleSet.add(newSubtitleText);
+      existsNextEpisode = true;
+    });
+
+    const infobarObserver = new MutationObserver((_, observer) => {
+      const infobarContainer = this.player.querySelector(
+        ".atvwebplayersdk-infobar-container"
+      );
+      if (!infobarContainer) {
+        return;
+      }
+
+      observer.disconnect();
+
+      titleObserver.observe(this.player, {
+        ...observeConfig,
+        attributes: true,
+      });
+
+      videoInfoObserver.observe(infobarContainer, {
+        ...observeConfig,
+        attributes: true,
+      });
+    });
+
+    infobarObserver.observe(this.player, {
+      ...observeConfig,
+      attributes: true,
+    });
+
+    const playNextEpisode = () => {
+      // This ID is obtained using xhook
+      const nextEpisodeId = this.player.dataset.nextEpisodeId;
+      delete this.player.dataset.nextEpisodeId;
+
+      if (titleChanged) {
+        console.log("Title changed");
+        return;
+      }
+      if (!subtitleText || !existsNextEpisode) {
+        console.log("No next episode");
+        return;
+      }
+      if (videoClosedByUser) {
+        // close button
+        console.log("Video closed by user");
+        return;
+      }
+
+      // Temporarily darkens the page.
+      document.body.style.filter = "brightness(0)";
+      setTimeout(() => {
+        document.body.style.filter = "";
+      }, 2000);
+
+      setTimeout(() => {
+        if (videoClosedByUser) {
+          // Esc key
+          console.log("Video closed by user");
+        } else {
+          const newSubtitleText = getSubtitleText();
+          console.log("Target episode", `[${newSubtitleText}]`);
+
+          if (!subtitleSet.has(newSubtitleText)) {
+            const video = this.player.querySelector("video");
+            if (!video.hasAttribute("src")) {
+              console.log("Cannot play next episode");
+            } else {
+              console.log("Play next episode");
+              this.player.classList.add("dv-player-fullscreen");
+              setTimeout(() => {
+                playVideo();
+              }, 500);
+            }
+          } else {
+            if (nextEpisodeId !== "null") {
+              // If the dv-web-player does not have the next episode preloaded.
+              console.log("Play next episode");
+              const origin = window.location.origin;
+              let url = `${origin}/gp/video/detail/${nextEpisodeId}/?autoplay=1&t=0&play-next-episode`;
+              console.log(url);
+              const volumeKey = "atvwebplayersdk_volume";
+              const volumeStr = localStorage.getItem(volumeKey);
+              const volume = parseFloat(volumeStr);
+              if (!Number.isNaN(volume)) {
+                url = `${url}&volume=${volumeStr}`;
+              }
+              localStorage.setItem("atvwebplayersdk_volume", "0");
+              setTimeout(() => {
+                window.location.href = url;
+              }, 200);
+            } else {
+              console.log("Last episode already played");
+            }
+          }
+        }
+        document.body.style.filter = "";
+      }, 1500);
+    };
+
+    const closeBtnClicked = (e) => {
+      if (!e) {
+        return;
+      }
+      videoClosedByUser = true;
+    };
+
+    const closeBtnObserver = new MutationObserver((_, observer) => {
+      const _closeBtn = this.player.querySelector(
+        ".atvwebplayersdk-playerclose-button"
+      );
+      if (!_closeBtn) {
+        return;
+      }
+      closeBtn = _closeBtn;
+      closeBtn.addEventListener("click", closeBtnClicked);
+    });
+
+    closeBtnObserver.observe(this.player, {
+      ...observeConfig,
+      attributes: true,
+    });
+
+    const escPressed = (e) => {
+      if (!e) {
+        return;
+      }
+      if (e.key !== "Escape") {
+        return;
+      }
+      setTimeout(() => {
+        videoClosedByUser = !this.player.classList.contains(
+          "dv-player-fullscreen"
+        );
+      }, 500);
+    };
+
+    document.body.addEventListener("keydown", escPressed);
+
+    new MutationObserver((_, outerObserver) => {
+      if (!this.player.classList.contains("dv-player-fullscreen")) {
+        outerObserver.disconnect();
+        infobarObserver.disconnect();
+        titleObserver.disconnect();
+        videoInfoObserver.disconnect();
+
+        closeBtnObserver.disconnect();
+        closeBtn.removeEventListener("click", closeBtnClicked);
+        setTimeout(() => {
+          document.body.removeEventListener("keydown", escPressed);
+        }, 800);
+
+        playNextEpisode();
+
+        new MutationObserver((_, observer) => {
+          if (this.player.classList.contains("dv-player-fullscreen")) {
+            observer.disconnect();
+            this.forcePlayNextEpisode(options);
+          }
+        }).observe(this.player, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+      }
+    }).observe(this.player, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
 }
 
 const main = () => {
@@ -1643,6 +2161,7 @@ const main = () => {
   updateOptionVersion(scriptInfo);
 
   const options = getOptions();
+  const url = window.location.href;
   let canRunXhook = true;
   let isFirstPlayer = true;
 
@@ -1706,6 +2225,22 @@ const main = () => {
 
         controller.markingCenterOverlaysWrapper();
 
+        const searchParams = new URL(url).searchParams;
+        if (
+          searchParams.has("autoplay") &&
+          searchParams.has("play-next-episode")
+        ) {
+          if (searchParams.has("volume")) {
+            const volumeStr = searchParams.get("volume");
+            const volume = parseFloat(volumeStr);
+            if (!Number.isNaN(volume)) {
+              video.volume = volume;
+              localStorage.setItem("atvwebplayersdk_volume", volume);
+              console.log("Volume restored", volumeStr);
+            }
+          }
+        }
+
         try {
           controller.hideSkipIntroBtn(options);
         } catch (e) {
@@ -1744,6 +2279,12 @@ const main = () => {
 
         try {
           controller.preventsTransitionsToRecommendedVideos(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.forcePlayNextEpisode(options);
         } catch (e) {
           console.log(e);
         }
