@@ -1839,31 +1839,29 @@ class ElementController {
     // Detection of transitions to another season is not supported.
     let titleObserver;
     const parentObserver = new MutationObserver((_, outerObserver) => {
-      const titleText = this.player.querySelector(
-        ".atvwebplayersdk-title-text"
-      );
-      if (!titleText) {
+      const title = this.player.querySelector(".atvwebplayersdk-title-text");
+      if (!title) {
         return;
       }
-      const title = titleText.textContent;
-      if (!title) {
+      const titleText = title.textContent;
+      if (!titleText) {
         return;
       }
       outerObserver.disconnect();
 
       titleObserver = new MutationObserver((_) => {
-        const newTitle = titleText.textContent;
-        if (!newTitle) {
+        const newTitleText = title.textContent;
+        if (!newTitleText) {
           return;
         }
-        console.log(`previous [${title}], current [${newTitle}]`);
+        console.log(`previous [${titleText}], current [${newTitleText}]`);
         const closeBtn = this.player.querySelector(
           ".atvwebplayersdk-playerclose-button"
         );
         if (!closeBtn) {
           return;
         }
-        if (title !== newTitle) {
+        if (titleText !== newTitleText) {
           closeBtn.click();
         } else if (this.player.dataset.isNotNextEpisode === "true") {
           // Season changes can be detected if "forcePlayNextEpisode_xhook" is enabled.
@@ -1871,7 +1869,7 @@ class ElementController {
           closeBtn.click();
         }
       });
-      titleObserver.observe(titleText, observeConfig);
+      titleObserver.observe(title, observeConfig);
     });
 
     parentObserver.observe(this.player, { ...observeConfig, attributes: true });
