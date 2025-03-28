@@ -1893,10 +1893,12 @@ class ElementController {
           }
         }).observe(this.player, {
           attributes: true,
+          attributeFilter: ["class"],
         });
       }
     }).observe(this.player, {
       attributes: true,
+      attributeFilter: ["class"],
     });
   }
 
