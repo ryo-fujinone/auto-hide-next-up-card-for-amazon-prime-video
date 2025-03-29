@@ -327,12 +327,12 @@ const createOptionMessages = () => {
     enableAutoplay_Tooltip:
       "この機能を使用してもプライムビデオの自動再生の設定は変更されません",
     forcePlayNextEpisode:
-      "実験的: 最後まで再生して動画が閉じた場合に次のエピソードを再生する",
-    forcePlayNextEpisode_Tooltip: `以下を必要とする人向けの機能です。
-        ・自動再生の代替手段
-        ・自動再生で6回連続で再生して動画が閉じてしまう挙動への対処\n
-        この機能はサジェストされたコンテンツに遷移した場合の次のエピソードの再生には非対応です。
-        動作の安定性のために [動画終了時にサジェストされたコンテンツに遷移するのを防ぐ] も有効にすることを推奨します。\n
+      "実験的: 動画を最後まで再生して自動的に閉じた場合に次のエピソードを再生する",
+    forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
+        また、自動再生の代替手段としても機能します。\n
+        この機能はサジェストされたコンテンツに遷移した後の次のエピソードの再生をサポートしていません。
+        動作の安定性のために [動画終了時にサジェストされたコンテンツに遷移するのを防ぐ] も有効にすることを推奨します。
+        また、動作の安定のために次のシーズンへの遷移もサポートしていません。\n
         次のエピソードがあるかどうかの判定に1500ミリ秒の待機時間を設定しています。
         最後まで再生して動画が閉じた場合やEscキーの入力で動画を閉じた場合、必要に応じて1500ミリ秒の間は画面を暗くします。`,
     close: "閉じる",
@@ -380,12 +380,12 @@ const createOptionMessages = () => {
     enableAutoplay_Tooltip:
       "Enabling this will not change the autoplay setting for Prime Video",
     forcePlayNextEpisode:
-      "Experimental: Open the next episode if the video is closed after playing to the end",
-    forcePlayNextEpisode_Tooltip: `This feature is for those who need the following
-        - An alternative to autoplay
-        - Solution to the behavior of autoplay that closes the video after 6 consecutive plays.\n
-        This feature does not support playback of the next episode after transitioning to the suggested content.
-        For operational stability, it is recommended that [Prevent transition to suggested content when video ends] also be enabled.\n
+      "Experimental: Play the next episode if the video is played to the end and closed automatically",
+    forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
+        It also works as an alternative to autoplay.\n
+        This feature does not support playing the next episode after transitioning to the suggested content.
+        For operational stability, it is recommended to also enable [Prevent transition to suggested content when video ends].
+        Also, transitions to the next season are not supported for operational stability.\n
         A wait time of 1500 milliseconds is set to determine if the next episode is available.
         If the video is closed after playing to the end or by entering the Esc key, the screen is darkened for 1500 milliseconds if necessary.`,
     close: "Close",
