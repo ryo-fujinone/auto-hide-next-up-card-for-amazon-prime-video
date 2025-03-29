@@ -2225,20 +2225,25 @@ const main = () => {
 
         controller.markingCenterOverlaysWrapper();
 
-        const searchParams = new URL(url).searchParams;
-        if (
-          searchParams.has("autoplay") &&
-          searchParams.has("play-next-episode")
-        ) {
-          if (searchParams.has("volume")) {
-            const volumeStr = searchParams.get("volume");
-            const volume = parseFloat(volumeStr);
-            if (!Number.isNaN(volume)) {
-              video.volume = volume;
-              localStorage.setItem("atvwebplayersdk_volume", volume);
-              console.log("Volume restored", volumeStr);
+        try {
+          // If autoplay is forced, restore volume as needed.
+          const searchParams = new URL(url).searchParams;
+          if (
+            searchParams.has("autoplay") &&
+            searchParams.has("play-next-episode")
+          ) {
+            if (searchParams.has("volume")) {
+              const volumeStr = searchParams.get("volume");
+              const volume = parseFloat(volumeStr);
+              if (!Number.isNaN(volume)) {
+                video.volume = volume;
+                localStorage.setItem("atvwebplayersdk_volume", volume);
+                console.log("Volume restored", volumeStr);
+              }
             }
           }
+        } catch (e) {
+          console.log(e);
         }
 
         try {
