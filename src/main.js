@@ -330,6 +330,8 @@ const createOptionMessages = () => {
       "実験的: 動画を最後まで再生して自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
         また、自動再生の代替手段としても機能します。\n
+        Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
+        Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。\n
         この機能はサジェストされたコンテンツに遷移した後の次のエピソードの再生をサポートしていません。
         動作の安定性のために [動画終了時にサジェストされたコンテンツに遷移するのを防ぐ] も有効にすることを推奨します。
         また、動作の安定のために次のシーズンへの遷移もサポートしていません。\n
@@ -383,6 +385,8 @@ const createOptionMessages = () => {
       "Experimental: Play the next episode if the video is played to the end and closed automatically",
     forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
         It also works as an alternative to autoplay.\n
+        For Chrome, you must allow [audio] permissions for the site.
+        For Firefox, you must allow the [Autoplay] permission for the site.\n
         This feature does not support playing the next episode after transitioning to the suggested content.
         For operational stability, it is recommended to also enable [Prevent transition to suggested content when video ends].
         Also, transitions to the next season are not supported for operational stability.\n
