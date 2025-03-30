@@ -327,7 +327,7 @@ const createOptionMessages = () => {
     enableAutoplay_Tooltip:
       "この機能を使用してもプライムビデオの自動再生の設定は変更されません",
     forcePlayNextEpisode:
-      "実験的: 動画を最後まで再生して自動的に閉じた場合に次のエピソードを再生する",
+      "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
         また、自動再生の代替手段としても機能します。\n
         Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
@@ -382,7 +382,7 @@ const createOptionMessages = () => {
     enableAutoplay_Tooltip:
       "Enabling this will not change the autoplay setting for Prime Video",
     forcePlayNextEpisode:
-      "Experimental: Play the next episode if the video is played to the end and closed automatically",
+      "Experimental: Play the next episode if the video is automatically closed at the end of the video",
     forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
         It also works as an alternative to autoplay.\n
         For Chrome, you must allow [audio] permissions for the site.
