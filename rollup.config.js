@@ -33,14 +33,14 @@ const createRollupOptions = () => {
   const metadata = JSON.parse(
     readFileSync("misc/userscript.meta.json", "utf-8")
   );
-  const pkgMetadata = JSON.parse(readFileSync("package.json", "utf-8"));
+  const manifest = JSON.parse(readFileSync("src/manifest.json"), "utf-8");
 
-  const pkgVersion = pkgMetadata.version;
-  metadata.version = pkgVersion;
+  const version = manifest.version;
+  metadata.version = version;
 
   const rootDir = process.cwd();
   const inputPath = "src/main.js";
-  const scriptName = `auto-hide-next-up-card_${pkgVersion}`;
+  const scriptName = `auto-hide-next-up-card_${version}`;
 
   const userscriptPath = `dist/userscript/${scriptName}.user.js`;
   const userscriptUrl = `file://${rootDir}/${userscriptPath}`;

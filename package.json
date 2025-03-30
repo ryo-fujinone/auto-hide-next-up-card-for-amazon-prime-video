@@ -1,6 +1,6 @@
 {
   "name": "auto-hide-next-up-card-for-amazon-prime-video",
-  "version": "2.8.0.1",
+  "version": "2.8.0",
   "private": true,
   "type": "module",
   "scripts": {

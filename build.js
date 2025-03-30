@@ -8,9 +8,10 @@ const distDir = "dist";
 const chromeExtDir = path.join(distDir, "chrome");
 const firefoxExtDir = path.join(distDir, "firefox");
 
-const pkgMetadata = JSON.parse(fs.readFileSync("package.json", "utf-8"));
-const pkgVersion = pkgMetadata.version;
-const baseArchiveName = `${extName}_${pkgVersion}`;
+const manifest = JSON.parse(
+  fs.readFileSync(path.join("src", "manifest.json"), "utf-8")
+);
+const baseArchiveName = `${extName}_${manifest.version}`;
 
 const prepareSrc = (parentDir) => {
   if (!fs.existsSync(parentDir)) {
