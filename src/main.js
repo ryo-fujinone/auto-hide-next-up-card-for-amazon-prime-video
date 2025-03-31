@@ -2045,22 +2045,8 @@ class ElementController {
           // Esc key
           console.log("Video closed by user");
         } else {
-          const newSubtitleText = getSubtitleText();
-          console.log("Target episode", `[${newSubtitleText}]`);
-
-          if (!subtitleSet.has(newSubtitleText)) {
-            const video = this.player.querySelector("video");
-            if (!video.hasAttribute("src")) {
-              console.log("Cannot play next episode");
-            } else {
-              console.log("Play next episode");
-              this.player.classList.add("dv-player-fullscreen");
-              setTimeout(() => {
-                playVideo();
-              }, 500);
-            }
-          } else {
-            if (nextEpisodeId !== "null") {
+          const movePage = () => {
+            if (nextEpisodeId && nextEpisodeId !== "null") {
               // If the dv-web-player does not have the next episode preloaded.
               console.log("Play next episode");
               const origin = window.location.origin;
@@ -2077,8 +2063,33 @@ class ElementController {
                 window.location.href = url;
               }, 200);
             } else {
-              console.log("Last episode already played");
+              console.log(
+                "Either the last episode has already been played or a problem may have occurred."
+              );
             }
+          };
+
+          const newSubtitleText = getSubtitleText();
+          console.log("Target episode", `[${newSubtitleText}]`);
+          if (!newSubtitleText) {
+            // This pattern if played from a page other than the individual pages of the series
+            movePage();
+          } else if (!subtitleSet.has(newSubtitleText)) {
+            // Expected normal pattern
+            const video = this.player.querySelector("video");
+            if (!video.hasAttribute("src")) {
+              movePage();
+            } else {
+              console.log("Play next episode");
+              this.player.classList.add("dv-player-fullscreen");
+              setTimeout(() => {
+                playVideo();
+              }, 500);
+            }
+          } else {
+            // If for some reason the video player information is not updated.
+            // This pattern sometimes occurs
+            movePage();
           }
         }
         document.body.style.filter = "";
