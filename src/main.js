@@ -1165,6 +1165,10 @@ const runXhook = () => {
             if (!pageId) {
               return;
             }
+            if (sectionsArray.find((s) => s.pageId === pageId)) {
+              return;
+            }
+
             const data = JSON.parse(response.text);
             sectionsArray.push({
               pageId,
@@ -1190,6 +1194,16 @@ const runXhook = () => {
 
           try {
             const data = JSON.parse(response.text);
+            const id = data.catalogMetadata?.catalog?.id;
+            if (!id) {
+              return;
+            }
+            if (
+              metadataArray.find((d) => d.catalogMetadata?.catalog?.id === id)
+            ) {
+              return;
+            }
+
             metadataArray.push(data);
             if (metadataArray.length > 20) {
               metadataArray.shift();
