@@ -2181,6 +2181,23 @@ class ElementController {
   }
 }
 
+const restoreVolume = (video, url) => {
+  const searchParams = new URL(url).searchParams;
+  if (
+    searchParams.has("autoplay") &&
+    searchParams.has("play-next-episode") &&
+    searchParams.has("volume")
+  ) {
+    const volumeStr = searchParams.get("volume");
+    const volume = parseFloat(volumeStr);
+    if (!Number.isNaN(volume)) {
+      video.volume = volume;
+      localStorage.setItem("atvwebplayersdk_volume", volume);
+      console.log("Volume restored", volumeStr);
+    }
+  }
+};
+
 const main = () => {
   if (!localStorage.getItem("nextup-ext")) {
     saveDefaultOptions();
@@ -2193,6 +2210,7 @@ const main = () => {
   const url = window.location.href;
   let canRunXhook = true;
   let isFirstPlayer = true;
+  let canRestoreVolume = true;
 
   new MutationObserver((_) => {
     const players = document.querySelectorAll(
@@ -2254,25 +2272,14 @@ const main = () => {
 
         controller.markingCenterOverlaysWrapper();
 
-        try {
-          // If autoplay is forced, restore volume as needed.
-          const searchParams = new URL(url).searchParams;
-          if (
-            searchParams.has("autoplay") &&
-            searchParams.has("play-next-episode")
-          ) {
-            if (searchParams.has("volume")) {
-              const volumeStr = searchParams.get("volume");
-              const volume = parseFloat(volumeStr);
-              if (!Number.isNaN(volume)) {
-                video.volume = volume;
-                localStorage.setItem("atvwebplayersdk_volume", volume);
-                console.log("Volume restored", volumeStr);
-              }
-            }
+        if (canRestoreVolume) {
+          canRestoreVolume = false;
+          try {
+            // If autoplay is forced, restore volume as needed.
+            restoreVolume(video, url);
+          } catch (e) {
+            console.log(e);
           }
-        } catch (e) {
-          console.log(e);
         }
 
         try {
