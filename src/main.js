@@ -633,12 +633,12 @@ const createOptionDialog = async (scriptVersion) => {
                     } />
                     <p>${messages.forceHighestResolution}</p>
                 </label>
-                <label>
+                <!--<label>
                     <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
                       options.disableNextup_xhook ? "checked" : ""
                     } />
                     <p>${messages.disableNextup}</p>
-                </label>
+                </label>-->
                 <label>
                     <input type="checkbox" id="enable-autoplay" name="enable-autoplay" ${
                       options.enableAutoplay_xhook ? "checked" : ""
@@ -1208,28 +1208,50 @@ const runXhook = () => {
         }
       })();
 
-      (() => {
-        if (!options.disableNextup_xhook) {
-          return;
-        }
-        if (!isGetSections(request, response)) {
-          return;
-        }
+      /**
+       * It is possible that the coping method of setting showAutoplayCard to false no longer works.
+       * Therefore, the following is temporarily commented out.
+       */
+      // (() => {
+      //   if (!options.disableNextup_xhook) {
+      //     return;
+      //   }
+      //   const _isGetSections = isGetSections(request, response);
+      //   const _hasNextUpV2Resource = hasNextUpV2Resource(request, response);
+      //   if (!_isGetSections && !_hasNextUpV2Resource) {
+      //     return;
+      //   }
 
-        try {
-          const data = JSON.parse(response.text);
-          const autoplayConfig =
-            data?.sections?.bottom?.collections?.collectionList?.[0]
-              ?.autoplayConfig;
-          if (!autoplayConfig) {
-            return;
-          }
-          autoplayConfig.showAutoplayCard = false;
-          response.text = JSON.stringify(data);
-        } catch (e) {
-          console.log(e);
-        }
-      })();
+      //   if (_isGetSections) {
+      //     try {
+      //       const data = JSON.parse(response.text);
+      //       const autoplayConfig =
+      //         data?.sections?.bottom?.collections?.collectionList?.[0]
+      //           ?.autoplayConfig;
+      //       if (!autoplayConfig) {
+      //         return;
+      //       }
+      //       autoplayConfig.showAutoplayCard = false;
+      //       response.text = JSON.stringify(data);
+      //     } catch (e) {
+      //       console.log(e);
+      //     }
+      //   } else if (_hasNextUpV2Resource) {
+      //     try {
+      //       const data = JSON.parse(response.text);
+      //       const autoplayConfig =
+      //         data?.resources?.nextUpV2?.card?.autoPlayConfig;
+      //       if (!autoplayConfig) {
+      //         return;
+      //       }
+      //       console.log(autoplayConfig);
+      //       autoplayConfig.showAutoplayCard = false;
+      //       response.text = JSON.stringify(data);
+      //     } catch (e) {
+      //       console.log(e);
+      //     }
+      //   }
+      // })();
 
       (() => {
         if (!options.enableAutoplay_xhook) {
@@ -1513,7 +1535,7 @@ const runXhook = () => {
 const injectXhook = (options = getDefaultOptions()) => {
   const xhookOptions = [
     options.forceHighestResolution_xhook,
-    options.disableNextup_xhook,
+    // options.disableNextup_xhook,
     options.enableAutoplay_xhook,
     options.forcePlayNextEpisode_xhook,
   ];
