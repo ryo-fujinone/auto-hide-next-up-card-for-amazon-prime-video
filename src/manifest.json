@@ -10,7 +10,7 @@
     "48": "icons/48.png",
     "128": "icons/128.png"
   },
-  "permissions": ["contextMenus"],
+  "permissions": ["contextMenus", "storage"],
   "background": {
     "service_worker": "background.js"
   },

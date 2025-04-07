@@ -32,6 +32,7 @@ const getDefaultOptions = () => {
 
 class ScriptInfo {
   static #info;
+
   static get() {
     if (this.#info) {
       return this.#info;
@@ -73,6 +74,16 @@ class ScriptInfo {
     };
     return this.#info;
   }
+
+  static isUserScript() {
+    const type = this.get().scriptType;
+    return type === "user-script";
+  }
+
+  static isChromeExtension() {
+    const type = this.get().scriptType;
+    return type === "chrome-extension";
+  }
 }
 
 // array of alphabets used to set shortcut keys.
@@ -111,31 +122,39 @@ const addStyle = (css, id) => {
 };
 
 const saveDefaultOptions = () => {
-  const jsonStr = JSON.stringify(getDefaultOptions());
-  localStorage.setItem("nextup-ext", jsonStr);
+  return new Promise((resolve) => {
+    const jsonStr = JSON.stringify(getDefaultOptions());
+    localStorage.setItem("nextup-ext", jsonStr);
+    resolve();
+  });
 };
 
 const getOptions = () => {
-  const jsonStr = localStorage.getItem("nextup-ext");
-  if (!jsonStr) {
-    saveDefaultOptions();
-    return getDefaultOptions();
-  }
-  return JSON.parse(jsonStr);
+  return new Promise(async (resolve) => {
+    const jsonStr = localStorage.getItem("nextup-ext");
+    if (!jsonStr) {
+      await saveDefaultOptions();
+      resolve(getDefaultOptions());
+    }
+    resolve(JSON.parse(jsonStr));
+  });
 };
 
 const saveOptions = (_newOptions = {}) => {
-  const options = getOptions();
-  const newOptions = {
-    ...options,
-    ..._newOptions,
-  };
-  const jsonStr = JSON.stringify(newOptions);
-  localStorage.setItem("nextup-ext", jsonStr);
+  return new Promise(async (resolve) => {
+    const options = await getOptions();
+    const newOptions = {
+      ...options,
+      ..._newOptions,
+    };
+    const jsonStr = JSON.stringify(newOptions);
+    localStorage.setItem("nextup-ext", jsonStr);
+    resolve();
+  });
 };
 
-const updateOptionVersion = (scriptInfo) => {
-  const options = getOptions();
+const updateOptionVersion = async (scriptInfo) => {
+  const options = await getOptions();
   if (options.scriptVersion === scriptInfo.scriptVersion) {
     // Developers can force updates to option values.
     const key = "nextup-ext-force-update-option-version";
@@ -204,8 +223,8 @@ const worksWithDialog = {
       this.whenClosed();
     }
   },
-  setShortcutKeyVal: function () {
-    const options = getOptions();
+  setShortcutKeyVal: async function () {
+    const options = await getOptions();
     let shortcutKeyStrs = [];
     if (options.shortcutKey.ctrl) {
       shortcutKeyStrs.push("Ctrl");
@@ -223,7 +242,7 @@ const worksWithDialog = {
       shortcutKeyStrs.push(char);
     } else {
       shortcutKeyStrs = ["Alt", "P"];
-      saveOptions({ shortcutKey: getDefaultOptions().shortcutKey });
+      await saveOptions({ shortcutKey: getDefaultOptions().shortcutKey });
     }
 
     if (!this.changeShortcutKeyVal) {
@@ -237,7 +256,7 @@ const worksWithDialog = {
     }
   },
   changeShortcutKeyVal: null,
-  _changeShortcutKeyVal: function (e) {
+  _changeShortcutKeyVal: async function (e) {
     if (e.code === "Tab" || e.code === "Escape" || e.code === "F5") {
       return;
     }
@@ -270,11 +289,11 @@ const worksWithDialog = {
     const shortcutKeyInput = getShortcutKeyInput();
     shortcutKeyInput.value = shortcutKeyStr;
 
-    saveOptions({ shortcutKey: newShortcutKeyOptions });
+    await saveOptions({ shortcutKey: newShortcutKeyOptions });
   },
-  whenOpening: function () {
+  whenOpening: async function () {
     pauseVideo();
-    this.setShortcutKeyVal();
+    await this.setShortcutKeyVal();
     if (!this.clickedOutSide) {
       this.clickedOutSide = this._clickedOutSide.bind(this);
     }
@@ -407,13 +426,13 @@ const createOptionMessages = () => {
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
 
-const createOptionDialog = (scriptVersion) => {
+const createOptionDialog = async (scriptVersion) => {
   if (getOptionDialog()) {
     return;
   }
 
   const messages = createOptionMessages();
-  const options = getOptions();
+  const options = await getOptions();
 
   const regexForMultiineTooltips = /^[^\S\r\n]*/gm;
 
@@ -698,9 +717,9 @@ const createOptionDialog = (scriptVersion) => {
   optDialog.toggleAttribute("open");
   optDialog.style.setProperty("visibility", "");
 
-  new MutationObserver((_) => {
+  new MutationObserver(async (_) => {
     if (optDialog.hasAttribute("open")) {
-      worksWithDialog.whenOpening();
+      await worksWithDialog.whenOpening();
     } else {
       worksWithDialog.whenClosed();
     }
@@ -708,7 +727,7 @@ const createOptionDialog = (scriptVersion) => {
 
   optDialog.addEventListener(
     "click",
-    (e) => {
+    async (e) => {
       const idName = e.target.id;
       if (idName === "") {
         return;
@@ -716,62 +735,62 @@ const createOptionDialog = (scriptVersion) => {
 
       switch (idName) {
         case "hide-skip-intro-btn":
-          saveOptions({ hideSkipIntroBtn: e.target.checked });
+          await saveOptions({ hideSkipIntroBtn: e.target.checked });
           break;
         case "show-skip-intro-btn":
-          saveOptions({ showSkipIntroBtnOnOverlay: e.target.checked });
+          await saveOptions({ showSkipIntroBtnOnOverlay: e.target.checked });
           break;
         case "hide-nextup":
-          saveOptions({ hideNextup: e.target.checked });
+          await saveOptions({ hideNextup: e.target.checked });
           break;
         case "temporarily-disable-overlay":
-          saveOptions({ temporarilyDisableOverlay: e.target.checked });
+          await saveOptions({ temporarilyDisableOverlay: e.target.checked });
           break;
         case "prevents-darkening-in-conjunction-with-nextup":
-          saveOptions({
+          await saveOptions({
             preventsDarkeningInConjunctionWithNextup: e.target.checked,
           });
           break;
         case "show-nextup":
-          saveOptions({ showNextupOnOverlay: e.target.checked });
+          await saveOptions({ showNextupOnOverlay: e.target.checked });
           break;
         case "hide-reactions":
-          saveOptions({ hideReactions: e.target.checked });
+          await saveOptions({ hideReactions: e.target.checked });
           break;
         case "show-reactions":
-          saveOptions({ showReactionsOnOverlay: e.target.checked });
+          await saveOptions({ showReactionsOnOverlay: e.target.checked });
           break;
         case "prevents-transitions-to-recommended-videos":
-          saveOptions({
+          await saveOptions({
             preventsTransitionsToRecommendedVideos: e.target.checked,
           });
           break;
         case "hide-rationg":
-          saveOptions({ hideRating: e.target.checked });
+          await saveOptions({ hideRating: e.target.checked });
           break;
         case "prevents-darkening":
-          saveOptions({ preventsDarkening: e.target.checked });
+          await saveOptions({ preventsDarkening: e.target.checked });
           break;
         case "add-outlines-for-texts-and-icons":
-          saveOptions({ addOutlinesForTextsAndIcons: e.target.checked });
+          await saveOptions({ addOutlinesForTextsAndIcons: e.target.checked });
           break;
         case "move-center-buttons-to-bottom":
-          saveOptions({ moveCenterButtonsToBottom: e.target.checked });
+          await saveOptions({ moveCenterButtonsToBottom: e.target.checked });
           break;
         case "enable-shortcutkey":
-          saveOptions({ shortcutKeyIsEnabled: e.target.checked });
+          await saveOptions({ shortcutKeyIsEnabled: e.target.checked });
           break;
         case "force-highest-resolution":
-          saveOptions({ forceHighestResolution_xhook: e.target.checked });
+          await saveOptions({ forceHighestResolution_xhook: e.target.checked });
           break;
         case "disable-nextup":
-          saveOptions({ disableNextup_xhook: e.target.checked });
+          await saveOptions({ disableNextup_xhook: e.target.checked });
           break;
         case "enable-autoplay":
-          saveOptions({ enableAutoplay_xhook: e.target.checked });
+          await saveOptions({ enableAutoplay_xhook: e.target.checked });
           break;
         case "force-play-next-episode":
-          saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
+          await saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
           break;
         case "nextup-ext-opt-dialog-close":
           optDialog.close();
@@ -789,7 +808,7 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
     return;
   }
 
-  document.body.addEventListener("keydown", (e) => {
+  document.body.addEventListener("keydown", async (e) => {
     const video = getVisibleVideo();
     if (!video || !video.checkVisibility()) {
       return;
@@ -800,7 +819,7 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
       return;
     }
 
-    const options = getOptions();
+    const options = await getOptions();
     if (
       e.code === options.shortcutKey.charCode &&
       e.ctrlKey === options.shortcutKey.ctrl &&
@@ -1007,8 +1026,8 @@ const createOptionBtnOnNavbar = () => {
   optionBtn.main();
 };
 
-const createUserscriptMenu = (scriptInfo = ScriptInfo.get()) => {
-  if (scriptInfo.scriptType !== "user-script") {
+const createUserScriptMenu = () => {
+  if (!ScriptInfo.isUserScript()) {
     return;
   }
   let name = "Open Options Dialog";
@@ -1394,10 +1413,7 @@ const runXhook = () => {
   detectNextEpisodeId();
 };
 
-const injectXhook = (
-  scriptInfo = ScriptInfo.get(),
-  options = getDefaultOptions()
-) => {
+const injectXhook = (options = getDefaultOptions()) => {
   const xhookOptions = [
     options.forceHighestResolution_xhook,
     options.disableNextup_xhook,
@@ -1428,7 +1444,7 @@ const injectXhook = (
 
   let xhookUrl = "https://unpkg.com/xhook@latest/dist/xhook.min.js";
   try {
-    if (scriptInfo.scriptType === "chrome-extension") {
+    if (ScriptInfo.isChromeExtension()) {
       xhookUrl = chrome?.runtime?.getURL("xhook.min.js");
     }
   } catch (e) {}
@@ -2208,15 +2224,15 @@ const restoreVolume = (video, url) => {
   }
 };
 
-const main = () => {
+const main = async () => {
   if (!localStorage.getItem("nextup-ext")) {
-    saveDefaultOptions();
+    await saveDefaultOptions();
   }
 
   const scriptInfo = ScriptInfo.get();
-  updateOptionVersion(scriptInfo);
+  await updateOptionVersion(scriptInfo);
 
-  const options = getOptions();
+  const options = await getOptions();
   const url = window.location.href;
   let canRunXhook = true;
   let isFirstPlayer = true;
@@ -2226,13 +2242,13 @@ const main = () => {
     const players = document.querySelectorAll(
       "[id*='dv-web-player']:not([data-detected-from-ext='true'])"
     );
-    players.forEach((player) => {
+    players.forEach(async (player) => {
       player.dataset.detectedFromExt = "true";
 
       if (canRunXhook) {
         canRunXhook = false;
         try {
-          injectXhook(scriptInfo, options);
+          injectXhook(options);
         } catch (e) {
           console.log(e);
         }
@@ -2255,13 +2271,13 @@ const main = () => {
         }
 
         try {
-          createOptionDialog(scriptInfo.scriptVersion);
+          await createOptionDialog(scriptInfo.scriptVersion);
         } catch (e) {
           console.log(e);
         }
 
         try {
-          createUserscriptMenu(scriptInfo);
+          createUserScriptMenu();
         } catch (e) {
           console.log(e);
         }
