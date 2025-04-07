@@ -2,6 +2,7 @@ const observeConfig = Object.freeze({ childList: true, subtree: true });
 
 const getDefaultOptions = () => {
   return {
+    skipAds: true,
     hideSkipIntroBtn: true,
     showSkipIntroBtnOnOverlay: false,
     hideNextup: true,
@@ -379,6 +380,8 @@ const worksWithDialog = {
 const createOptionMessages = () => {
   const jaMessages = {
     promptReloadPage: "オプションを変更した場合はページをリロードしてください",
+    skipAds: "広告をスキップする",
+    skipAds_Tooltip: "本編をスキップしてしまわないように1500ミリ秒分を残します",
     hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
     showSkipIntroBtnOnOverlay:
       "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
@@ -434,6 +437,8 @@ const createOptionMessages = () => {
   };
   const enMessages = {
     promptReloadPage: "If you change the options, please reload the page",
+    skipAds: "Skip ads",
+    skipAds_Tooltip: "Leave 1500 ms for stability of operation",
     hideSkipIntroBtn: "Hide skip intro button",
     showSkipIntroBtnOnOverlay:
       "Show skip intro button when overlay display is enabled",
@@ -506,6 +511,17 @@ const createOptionDialog = async (scriptVersion) => {
             <div class="group-title nextup-ext-opt-dialog-note">
               <p>${messages.promptReloadPage}</p>            
             </div>
+            <label>
+                <input type="checkbox" id="skip-ads" name="skip-ads" ${
+                  options.skipAds ? "checked" : ""
+                } />
+                <p>
+                    ${messages.skipAds}
+                    <span class="nextup-ext-opt-dialog-tooltip" title="${
+                      messages.skipAds_Tooltip
+                    }"></span>
+                </p>
+            </label>
             <label>
                 <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
                   options.hideSkipIntroBtn ? "checked" : ""
@@ -798,6 +814,9 @@ const createOptionDialog = async (scriptVersion) => {
       }
 
       switch (idName) {
+        case "skip-ads":
+          await saveOptions({ skipAds: e.target.checked });
+          break;
         case "hide-skip-intro-btn":
           await saveOptions({ hideSkipIntroBtn: e.target.checked });
           break;
@@ -1644,6 +1663,79 @@ class ElementController {
     }
   }
 
+  skipAds(options = getDefaultOptions()) {
+    if (!options.skipAds) {
+      return;
+    }
+
+    if (!document.querySelector("#skipAds")) {
+      const css = `
+        .atvwebplayersdk-ad-timer-countdown {
+          display: none !important;
+        }
+        .atvwebplayersdk-go-ad-free-button {
+          display: none !important;
+        }
+        .atvwebplayersdk-seek-unavailable-text {
+          display: none !important;
+        }
+      `;
+      addStyle(css, "skipAds");
+    }
+
+    let canSkip = true;
+    new MutationObserver((_) => {
+      if (!canSkip) {
+        return;
+      }
+      const remainingTimeElem = this.player.querySelector(
+        ".atvwebplayersdk-ad-timer-remaining-time"
+      );
+      if (!remainingTimeElem) {
+        return;
+      }
+
+      const video = this.player.querySelector("video");
+      if (!video?.currentTime) {
+        return;
+      }
+
+      video.muted = true;
+      setTimeout(() => {
+        video.muted = false;
+      }, 2000);
+
+      const remainingTimeStr = remainingTimeElem.textContent;
+      const mached = remainingTimeStr.match(/(\d?\d):{0,2}(\d?\d)/);
+      if (!mached) {
+        video.muted = false;
+        return;
+      }
+
+      let adTime = 0;
+      const remainingTimeArray = [mached[1], mached[2]];
+      for (const [i, timeStr] of remainingTimeArray.entries()) {
+        adTime +=
+          parseInt(timeStr) * Math.pow(60, remainingTimeArray.length - 1 - i);
+      }
+      if (adTime <= 1) {
+        video.muted = false;
+        return;
+      }
+
+      canSkip = false;
+      adTime -= 1.5;
+      console.log(`Skip ${adTime} seconds`);
+      video.currentTime += adTime;
+      video.muted = false;
+      console.log("Skipped ads");
+
+      setTimeout(() => {
+        canSkip = true;
+      }, 3000);
+    }).observe(this.player, { ...observeConfig, characterData: true });
+  }
+
   hideSkipIntroBtn(options = getDefaultOptions()) {
     if (!options.hideSkipIntroBtn) {
       return;
@@ -2438,6 +2530,12 @@ const main = async () => {
           } catch (e) {
             console.log(e);
           }
+        }
+
+        try {
+          controller.skipAds(options);
+        } catch (e) {
+          console.log(e);
         }
 
         try {
