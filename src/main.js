@@ -53,7 +53,7 @@ class ScriptInfo {
       // console.log(e);
     }
 
-    // chrome extension
+    // chrome/firefox extension
     try {
       const chromeExtVer = chrome?.runtime?.getManifest()?.version;
       if (typeof chromeExtVer === "string") {
@@ -81,6 +81,7 @@ class ScriptInfo {
   }
 
   static isChromeExtension() {
+    // This is also “true” when using Firefox
     const type = this.get().scriptType;
     return type === "chrome-extension";
   }
@@ -121,34 +122,78 @@ const addStyle = (css, id) => {
   document.head.appendChild(style);
 };
 
+const saveOptionsToChromeStorage = async (newOptions) => {
+  await chrome.storage.local.set({ options: newOptions });
+};
+
+const getOptionsFromChromeStorage = async () => {
+  const result = await chrome.storage.local.get(["options"]);
+  return result.options;
+};
+
+const saveOptionsToLocalStorage = (newOptions) => {
+  const jsonStr = JSON.stringify(newOptions);
+  localStorage.setItem("nextup-ext", jsonStr);
+};
+
+const getOptionsFromLocalStorage = () => {
+  return localStorage.getItem("nextup-ext");
+};
+
 const saveDefaultOptions = () => {
-  return new Promise((resolve) => {
-    const jsonStr = JSON.stringify(getDefaultOptions());
-    localStorage.setItem("nextup-ext", jsonStr);
+  return new Promise(async (resolve) => {
+    const newOptions = getDefaultOptions();
+    if (ScriptInfo.isChromeExtension()) {
+      await saveOptionsToChromeStorage(newOptions);
+    } else {
+      saveOptionsToLocalStorage(newOptions);
+    }
     resolve();
   });
 };
 
 const getOptions = () => {
   return new Promise(async (resolve) => {
-    const jsonStr = localStorage.getItem("nextup-ext");
-    if (!jsonStr) {
-      await saveDefaultOptions();
-      resolve(getDefaultOptions());
+    if (ScriptInfo.isChromeExtension()) {
+      const options = await getOptionsFromChromeStorage();
+      if (!options) {
+        await saveDefaultOptions();
+        resolve(getDefaultOptions());
+      } else {
+        resolve(options);
+      }
+    } else {
+      const jsonStr = getOptionsFromLocalStorage();
+      if (!jsonStr) {
+        await saveDefaultOptions();
+        resolve(getDefaultOptions());
+      } else {
+        resolve(JSON.parse(jsonStr));
+      }
     }
-    resolve(JSON.parse(jsonStr));
   });
 };
 
-const saveOptions = (_newOptions = {}) => {
+const saveOptions = (_newOptions = {}, shouldReplace = false) => {
   return new Promise(async (resolve) => {
-    const options = await getOptions();
-    const newOptions = {
-      ...options,
-      ..._newOptions,
-    };
-    const jsonStr = JSON.stringify(newOptions);
-    localStorage.setItem("nextup-ext", jsonStr);
+    let newOptions;
+    if (shouldReplace) {
+      // This pattern is required for the updateOptionVersion function
+      newOptions = _newOptions;
+    } else {
+      // Normal pattern
+      const options = await getOptions();
+      newOptions = {
+        ...options,
+        ..._newOptions,
+      };
+    }
+
+    if (ScriptInfo.isChromeExtension()) {
+      await saveOptionsToChromeStorage(newOptions);
+    } else {
+      saveOptionsToLocalStorage(newOptions);
+    }
     resolve();
   });
 };
@@ -177,8 +222,27 @@ const updateOptionVersion = async (scriptInfo) => {
     }
     return obj;
   }, {});
-  const jsonStr = JSON.stringify(newOptions);
-  localStorage.setItem("nextup-ext", jsonStr);
+
+  await saveOptions(newOptions, true);
+};
+
+const migrateStorage = async () => {
+  if (!ScriptInfo.isChromeExtension()) {
+    return;
+  }
+  if (await getOptionsFromChromeStorage()) {
+    localStorage.removeItem("nextup-ext");
+    return;
+  }
+
+  const jsonStr = getOptionsFromLocalStorage();
+  if (!jsonStr) {
+    return;
+  }
+
+  const options = JSON.parse(jsonStr);
+  await saveOptionsToChromeStorage(options);
+  localStorage.removeItem("nextup-ext");
 };
 
 const getOptionDialog = () => {
@@ -2225,8 +2289,10 @@ const restoreVolume = (video, url) => {
 };
 
 const main = async () => {
-  if (!localStorage.getItem("nextup-ext")) {
-    await saveDefaultOptions();
+  try {
+    await migrateStorage();
+  } catch (e) {
+    console.log(e);
   }
 
   const scriptInfo = ScriptInfo.get();
