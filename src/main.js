@@ -1763,9 +1763,20 @@ class ElementController {
           ".atvwebplayersdk-nextupcardhide-button"
         );
         if (hideButton) {
-          // Temporarily disable the overlay because it will be displayed by executing click().
-          this.temporarilyDisableOverlay(options, 5000);
-          hideButton.click();
+          const video = this.player.querySelector("video");
+          if (!video) {
+            // Temporarily disable the overlay because it will be displayed by executing click().
+            this.temporarilyDisableOverlay(options, 5000);
+            hideButton.click();
+          } else {
+            // If you press the hide button on the Next up card that appears 5 seconds before the end of the video,the autoplay seems to be canceled.
+            const currentTime = video.currentTime;
+            const duration = video.duration;
+            if (duration - currentTime >= 6) {
+              this.temporarilyDisableOverlay(options, 5000);
+              hideButton.click();
+            }
+          }
         }
       }).observe(wrapper, observeConfig);
 
