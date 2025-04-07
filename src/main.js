@@ -1139,8 +1139,10 @@ const runXhook = () => {
   const script = document.createElement("script");
   script.src = xhookUrl;
 
-  const metadataArray = [];
-  const sectionsArray = [];
+  const metadataResourceArray = [];
+  const nextUpV2ResourceArray = [];
+  const getVodPlaybackResourcesArray = [];
+
   let mpdId;
 
   const isMpd = (request, response) => {
@@ -1169,11 +1171,40 @@ const runXhook = () => {
     return true;
   };
 
+  const isGetVodPlaybackResources = (request, response) => {
+    if (!request.url.includes("GetVodPlaybackResources")) {
+      return false;
+    }
+    if (response.status !== 200) {
+      return false;
+    }
+    if (response.headers?.["content-type"] !== "application/json") {
+      return false;
+    }
+    return true;
+  };
+
   const hasNextUpV2Resource = (request, response) => {
     if (!request.url.includes("playerChromeResources")) {
       return false;
     }
     if (!request.url.includes("nextUpV2")) {
+      return false;
+    }
+    if (response.status !== 200) {
+      return false;
+    }
+    if (response.headers?.["content-type"] !== "application/json") {
+      return false;
+    }
+    return true;
+  };
+
+  const hasCatalogMetadataV2Resource = (request, response) => {
+    if (!request.url.includes("playerChromeResources")) {
+      return false;
+    }
+    if (!request.url.includes("catalogMetadataV2")) {
       return false;
     }
     if (response.status !== 200) {
@@ -1317,6 +1348,8 @@ const runXhook = () => {
           return;
         }
         const url = request.url;
+        hasCatalogMetadataV2Resource(request, response);
+        isGetVodPlaybackResources(request, response);
         if (url.includes(".mp4")) {
           const pathname = new window.URL(url).pathname;
           const found = pathname.match(
@@ -1326,57 +1359,56 @@ const runXhook = () => {
             return;
           }
           mpdId = found[1];
-        } else if (isGetSections(request, response)) {
-          try {
-            const pageId = new window.URL(url).searchParams.get("pageId");
-            if (!pageId) {
-              return;
-            }
-            if (sectionsArray.find((s) => s.pageId === pageId)) {
-              return;
-            }
-
-            const data = JSON.parse(response.text);
-            sectionsArray.push({
-              pageId,
-              data,
-            });
-            if (sectionsArray.length > 20) {
-              sectionsArray.shift();
-            }
-          } catch (e) {
-            console.log(e);
-          }
-        } else {
-          if (
-            !url.includes("GetPlaybackResources") ||
-            !url.includes("CatalogMetadata") ||
-            !url.includes("TransitionTimecodes")
-          ) {
+        } else if (hasCatalogMetadataV2Resource(request, response)) {
+          const entityId = new window.URL(url).searchParams.get("entityId");
+          if (!entityId) {
             return;
           }
-          if (response.status !== 200) {
+          if (metadataResourceArray.find((m) => m.entityId === entityId)) {
             return;
           }
 
-          try {
-            const data = JSON.parse(response.text);
-            const id = data.catalogMetadata?.catalog?.id;
-            if (!id) {
-              return;
-            }
-            if (
-              metadataArray.find((d) => d.catalogMetadata?.catalog?.id === id)
-            ) {
-              return;
-            }
+          const data = JSON.parse(response.text);
+          metadataResourceArray.push({
+            entityId,
+            data,
+          });
+          if (metadataResourceArray > 20) {
+            metadataResourceArray.shift();
+          }
+        } else if (hasNextUpV2Resource(request, response)) {
+          const entityId = new window.URL(url).searchParams.get("entityId");
+          if (!entityId) {
+            return;
+          }
+          if (nextUpV2ResourceArray.find((n) => n.entityId === entityId)) {
+            return;
+          }
 
-            metadataArray.push(data);
-            if (metadataArray.length > 20) {
-              metadataArray.shift();
-            }
-          } catch (e) {
-            console.log(e);
+          const data = JSON.parse(response.text);
+          nextUpV2ResourceArray.push({
+            entityId,
+            data,
+          });
+          if (nextUpV2ResourceArray > 20) {
+            nextUpV2ResourceArray.shift();
+          }
+        } else if (isGetVodPlaybackResources(request, response)) {
+          const titleId = new window.URL(url).searchParams.get("titleId");
+          if (!titleId) {
+            return;
+          }
+          if (getVodPlaybackResourcesArray.find((g) => g.titleId === titleId)) {
+            return;
+          }
+
+          const data = JSON.parse(response.text);
+          getVodPlaybackResourcesArray.push({
+            titleId,
+            data,
+          });
+          if (getVodPlaybackResourcesArray > 20) {
+            getVodPlaybackResourcesArray.shift();
           }
         }
       })();
@@ -1421,39 +1453,63 @@ const runXhook = () => {
           return;
         }
 
-        const metadata = metadataArray.find((meta) => {
-          const defaultUrlSetId = meta?.playbackUrls?.defaultUrlSetId;
-          if (!defaultUrlSetId) {
-            return;
+        const getVodPlaybackResources = getVodPlaybackResourcesArray.find(
+          (g) => {
+            const playbackUrls = g.data?.vodPlaybackUrls?.result?.playbackUrls;
+            if (!playbackUrls) {
+              return;
+            }
+            const urlSets = playbackUrls.urlSets;
+            if (!urlSets) {
+              return;
+            }
+            const defaultUrlSetId = playbackUrls.defaultUrlSetId;
+            if (!defaultUrlSetId) {
+              return;
+            }
+            const urlSet = urlSets.find((u) => u.urlSetId === defaultUrlSetId);
+            if (!urlSet) {
+              return;
+            }
+            const mpdUrl = urlSet.url;
+            return mpdUrl?.includes(mpdId);
           }
-          const mpdUrl =
-            meta?.playbackUrls?.urlSets[defaultUrlSetId].urls.manifest.url;
-          return mpdUrl.includes(mpdId);
-        });
-        if (!metadata) {
-          return;
-        }
-        if (!subtitleText.includes(metadata.catalogMetadata?.catalog?.title)) {
+        );
+        if (!getVodPlaybackResources) {
           return;
         }
 
-        const episodeId = metadata.catalogMetadata?.catalog?.id;
-        const sections = sectionsArray.find((s) => s.pageId === episodeId);
-        if (!sections) {
+        const titleId = getVodPlaybackResources.titleId;
+        const metadataResource = metadataResourceArray.find(
+          (m) => m.entityId === titleId
+        );
+        if (!metadataResource) {
           return;
         }
 
-        const nextItem =
-          sections.data?.sections?.bottom?.collections?.collectionList?.[0]
-            ?.items?.itemList?.[0];
-        if (!nextItem) {
+        if (
+          !subtitleText.includes(
+            metadataResource.data.resources?.catalogMetadataV2?.catalog?.title
+          )
+        ) {
           return;
         }
 
-        const autoplayConfig =
-          sections.data?.sections?.bottom?.collections?.collectionList?.[0]
-            ?.autoplayConfig;
-        if (nextItem.metadata?.SlotType !== "NEXT_EPISODE_SLOT") {
+        const nextUpV2Resource = nextUpV2ResourceArray.find(
+          (n) => n.entityId === titleId
+        );
+        if (!nextUpV2Resource) {
+          return;
+        }
+
+        const data = nextUpV2Resource.data;
+        const carouselItem = data.resources.nextUpV2.card.carouselItems[0];
+        if (!carouselItem) {
+          return;
+        }
+
+        const autoplayConfig = data.resources?.nextUpV2?.card?.autoPlayConfig;
+        if (carouselItem.analytics?.slotType !== "NEXT_EPISODE_SLOT") {
           this.player.dataset.nextEpisodeId = "null";
           this.player.dataset.isNotNextEpisode = "true";
         } else if (autoplayConfig?.autoplayCardPreferredImage !== "episode") {
@@ -1462,7 +1518,7 @@ const runXhook = () => {
         }
 
         if (this.player.dataset.nextEpisodeId !== "null") {
-          const nextEpisodeId = nextItem.titleId;
+          const nextEpisodeId = carouselItem.titleId;
           if (nextEpisodeId) {
             if (!this.player.dataset.nextEpisodeId) {
               this.player.dataset.nextEpisodeId = nextEpisodeId;
