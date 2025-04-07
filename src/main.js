@@ -30,40 +30,50 @@ const getDefaultOptions = () => {
   };
 };
 
-const getScriptInfo = () => {
-  // user script
-  try {
-    const gmInfo = window.GM_info || GM_info;
-    const scriptVer = gmInfo.script.version;
-    if (typeof scriptVer === "string") {
-      return {
-        scriptType: "user-script",
-        scriptVersion: scriptVer,
-      };
+class ScriptInfo {
+  static #info;
+  static get() {
+    if (this.#info) {
+      return this.#info;
     }
-  } catch (e) {
-    // console.log(e);
-  }
 
-  // chrome extension
-  try {
-    const chromeExtVer = chrome?.runtime?.getManifest()?.version;
-    if (typeof chromeExtVer === "string") {
-      return {
-        scriptType: "chrome-extension",
-        scriptVersion: chromeExtVer,
-      };
+    // user script
+    try {
+      const gmInfo = window.GM_info || GM_info;
+      const scriptVer = gmInfo.script.version;
+      if (typeof scriptVer === "string") {
+        this.#info = {
+          scriptType: "user-script",
+          scriptVersion: scriptVer,
+        };
+        return this.#info;
+      }
+    } catch (e) {
+      // console.log(e);
     }
-  } catch (e) {
-    // console.log(e);
-  }
 
-  // unknown
-  return {
-    scriptType: "unknown",
-    scriptVersion: getDefaultOptions().scriptVersion,
-  };
-};
+    // chrome extension
+    try {
+      const chromeExtVer = chrome?.runtime?.getManifest()?.version;
+      if (typeof chromeExtVer === "string") {
+        this.#info = {
+          scriptType: "chrome-extension",
+          scriptVersion: chromeExtVer,
+        };
+        return this.#info;
+      }
+    } catch (e) {
+      // console.log(e);
+    }
+
+    // unknown
+    this.#info = {
+      scriptType: "unknown",
+      scriptVersion: getDefaultOptions().scriptVersion,
+    };
+    return this.#info;
+  }
+}
 
 // array of alphabets used to set shortcut keys.
 const charObj = {
@@ -997,7 +1007,7 @@ const createOptionBtnOnNavbar = () => {
   optionBtn.main();
 };
 
-const createUserscriptMenu = (scriptInfo = getScriptInfo()) => {
+const createUserscriptMenu = (scriptInfo = ScriptInfo.get()) => {
   if (scriptInfo.scriptType !== "user-script") {
     return;
   }
@@ -1385,7 +1395,7 @@ const runXhook = () => {
 };
 
 const injectXhook = (
-  scriptInfo = getScriptInfo(),
+  scriptInfo = ScriptInfo.get(),
   options = getDefaultOptions()
 ) => {
   const xhookOptions = [
@@ -2203,7 +2213,7 @@ const main = () => {
     saveDefaultOptions();
   }
 
-  const scriptInfo = getScriptInfo();
+  const scriptInfo = ScriptInfo.get();
   updateOptionVersion(scriptInfo);
 
   const options = getOptions();
