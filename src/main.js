@@ -1150,6 +1150,22 @@ const runXhook = () => {
     return true;
   };
 
+  const hasNextUpV2Resource = (request, response) => {
+    if (!request.url.includes("playerChromeResources")) {
+      return false;
+    }
+    if (!request.url.includes("nextUpV2")) {
+      return false;
+    }
+    if (response.status !== 200) {
+      return false;
+    }
+    if (response.headers?.["content-type"] !== "application/json") {
+      return false;
+    }
+    return true;
+  };
+
   script.addEventListener("load", () => {
     xhook.after(function (request, response) {
       (() => {
@@ -1219,22 +1235,39 @@ const runXhook = () => {
         if (!options.enableAutoplay_xhook) {
           return;
         }
-        if (!isGetSections(request, response)) {
+        const _isGetSections = isGetSections(request, response);
+        const _hasNextUpV2Resource = hasNextUpV2Resource(request, response);
+        if (!_isGetSections && !_hasNextUpV2Resource) {
           return;
         }
 
-        try {
-          const data = JSON.parse(response.text);
-          const autoplayConfig =
-            data?.sections?.bottom?.collections?.collectionList?.[0]
-              ?.autoplayConfig;
-          if (!autoplayConfig) {
-            return;
+        if (_isGetSections) {
+          try {
+            const data = JSON.parse(response.text);
+            const autoplayConfig =
+              data?.sections?.bottom?.collections?.collectionList?.[0]
+                ?.autoplayConfig;
+            if (!autoplayConfig) {
+              return;
+            }
+            autoplayConfig.autoplayEnabled = true;
+            response.text = JSON.stringify(data);
+          } catch (e) {
+            console.log(e);
           }
-          autoplayConfig.autoplayEnabled = true;
-          response.text = JSON.stringify(data);
-        } catch (e) {
-          console.log(e);
+        } else if (_hasNextUpV2Resource) {
+          try {
+            const data = JSON.parse(response.text);
+            const autoplayConfig =
+              data?.resources?.nextUpV2?.card?.autoPlayConfig;
+            if (!autoplayConfig) {
+              return;
+            }
+            autoplayConfig.autoplayEnabled = true;
+            response.text = JSON.stringify(data);
+          } catch (e) {
+            console.log(e);
+          }
         }
       })();
 
