@@ -2072,7 +2072,7 @@ class ElementController {
               if (!Number.isNaN(volume)) {
                 url = `${url}&volume=${volumeStr}`;
               }
-              localStorage.setItem("atvwebplayersdk_volume", "0");
+              localStorage.setItem(volumeKey, "0");
               setTimeout(() => {
                 window.location.href = url;
               }, 200);
