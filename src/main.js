@@ -399,7 +399,7 @@ const createOptionMessages = () => {
     preventsTransitionsToRecommendedVideos:
       "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ",
     preventsTransitionsToRecommendedVideos_Tooltip:
-      "動画終了時の次のエピソードへの遷移に影響はありません",
+      "動画終了時の次のエピソードへの遷移に影響はありません。\nまた、Next upがクリックされた場合は再生を継続します。",
     hideRating: "レーティングを非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
@@ -455,7 +455,7 @@ const createOptionMessages = () => {
     preventsTransitionsToRecommendedVideos:
       "Prevent transition to suggested content when video ends",
     preventsTransitionsToRecommendedVideos_Tooltip:
-      "There is no impact on the transition to the next episode when the video ends.",
+      "There is no impact on the transition to the next episode when the video ends.\nAlso, if next up card is clicked, playback will continue.",
     hideRating: "Hide rating",
     preventsDarkening: "Prevents darkening when overlay display is enabled",
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
@@ -2256,12 +2256,14 @@ class ElementController {
     // The video titles are compared to determine if there has been a transition to a different video.
     // Detection of transitions to another season is not supported.
     let titleObserver;
+    let clickedNextup = false;
+
     const parentObserver = new MutationObserver((_, outerObserver) => {
       const title = this.player.querySelector(".atvwebplayersdk-title-text");
       if (!title) {
         return;
       }
-      const titleText = title.textContent;
+      let titleText = title.textContent;
       if (!titleText) {
         return;
       }
@@ -2273,6 +2275,15 @@ class ElementController {
           return;
         }
         console.log(`previous [${titleText}], current [${newTitleText}]`);
+        if (clickedNextup) {
+          console.log("Next up card was clicked by user");
+          const t = title.textContent;
+          if (t) {
+            titleText = t;
+          }
+          clickedNextup = false;
+          return;
+        }
         const closeBtn = this.player.querySelector(
           ".atvwebplayersdk-playerclose-button"
         );
@@ -2290,7 +2301,39 @@ class ElementController {
       titleObserver.observe(title, observeConfig);
     });
 
+    let nextupButtonObserver = "";
+    const nextupWrapperObserver = new MutationObserver((_, outerObserver) => {
+      const wrapper = this.player.querySelector(
+        ".atvwebplayersdk-nextupcard-wrapper"
+      );
+      if (!wrapper) {
+        return;
+      }
+      outerObserver.disconnect();
+
+      nextupButtonObserver = new MutationObserver((_) => {
+        const nextupButton = this.player.querySelector(
+          ".atvwebplayersdk-nextupcard-button"
+        );
+        if (!nextupButton) {
+          return;
+        }
+        // nextupButton will disappear, so there is no need to remove the event listener.
+        nextupButton.addEventListener("click", (e) => {
+          clickedNextup = true;
+          setTimeout(() => {
+            clickedNextup = false;
+          }, 5000);
+        });
+      });
+      nextupButtonObserver.observe(wrapper, observeConfig);
+    });
+
     parentObserver.observe(this.player, { ...observeConfig, attributes: true });
+    nextupWrapperObserver.observe(this.player, {
+      ...observeConfig,
+      attributes: true,
+    });
 
     // Stops parentObserver and titleObserver when the video is closed.
     new MutationObserver((_, outerObserver) => {
@@ -2300,6 +2343,10 @@ class ElementController {
         parentObserver.disconnect();
         if (titleObserver) {
           titleObserver.disconnect();
+        }
+        nextupWrapperObserver.disconnect();
+        if (nextupButtonObserver) {
+          nextupButtonObserver.disconnect();
         }
 
         // Execute preventsTransitionsToRecommendedVideos method each time the video is opened.
