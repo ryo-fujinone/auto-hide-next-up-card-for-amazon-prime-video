@@ -233,7 +233,7 @@ const migrateStorage = async () => {
     return;
   }
   if (await getOptionsFromChromeStorage()) {
-    localStorage.removeItem("nextup-ext");
+    // localStorage.removeItem("nextup-ext");
     return;
   }
 
@@ -244,7 +244,7 @@ const migrateStorage = async () => {
 
   const options = JSON.parse(jsonStr);
   await saveOptionsToChromeStorage(options);
-  localStorage.removeItem("nextup-ext");
+  // localStorage.removeItem("nextup-ext");
 };
 
 const getOptionDialog = () => {
