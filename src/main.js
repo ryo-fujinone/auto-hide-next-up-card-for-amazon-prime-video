@@ -24,6 +24,7 @@ const getDefaultOptions = () => {
     },
     shortcutKeyIsEnabled: true,
     forceHighestResolution_xhook: false,
+    removeAdRelatedData: false,
     disableNextup_xhook: false,
     enableAutoplay_xhook: false,
     forcePlayNextEpisode_xhook: false,
@@ -418,6 +419,7 @@ const createOptionMessages = () => {
         通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出ることが確認されています。
         先読みで最低画質の動画が取得され、少しの間だけそれが再生されるようです。
         [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
+    removeAdRelatedData: "広告関連のデータを除去する",
     disableNextup: "Next upの表示フラグをfalseに変更する",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
@@ -475,6 +477,7 @@ const createOptionMessages = () => {
         We employ a library called xhook for communication monitoring and modification, and it has been confirmed that when xhook is enabled, the preloading behavior is affected for a short period of time after the start of playback.
         It seems that the lowest quality video is retrieved during preloading and that is what is played for a short period of time.
         It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
+    removeAdRelatedData: "Remove ad related data",
     disableNextup: "Change the next up card appear flag to false",
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
@@ -648,6 +651,12 @@ const createOptionDialog = async (scriptVersion) => {
                       options.forceHighestResolution_xhook ? "checked" : ""
                     } />
                     <p>${messages.forceHighestResolution}</p>
+                </label>
+                <label>
+                    <input type="checkbox" id="remove-ad-related-data" name="remove-ad-related-data" ${
+                      options.removeAdRelatedData ? "checked" : ""
+                    } />
+                    <p>${messages.removeAdRelatedData}</p>
                 </label>
                 <!--<label>
                     <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
@@ -865,6 +874,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "force-highest-resolution":
           await saveOptions({ forceHighestResolution_xhook: e.target.checked });
+          break;
+        case "remove-ad-related-data":
+          await saveOptions({ removeAdRelatedData: e.target.checked });
           break;
         case "disable-nextup":
           await saveOptions({ disableNextup_xhook: e.target.checked });
@@ -1268,6 +1280,85 @@ const runXhook = () => {
         }
       })();
 
+      (() => {
+        if (!options.removeAdRelatedData) {
+          return;
+        }
+        if (!isMpd(request, response)) {
+          return;
+        }
+
+        try {
+          const mpd = response.text;
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(mpd, "text/xml");
+
+          const periods = dom.querySelectorAll("Period");
+          if (periods.length === 0) {
+            return;
+          }
+
+          for (const p of periods) {
+            const ad = p.querySelector("SupplementalProperty[value='Ad']");
+            if (!ad) {
+              continue;
+            }
+            p.remove();
+            console.log("Removed ads");
+          }
+
+          const period = dom.querySelector("Period:has(Role[value='main'])");
+          if (!period) {
+            return;
+          }
+          period.removeAttribute("start");
+
+          const newMpd = dom.documentElement.outerHTML;
+          response.text = newMpd;
+        } catch (e) {
+          console.log(e);
+        }
+      })();
+
+      (() => {
+        if (!options.removeAdRelatedData) {
+          return;
+        }
+        if (!isGetVodPlaybackResources(request, response)) {
+          return;
+        }
+
+        try {
+          const data = JSON.parse(response.text);
+          const cuepoints =
+            data.vodPlaybackUrls?.result?.playbackUrls?.cuepoints;
+          if (!cuepoints) {
+            return;
+          }
+          const encodedManifest = cuepoints.encodedManifest;
+          if (!encodedManifest) {
+            return;
+          }
+
+          const manifest = atob(encodedManifest);
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(manifest, "text/xml");
+          const adSources = dom.querySelectorAll("AdSource");
+          if (adSources.length === 0) {
+            return;
+          }
+
+          for (const adSource of adSources) {
+            adSource.remove();
+          }
+
+          const newManifest = dom.documentElement.outerHTML;
+          const newEncodedManifest = btoa(newManifest);
+          cuepoints.encodedManifest = newEncodedManifest;
+          response.text = JSON.stringify(data);
+        } catch (e) {}
+      })();
+
       /**
        * It is possible that the coping method of setting showAutoplayCard to false no longer works.
        * Therefore, the following is temporarily commented out.
@@ -1618,6 +1709,7 @@ const runXhook = () => {
 const injectXhook = (options = getDefaultOptions()) => {
   const xhookOptions = [
     options.forceHighestResolution_xhook,
+    options.removeAdRelatedData,
     // options.disableNextup_xhook,
     options.enableAutoplay_xhook,
     options.forcePlayNextEpisode_xhook,
