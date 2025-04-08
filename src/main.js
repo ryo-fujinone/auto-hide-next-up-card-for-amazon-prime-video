@@ -1348,8 +1348,6 @@ const runXhook = () => {
           return;
         }
         const url = request.url;
-        hasCatalogMetadataV2Resource(request, response);
-        isGetVodPlaybackResources(request, response);
         if (url.includes(".mp4")) {
           const pathname = new window.URL(url).pathname;
           const found = pathname.match(
