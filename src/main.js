@@ -390,16 +390,14 @@ const createOptionMessages = () => {
     temporarilyDisableOverlay:
       "非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする",
     preventsDarkeningInConjunctionWithNextup:
-      "Next upの出現と同時に画面が暗くなるのを防ぐ（非表示ボタンが無い場合のみ）",
-    showNextupOnOverlay:
-      "オーバーレイ表示が有効な時はNext upを表示する（非表示ボタンが無い場合のみ）",
+      "Next upの出現と同時に画面が暗くなるのを防ぐ",
+    showNextupOnOverlay: "オーバーレイ表示が有効な時はNext upを表示する",
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
-    showReactionsOnOverlay:
-      "オーバーレイ表示が有効な時はReactionsを表示する（Next upがDOMに存在する場合のみ）",
+    showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
       "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます",
     preventsTransitionsToRecommendedVideos:
-      "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ（自動再生が有効の場合）",
+      "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ",
     preventsTransitionsToRecommendedVideos_Tooltip:
       "動画終了時の次のエピソードへの遷移に影響はありません",
     hideRating: "レーティングを非表示にする",
@@ -448,16 +446,14 @@ const createOptionMessages = () => {
     temporarilyDisableOverlay:
       "Disable overlay for 5 seconds when auto-clicking hide button",
     preventsDarkeningInConjunctionWithNextup:
-      "Prevents darkening in conjunction with next up appears (only if there is no hide button)",
-    showNextupOnOverlay:
-      "Show next up card when overlay display is enabled (only if there is no hide button)",
+      "Prevents darkening in conjunction with next up appears",
+    showNextupOnOverlay: "Show next up card when overlay display is enabled",
     hideReactions: "Hide reactions (like/not for me)",
-    showReactionsOnOverlay:
-      "Show Reactions when overlay display is enabled (only if next up card exists in the DOM.)",
+    showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
       "If hide next up card is enabled, auto-clicking the hide button will remove next up card and reactions from the DOM",
     preventsTransitionsToRecommendedVideos:
-      "Prevent transition to suggested content when video ends (if autoplay is enabled)",
+      "Prevent transition to suggested content when video ends",
     preventsTransitionsToRecommendedVideos_Tooltip:
       "There is no impact on the transition to the next episode when the video ends.",
     hideRating: "Hide rating",
