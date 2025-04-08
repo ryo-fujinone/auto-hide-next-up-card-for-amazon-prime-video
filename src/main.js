@@ -427,7 +427,6 @@ const createOptionMessages = () => {
         Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
         Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。\n
         この機能はサジェストされたコンテンツに遷移した後の次のエピソードの再生をサポートしていません。
-        動作の安定性のために [動画終了時にサジェストされたコンテンツに遷移するのを防ぐ] も有効にすることを推奨します。
         また、動作の安定性のために次のシーズンへの遷移もサポートしていません。\n
         次のエピソードがあるかどうかの判定に1500ミリ秒の待機時間を設定しています。
         最後まで再生して動画が閉じた場合やEscキーの入力で動画を閉じた場合、必要に応じて1500ミリ秒の間は画面を暗くします。`,
@@ -482,7 +481,6 @@ const createOptionMessages = () => {
         For Chrome, you must allow [audio] permissions for the site.
         For Firefox, you must allow the [Autoplay] permission for the site.\n
         This feature does not support playing the next episode after transitioning to the suggested content.
-        For operational stability, it is recommended to also enable [Prevent transition to suggested content when video ends].
         Also, transitions to the next season are not supported for operational stability.\n
         A wait time of 1500 milliseconds is set to determine if the next episode is available.
         If the video is closed after playing to the end or by entering the Esc key, the screen is darkened for 1500 milliseconds if necessary.`,
