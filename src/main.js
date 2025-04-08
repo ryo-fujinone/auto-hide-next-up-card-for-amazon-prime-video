@@ -2222,6 +2222,7 @@ class ElementController {
             titleText = t;
           }
           clickedNextup = false;
+          delete this.player.dataset.isNotNextEpisode;
           return;
         }
         const closeBtn = this.player.querySelector(
