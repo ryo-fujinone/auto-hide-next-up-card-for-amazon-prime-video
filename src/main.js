@@ -25,7 +25,6 @@ const getDefaultOptions = () => {
     shortcutKeyIsEnabled: true,
     forceHighestResolution_xhook: false,
     removeAdRelatedData: false,
-    disableNextup_xhook: false,
     enableAutoplay_xhook: false,
     forcePlayNextEpisode_xhook: false,
     scriptVersion: "2.9.1",
@@ -418,7 +417,6 @@ const createOptionMessages = () => {
         先読みで最低画質の動画が取得され、少しの間だけそれが再生されるようです。
         [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
     removeAdRelatedData: "広告関連のデータを除去する",
-    disableNextup: "Next upの表示フラグをfalseに変更する",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
       "この機能を使用してもプライムビデオの自動再生の設定は変更されません",
@@ -474,7 +472,6 @@ const createOptionMessages = () => {
         It seems that the lowest quality video is retrieved during preloading and that is what is played for a short period of time.
         It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
     removeAdRelatedData: "Remove ad related data",
-    disableNextup: "Change the next up card appear flag to false",
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
       "Enabling this will not change the autoplay setting for Prime Video",
@@ -654,12 +651,6 @@ const createOptionDialog = async (scriptVersion) => {
                     } />
                     <p>${messages.removeAdRelatedData}</p>
                 </label>
-                <!--<label>
-                    <input type="checkbox" id="disable-nextup" name="disable-nextup" ${
-                      options.disableNextup_xhook ? "checked" : ""
-                    } />
-                    <p>${messages.disableNextup}</p>
-                </label>-->
                 <label>
                     <input type="checkbox" id="enable-autoplay" name="enable-autoplay" ${
                       options.enableAutoplay_xhook ? "checked" : ""
@@ -873,9 +864,6 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "remove-ad-related-data":
           await saveOptions({ removeAdRelatedData: e.target.checked });
-          break;
-        case "disable-nextup":
-          await saveOptions({ disableNextup_xhook: e.target.checked });
           break;
         case "enable-autoplay":
           await saveOptions({ enableAutoplay_xhook: e.target.checked });
@@ -1355,51 +1343,6 @@ const runXhook = () => {
         } catch (e) {}
       })();
 
-      /**
-       * It is possible that the coping method of setting showAutoplayCard to false no longer works.
-       * Therefore, the following is temporarily commented out.
-       */
-      // (() => {
-      //   if (!options.disableNextup_xhook) {
-      //     return;
-      //   }
-      //   const _isGetSections = isGetSections(request, response);
-      //   const _hasNextUpV2Resource = hasNextUpV2Resource(request, response);
-      //   if (!_isGetSections && !_hasNextUpV2Resource) {
-      //     return;
-      //   }
-
-      //   if (_isGetSections) {
-      //     try {
-      //       const data = JSON.parse(response.text);
-      //       const autoplayConfig =
-      //         data?.sections?.bottom?.collections?.collectionList?.[0]
-      //           ?.autoplayConfig;
-      //       if (!autoplayConfig) {
-      //         return;
-      //       }
-      //       autoplayConfig.showAutoplayCard = false;
-      //       response.text = JSON.stringify(data);
-      //     } catch (e) {
-      //       console.log(e);
-      //     }
-      //   } else if (_hasNextUpV2Resource) {
-      //     try {
-      //       const data = JSON.parse(response.text);
-      //       const autoplayConfig =
-      //         data?.resources?.nextUpV2?.card?.autoPlayConfig;
-      //       if (!autoplayConfig) {
-      //         return;
-      //       }
-      //       console.log(autoplayConfig);
-      //       autoplayConfig.showAutoplayCard = false;
-      //       response.text = JSON.stringify(data);
-      //     } catch (e) {
-      //       console.log(e);
-      //     }
-      //   }
-      // })();
-
       (() => {
         if (!options.enableAutoplay_xhook) {
           return;
@@ -1706,7 +1649,6 @@ const injectXhook = (options = getDefaultOptions()) => {
   const xhookOptions = [
     options.forceHighestResolution_xhook,
     options.removeAdRelatedData,
-    // options.disableNextup_xhook,
     options.enableAutoplay_xhook,
     options.forcePlayNextEpisode_xhook,
   ];
