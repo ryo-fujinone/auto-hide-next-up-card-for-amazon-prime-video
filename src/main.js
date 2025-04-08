@@ -1231,23 +1231,33 @@ const runXhook = () => {
           const parser = new DOMParser();
           const dom = parser.parseFromString(mpd, "text/xml");
 
-          const representations = dom.querySelectorAll(
-            "Period:first-child AdaptationSet[contentType='video'] > Representation"
-          );
+          const periods = dom.querySelectorAll("Period ");
+          if (periods.length === 0) {
+            return;
+          }
 
-          const highestRepresentation = Array.from(representations).reduce(
-            (acc, cur) => {
-              return parseInt(acc.getAttribute("bandwidth")) >
-                parseInt(cur.getAttribute("bandwidth"))
-                ? acc
-                : cur;
+          for (const p of periods) {
+            const representations = p.querySelectorAll(
+              "AdaptationSet[contentType='video'] > Representation"
+            );
+            if (representations.length === 0) {
+              continue;
             }
-          );
 
-          highestRepresentation.setAttribute("highestRepresentation", "true");
-          for (const rep of representations) {
-            if (!rep.hasAttribute("highestRepresentation")) {
-              rep.remove();
+            const highestRepresentation = Array.from(representations).reduce(
+              (acc, cur) => {
+                return parseInt(acc.getAttribute("bandwidth")) >
+                  parseInt(cur.getAttribute("bandwidth"))
+                  ? acc
+                  : cur;
+              }
+            );
+
+            highestRepresentation.setAttribute("highestRepresentation", "true");
+            for (const rep of representations) {
+              if (!rep.hasAttribute("highestRepresentation")) {
+                rep.remove();
+              }
             }
           }
 
