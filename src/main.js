@@ -1286,7 +1286,7 @@ const runXhook = () => {
               continue;
             }
             p.remove();
-            console.log("Removed ads");
+            console.log("Removed ads (data in mpd)");
           }
 
           const period = dom.querySelector("Period:has(Role[value='main'])");
@@ -1312,32 +1312,46 @@ const runXhook = () => {
 
         try {
           const data = JSON.parse(response.text);
-          const cuepoints =
-            data.vodPlaybackUrls?.result?.playbackUrls?.cuepoints;
-          if (!cuepoints) {
+          const playbackUrls = data.vodPlaybackUrls?.result?.playbackUrls;
+          if (!playbackUrls) {
             return;
           }
-          const encodedManifest = cuepoints.encodedManifest;
-          if (!encodedManifest) {
+          if (!playbackUrls.cuepoints) {
             return;
           }
-
-          const manifest = atob(encodedManifest);
-          const parser = new DOMParser();
-          const dom = parser.parseFromString(manifest, "text/xml");
-          const adSources = dom.querySelectorAll("AdSource");
-          if (adSources.length === 0) {
-            return;
-          }
-
-          for (const adSource of adSources) {
-            adSource.remove();
-          }
-
-          const newManifest = dom.documentElement.outerHTML;
-          const newEncodedManifest = btoa(newManifest);
-          cuepoints.encodedManifest = newEncodedManifest;
+          delete playbackUrls.cuepoints;
+          console.log("Removed ads (cuepoints)");
           response.text = JSON.stringify(data);
+
+          /**
+           * The following implementation will also work, but it is more reliable to remove the cuepoints themselves.
+           */
+          // const cuepoints =
+          //   data.vodPlaybackUrls?.result?.playbackUrls?.cuepoints;
+          // if (!cuepoints) {
+          //   return;
+          // }
+          // const encodedManifest = cuepoints.encodedManifest;
+          // if (!encodedManifest) {
+          //   return;
+          // }
+
+          // const manifest = atob(encodedManifest);
+          // const parser = new DOMParser();
+          // const dom = parser.parseFromString(manifest, "text/xml");
+          // const adSources = dom.querySelectorAll("AdSource");
+          // if (adSources.length === 0) {
+          //   return;
+          // }
+
+          // for (const adSource of adSources) {
+          //   adSource.remove();
+          // }
+
+          // const newManifest = dom.documentElement.outerHTML;
+          // const newEncodedManifest = btoa(newManifest);
+          // cuepoints.encodedManifest = newEncodedManifest;
+          // response.text = JSON.stringify(data);
         } catch (e) {}
       })();
 
