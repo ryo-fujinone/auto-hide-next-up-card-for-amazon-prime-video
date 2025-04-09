@@ -413,8 +413,8 @@ const createOptionMessages = () => {
     forceHighestResolution_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
         プライムビデオの挙動に支障をきたす可能性があるため、ご理解の上ご活用ください。\n
         [強制的に最高画質で再生する] は他の監視・改変オプションを有効にする場合にセットで有効にすることを推奨します。
-        通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出ることが確認されています。
-        先読みで最低画質の動画が取得され、少しの間だけそれが再生されるようです。
+        通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出る可能性があることが確認されています。
+        先読みで最低画質の動画が取得され、少しの間だけそれが再生される場合があるようです。
         [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
     removeAdRelatedData: "広告関連のデータを除去する",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
@@ -467,8 +467,8 @@ const createOptionMessages = () => {
     forceHighestResolution_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
         Please understand that this may interfere with the behavior of Prime Video.\n
         It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
-        We employ a library called xhook for communication monitoring and modification, and it has been confirmed that when xhook is enabled, the preloading behavior is affected for a short period of time after the start of playback.
-        It seems that the lowest quality video is retrieved during preloading and that is what is played for a short period of time.
+        This extension uses a library called xhook to monitor and modify communications, and it has been confirmed that if xhook is enabled, it may affect the preloading behavior for a short period of time after playback begins.
+        It seems that in some cases the lowest quality video is retrieved in preload and it plays for a short while.
         It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
     removeAdRelatedData: "Remove ad related data",
     enableAutoplay: "Change autoplay flag to true",
