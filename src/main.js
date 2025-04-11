@@ -90,30 +90,32 @@ class ScriptInfo {
 }
 
 // array of alphabets used to set shortcut keys.
-const charObj = {
-  _chars: [],
-  _codeStrs: [],
-  _startCode: "A".charCodeAt(0),
-  getChars() {
-    if (this._chars.length) {
-      return this._chars;
+class CharStore {
+  static #chars = [];
+  static #codeStrs = [];
+  static #startCode = "A".charCodeAt(0);
+
+  static getChars() {
+    if (this.#chars.length) {
+      return this.#chars;
     }
     [...Array(26)].forEach((_, i) => {
-      const char = String.fromCharCode(this._startCode + i);
-      this._chars.push(char);
+      const char = String.fromCharCode(this.#startCode + i);
+      this.#chars.push(char);
     });
-    return this._chars;
-  },
-  getCodeStrs() {
-    if (this._codeStrs.length) {
-      return this._codeStrs;
+    return this.#chars;
+  }
+
+  static getCodeStrs() {
+    if (this.#codeStrs.length) {
+      return this.#codeStrs;
     }
     this.getChars().forEach((c) => {
-      this._codeStrs.push("Key" + c);
+      this.#codeStrs.push("Key" + c);
     });
-    return this._codeStrs;
-  },
-};
+    return this.#codeStrs;
+  }
+}
 
 const addStyle = (css, id) => {
   const style = document.createElement("style");
@@ -299,8 +301,8 @@ const worksWithDialog = {
     if (options.shortcutKey.shift) {
       shortcutKeyStrs.push("Shift");
     }
-    const codeStrs = charObj.getCodeStrs();
-    const chars = charObj.getChars();
+    const codeStrs = CharStore.getCodeStrs();
+    const chars = CharStore.getChars();
     const char = chars[codeStrs.indexOf(options.shortcutKey.charCode)];
     if (char) {
       shortcutKeyStrs.push(char);
@@ -324,7 +326,7 @@ const worksWithDialog = {
     if (e.code === "Tab" || e.code === "Escape" || e.code === "F5") {
       return;
     }
-    const codeStrs = charObj.getCodeStrs();
+    const codeStrs = CharStore.getCodeStrs();
     if (codeStrs.indexOf(e.code) === -1 || (!e.ctrlKey && !e.altKey)) {
       e.preventDefault();
       return;
@@ -344,7 +346,7 @@ const worksWithDialog = {
       shortcutKeyStrs.push("Shift");
     }
     newShortcutKeyOptions.shift = e.shiftKey;
-    const chars = charObj.getChars();
+    const chars = CharStore.getChars();
     const char = chars[codeStrs.indexOf(e.code)];
     shortcutKeyStrs.push(char);
     newShortcutKeyOptions.charCode = e.code;
