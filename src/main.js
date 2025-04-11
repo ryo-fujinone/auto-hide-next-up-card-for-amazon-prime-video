@@ -690,6 +690,8 @@ const createOptionDialog = async (scriptVersion) => {
     .nextup-ext-opt-dialog {
       padding: 0;
       word-break: break-all;
+      border-radius: 1em;
+      box-shadow: 0px 4px 16px rgb(0 0 0 / 0.3);
     }
     .dialog-inner {
       padding: 14px;
@@ -711,9 +713,13 @@ const createOptionDialog = async (scriptVersion) => {
     .nextup-ext-opt-dialog label p {
       margin-bottom: 5px;
       width: calc(100% - 24px);
+      font-weight: 400;
     }
     .nextup-ext-opt-dialog ul li {
       margin-left: 18px;
+    }
+    .nextup-ext-opt-dialog ul li span {
+      font-weight: 400;
     }
     .nextup-ext-opt-dialog label input[type='text'] {
       height: 20px;
@@ -758,6 +764,7 @@ const createOptionDialog = async (scriptVersion) => {
     #nextup-ext-opt-dialog-close {
       width: 120px;
       letter-spacing: 4px;
+      border-radius: 0.5em;
     }
     #nextup-ext-opt-dialog-close:hover {
       background-color: #DDD
