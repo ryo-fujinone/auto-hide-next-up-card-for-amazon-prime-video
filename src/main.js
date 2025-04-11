@@ -281,15 +281,16 @@ const pauseVideo = () => {
   }
 };
 
-const worksWithDialog = {
-  clickedOutSide: null,
-  _clickedOutSide: function (e) {
+class Dialog {
+  static #clickedOutSide = null;
+  static #_clickedOutSide(e) {
     if (e.target.classList.contains("nextup-ext-opt-dialog")) {
       e.target.close();
       this.whenClosed();
     }
-  },
-  setShortcutKeyVal: async function () {
+  }
+
+  static async #setShortcutKeyVal() {
     const options = await getOptions();
     let shortcutKeyStrs = [];
     if (options.shortcutKey.ctrl) {
@@ -311,18 +312,20 @@ const worksWithDialog = {
       await saveOptions({ shortcutKey: getDefaultOptions().shortcutKey });
     }
 
-    if (!this.changeShortcutKeyVal) {
-      this.changeShortcutKeyVal = this._changeShortcutKeyVal.bind(this);
+    if (!this.#changeShortcutKeyVal) {
+      this.#changeShortcutKeyVal = this.#_changeShortcutKeyVal.bind(this);
     }
+
     const shortcutKeyStr = shortcutKeyStrs.join(" + ");
     const shortcutKeyInput = getShortcutKeyInput();
     if (shortcutKeyInput) {
       shortcutKeyInput.value = shortcutKeyStr;
-      shortcutKeyInput.addEventListener("keydown", this.changeShortcutKeyVal);
+      shortcutKeyInput.addEventListener("keydown", this.#changeShortcutKeyVal);
     }
-  },
-  changeShortcutKeyVal: null,
-  _changeShortcutKeyVal: async function (e) {
+  }
+
+  static #changeShortcutKeyVal = null;
+  static async #_changeShortcutKeyVal(e) {
     if (e.code === "Tab" || e.code === "Escape" || e.code === "F5") {
       return;
     }
@@ -356,27 +359,29 @@ const worksWithDialog = {
     shortcutKeyInput.value = shortcutKeyStr;
 
     await saveOptions({ shortcutKey: newShortcutKeyOptions });
-  },
-  whenOpening: async function () {
+  }
+
+  static async whenOpening() {
     pauseVideo();
-    await this.setShortcutKeyVal();
-    if (!this.clickedOutSide) {
-      this.clickedOutSide = this._clickedOutSide.bind(this);
+    await this.#setShortcutKeyVal();
+    if (!this.#clickedOutSide) {
+      this.#clickedOutSide = this.#_clickedOutSide.bind(this);
     }
-    document.addEventListener("click", this.clickedOutSide);
-  },
-  whenClosed: function () {
+    document.addEventListener("click", this.#clickedOutSide);
+  }
+
+  static whenClosed() {
     const shortcutKeyInput = getShortcutKeyInput();
     if (shortcutKeyInput) {
       shortcutKeyInput.removeEventListener(
         "keydown",
-        this.changeShortcutKeyVal
+        this.#changeShortcutKeyVal
       );
     }
-    document.removeEventListener("click", this.clickedOutSide);
+    document.removeEventListener("click", this.#clickedOutSide);
     playVideo();
-  },
-};
+  }
+}
 
 const createOptionMessages = () => {
   const jaMessages = {
@@ -827,9 +832,9 @@ const createOptionDialog = async (scriptVersion) => {
 
   new MutationObserver(async (_) => {
     if (optDialog.hasAttribute("open")) {
-      await worksWithDialog.whenOpening();
+      await Dialog.whenOpening();
     } else {
-      worksWithDialog.whenClosed();
+      Dialog.whenClosed();
     }
   }).observe(optDialog, { attributes: true, attributeFilter: ["open"] });
 
