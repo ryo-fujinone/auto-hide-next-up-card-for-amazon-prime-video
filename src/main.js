@@ -2245,13 +2245,33 @@ class ElementController {
         if (!closeBtn) {
           return;
         }
+
+        let shouldPause = false;
         if (titleText !== newTitleText) {
+          shouldPause = true;
           closeBtn.click();
         } else if (this.player.dataset.isNotNextEpisode === "true") {
           // Season changes can be detected if "forcePlayNextEpisode_xhook" is enabled.
           console.log("Prevented transition to another season");
+          shouldPause = true;
           closeBtn.click();
         }
+
+        // There were a few times when the video would start playing in the background for some reason.
+        // Therefore, pause() is executed just to be sure.
+        setTimeout(() => {
+          if (!shouldPause) {
+            return;
+          }
+          try {
+            const video = this.player.querySelector("video");
+            if (video) {
+              video.pause();
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        }, 1000);
       });
       titleObserver.observe(title, observeConfig);
     });
