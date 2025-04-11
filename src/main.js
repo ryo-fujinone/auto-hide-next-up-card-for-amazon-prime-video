@@ -387,7 +387,8 @@ const createOptionMessages = () => {
   const jaMessages = {
     promptReloadPage: "オプションを変更した場合はページをリロードしてください",
     skipAds: "広告をスキップする",
-    skipAds_Tooltip: "本編をスキップしてしまわないように1500ミリ秒分を残します",
+    skipAds_Tooltip:
+      "本編をスキップしてしまわないように1500ミリ秒分を残します。",
     hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
     showSkipIntroBtnOnOverlay:
       "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
@@ -397,6 +398,8 @@ const createOptionMessages = () => {
     preventsDarkeningInConjunctionWithNextup:
       "Next upの出現と同時に画面が暗くなるのを防ぐ",
     showNextupOnOverlay: "オーバーレイ表示が有効な時はNext upを表示する",
+    showNextupOnOverlay_Tooltip:
+      "自動再生が無効、或いはNext upの非表示ボタンが自動クリックされない場合に表示されます。",
     clickHideButtonForAllNextup:
       "全てのNext upの非表示ボタンをクリックする（自動再生の完全なキャンセル）",
     clickHideButtonForAllNextup_Tooltip: `通常はこのオプションを有効にする必要はありません。\n
@@ -407,7 +410,7 @@ const createOptionMessages = () => {
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
-      "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます",
+      "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます。",
     preventsTransitionsToRecommendedVideos:
       "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ",
     preventsTransitionsToRecommendedVideos_Tooltip:
@@ -420,7 +423,7 @@ const createOptionMessages = () => {
     enableShortcutKey:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
-    shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須",
+    shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須。",
     monitorNetworkActivity: "通信の監視・改変",
     forceHighestResolution: "強制的に最高画質で再生する",
     forceHighestResolution_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
@@ -432,7 +435,7 @@ const createOptionMessages = () => {
     removeAdRelatedData: "広告関連のデータを除去する",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
-      "この機能を使用してもプライムビデオの自動再生の設定は変更されません",
+      "この機能を使用してもプライムビデオの自動再生の設定は変更されません。",
     forcePlayNextEpisode:
       "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
@@ -458,6 +461,8 @@ const createOptionMessages = () => {
     preventsDarkeningInConjunctionWithNextup:
       "Prevents darkening in conjunction with next up appears",
     showNextupOnOverlay: "Show next up card when overlay display is enabled",
+    showNextupOnOverlay_Tooltip:
+      "This works if autoplay is disabled or if the next up card's hide button is not clicked automatically.",
     clickHideButtonForAllNextup:
       "Click the hide button for all next-up-cards (cancel autoplay completely)",
     clickHideButtonForAllNextup_Tooltip: `Normally it is not necessary to enable this option.\n
@@ -572,7 +577,12 @@ const createOptionDialog = async (scriptVersion) => {
                 <input type="checkbox" id="show-nextup" name="show-nextup" ${
                   options.showNextupOnOverlay ? "checked" : ""
                 } />
-                <p>${messages.showNextupOnOverlay}</p>
+                <p>
+                    ${messages.showNextupOnOverlay}
+                    <span class="nextup-ext-opt-dialog-tooltip" title="${
+                      messages.showNextupOnOverlay_Tooltip
+                    }"></span>
+                </p>
             </label>
             <label class="indent1">
                 <input type="checkbox" id="click-hide-button-for-all-nextup" name="click-hide-button-for-all-nextup" ${
@@ -584,7 +594,7 @@ const createOptionDialog = async (scriptVersion) => {
                       regexForMultiineTooltips,
                       ""
                     )}"></span>
-</p>
+                </p>
             </label>
             <label>
                 <input type="checkbox" id="hide-reactions" name="hide-reactions" ${
