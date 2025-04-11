@@ -9,6 +9,7 @@ const getDefaultOptions = () => {
     temporarilyDisableOverlay: true,
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
+    clickHideButtonForAllNextup: false,
     hideReactions: true,
     showReactionsOnOverlay: false,
     preventsTransitionsToRecommendedVideos: true,
@@ -391,6 +392,13 @@ const createOptionMessages = () => {
     preventsDarkeningInConjunctionWithNextup:
       "Next upの出現と同時に画面が暗くなるのを防ぐ",
     showNextupOnOverlay: "オーバーレイ表示が有効な時はNext upを表示する",
+    clickHideButtonForAllNextup:
+      "全てのNext upの非表示ボタンをクリックする（自動再生の完全なキャンセル）",
+    clickHideButtonForAllNextup_Tooltip: `通常はこのオプションを有効にする必要はありません。\n
+    Next upには「通常のNext up」と「動画終了の数秒前に表示されるNext up」の2つが存在します。
+    自動再生が有効な場合はどちらにも非表示ボタンが表示されますが、後者の非表示ボタンはクリックすると自動再生が完全にキャンセルされ、動画が終了すると動画プレイヤーが閉じてしまいます。
+    そのため非表示ボタンの自動クリックは通常のNext upでのみ行うようにしていますが、このオプションを使用することでその条件を無視して非表示ボタンを自動クリックさせることが可能です。
+    このオプションは念の為に用意しているもので、通常は有効にする必要はありません。`,
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
@@ -445,6 +453,13 @@ const createOptionMessages = () => {
     preventsDarkeningInConjunctionWithNextup:
       "Prevents darkening in conjunction with next up appears",
     showNextupOnOverlay: "Show next up card when overlay display is enabled",
+    clickHideButtonForAllNextup:
+      "Click the hide button for all next-up-cards (cancel autoplay completely)",
+    clickHideButtonForAllNextup_Tooltip: `Normally it is not necessary to enable this option.\n
+    There are two types of next up cards: “normal next up” and "next up displayed a few seconds before the end of the video".
+    A hide button appears on both when autoplay is enabled, but clicking the latter hide button cancels autoplay completely and closes the video player when the video ends.
+    Therefore, the auto-click of the hide button is only done with the normal next up card, but this option can be used to ignore that condition and have the hide button auto-click.
+    This option is provided just in case and does not normally need to be enabled.`,
     hideReactions: "Hide reactions (like/not for me)",
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
@@ -553,6 +568,18 @@ const createOptionDialog = async (scriptVersion) => {
                   options.showNextupOnOverlay ? "checked" : ""
                 } />
                 <p>${messages.showNextupOnOverlay}</p>
+            </label>
+            <label class="indent1">
+                <input type="checkbox" id="click-hide-button-for-all-nextup" name="click-hide-button-for-all-nextup" ${
+                  options.clickHideButtonForAllNextup ? "checked" : ""
+                } />
+                <p>
+                    ${messages.clickHideButtonForAllNextup}
+                    <span class="nextup-ext-opt-dialog-tooltip" title="${messages.clickHideButtonForAllNextup_Tooltip.replaceAll(
+                      regexForMultiineTooltips,
+                      ""
+                    )}"></span>
+</p>
             </label>
             <label>
                 <input type="checkbox" id="hide-reactions" name="hide-reactions" ${
@@ -789,9 +816,9 @@ const createOptionDialog = async (scriptVersion) => {
   //  Adjust width of options dialog.
   optDialog.style.setProperty("visibility", "hidden", "important");
   optDialog.toggleAttribute("open");
-  let maxWidth = 650;
-  if (optDialog.offsetWidth > 500) {
-    maxWidth = optDialog.offsetWidth + 14;
+  let maxWidth = 600;
+  if (optDialog.offsetWidth > maxWidth) {
+    maxWidth = optDialog.offsetWidth + 30;
   }
   optDialog.style.maxWidth = maxWidth + "px";
   optDialog.style.width = "100%";
@@ -837,6 +864,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "show-nextup":
           await saveOptions({ showNextupOnOverlay: e.target.checked });
+          break;
+        case "click-hide-button-for-all-nextup":
+          await saveOptions({ clickHideButtonForAllNextup: e.target.checked });
           break;
         case "hide-reactions":
           await saveOptions({ hideReactions: e.target.checked });
@@ -1969,17 +1999,25 @@ class ElementController {
         );
         if (hideButton) {
           const video = this.player.querySelector("video");
-          if (!video) {
-            // Temporarily disable the overlay because it will be displayed by executing click().
-            this.temporarilyDisableOverlay(options, 5000);
-            hideButton.click();
-          } else {
-            // If you press the hide button on the Next up card that appears 5 seconds before the end of the video,the autoplay seems to be canceled.
-            const currentTime = video.currentTime;
-            const duration = video.duration;
-            if (duration - currentTime >= 6) {
+          if (!video || options.clickHideButtonForAllNextup) {
+            try {
               this.temporarilyDisableOverlay(options, 5000);
               hideButton.click();
+            } catch (e) {
+              console.log(e);
+            }
+          } else {
+            // Pressing the hide button on the next up card that appears a few seconds before the end of the video seems to cancel autoplay.
+            // To avoid closing the video, the decision to click the hide button is based on the time remaining in the video.
+            try {
+              const currentTime = video.currentTime;
+              const duration = video.duration;
+              if (duration - currentTime >= 6) {
+                this.temporarilyDisableOverlay(options, 5000);
+                hideButton.click();
+              }
+            } catch (e) {
+              console.log(e);
             }
           }
         }
