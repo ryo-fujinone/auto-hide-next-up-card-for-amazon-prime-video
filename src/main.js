@@ -256,9 +256,7 @@ const getShortcutKeyInput = () => {
 };
 
 const getVisibleVideo = () => {
-  return document.querySelector(
-    ".dv-player-fullscreen .rendererContainer video"
-  );
+  return document.querySelector(".dv-player-fullscreen video");
 };
 
 const playVideo = () => {
