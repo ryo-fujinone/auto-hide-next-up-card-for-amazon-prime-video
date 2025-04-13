@@ -363,6 +363,10 @@ class Dialog {
 
   static async whenOpening() {
     pauseVideo();
+
+    const optDialog = getOptionDialog();
+    optDialog.focus();
+
     await this.#setShortcutKeyVal();
     if (!this.#clickedOutSide) {
       this.#clickedOutSide = this.#_clickedOutSide.bind(this);
@@ -525,298 +529,364 @@ const createOptionDialog = async (scriptVersion) => {
   const regexForMultiineTooltips = /^[^\S\r\n]*/gm;
 
   const dialogHtmlStr = `
-    <dialog class="nextup-ext-opt-dialog">
-        <div class="dialog-inner">
-            <div class="group-title nextup-ext-opt-dialog-note">
-              <p>${messages.promptReloadPage}</p>            
-            </div>
-            <label>
-                <input type="checkbox" id="skip-ads" name="skip-ads" ${
-                  options.skipAds ? "checked" : ""
-                } />
-                <p>
-                    ${messages.skipAds}
-                    <span class="nextup-ext-opt-dialog-tooltip" title="${
-                      messages.skipAds_Tooltip
-                    }"></span>
-                </p>
-            </label>
-            <label>
-                <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
-                  options.hideSkipIntroBtn ? "checked" : ""
-                } />
-                <p>${messages.hideSkipIntroBtn}</p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="show-skip-intro-btn" name="show-skip-intro-btn" ${
-                  options.showSkipIntroBtnOnOverlay ? "checked" : ""
-                } />
-                <p>${messages.showSkipIntroBtnOnOverlay}</p>
-            </label>
-            <label>
-                <input type="checkbox" id="hide-nextup" name="hide-nextup" ${
-                  options.hideNextup ? "checked" : ""
-                } />
-                <p>${messages.hideNextup}</p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="temporarily-disable-overlay" name="temporarily-disable-overlay" ${
-                  options.temporarilyDisableOverlay ? "checked" : ""
-                } />
-                <p>${messages.temporarilyDisableOverlay}</p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="prevents-darkening-in-conjunction-with-nextup" name="prevents-darkening-in-conjunction-with-nextup" ${
-                  options.preventsDarkeningInConjunctionWithNextup
-                    ? "checked"
-                    : ""
-                } />
-                <p>${messages.preventsDarkeningInConjunctionWithNextup}</p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="show-nextup" name="show-nextup" ${
-                  options.showNextupOnOverlay ? "checked" : ""
-                } />
-                <p>
-                    ${messages.showNextupOnOverlay}
-                    <span class="nextup-ext-opt-dialog-tooltip" title="${
-                      messages.showNextupOnOverlay_Tooltip
-                    }"></span>
-                </p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="click-hide-button-for-all-nextup" name="click-hide-button-for-all-nextup" ${
-                  options.clickHideButtonForAllNextup ? "checked" : ""
-                } />
-                <p>
-                    ${messages.clickHideButtonForAllNextup}
-                    <span class="nextup-ext-opt-dialog-tooltip" title="${messages.clickHideButtonForAllNextup_Tooltip.replaceAll(
-                      regexForMultiineTooltips,
-                      ""
-                    )}"></span>
-                </p>
-            </label>
-            <label>
-                <input type="checkbox" id="hide-reactions" name="hide-reactions" ${
-                  options.hideReactions ? "checked" : ""
-                } />
-                <p>${messages.hideReactions}</p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="show-reactions" name="show-reactions" ${
-                  options.showReactionsOnOverlay ? "checked" : ""
-                } />
-                <p>
-                  ${messages.showReactionsOnOverlay}
+  <dialog class="nextup-ext-opt-dialog">
+      <button class="nextup-ext-opt-dialog-close-button">&times;</button>
+      <div class="nextup-ext-opt-dialog-tab-wrapper">
+          <div class="nextup-ext-opt-dialog-tab nextup-ext-opt-dialog-tab-active" data-target="options">Options</div>
+          <div class="nextup-ext-opt-dialog-tab" data-target="about">About</div>
+      </div>
+      <div class="nextup-ext-opt-dialog-content nextup-ext-opt-dialog-content-active" data-tab-id="options">
+          <div class="group-title nextup-ext-opt-dialog-note">
+             <p>${messages.promptReloadPage}</p>
+          </div>
+          <label>
+              <input type="checkbox" id="skip-ads" name="skip-ads" ${
+                options.skipAds ? "checked" : ""
+              } />
+              <p>
+                  ${messages.skipAds}
                   <span class="nextup-ext-opt-dialog-tooltip" title="${
-                    messages.showReactionsOnOverlay_Tooltip
+                    messages.skipAds_Tooltip
                   }"></span>
-                </p>
-            </label>
-            <label>
-                <input type="checkbox" id="prevents-transitions-to-recommended-videos" name="prevents-transitions-to-recommended-videos" ${
-                  options.preventsTransitionsToRecommendedVideos
-                    ? "checked"
-                    : ""
-                } />
-                <p>
-                  ${messages.preventsTransitionsToRecommendedVideos}
+              </p>
+          </label>
+          <label>
+              <input type="checkbox" id="hide-skip-intro-btn" name="hide-skip-intro-btn" ${
+                options.hideSkipIntroBtn ? "checked" : ""
+              } />
+              <p>${messages.hideSkipIntroBtn}</p>
+          </label>
+          <label class="indent1">
+              <input type="checkbox" id="show-skip-intro-btn" name="show-skip-intro-btn" ${
+                options.showSkipIntroBtnOnOverlay ? "checked" : ""
+              } />
+              <p>${messages.showSkipIntroBtnOnOverlay}</p>
+          </label>
+          <label>
+              <input type="checkbox" id="hide-nextup" name="hide-nextup" ${
+                options.hideNextup ? "checked" : ""
+              } />
+              <p>${messages.hideNextup}</p>
+          </label>
+          <label class="indent1">
+              <input type="checkbox" id="temporarily-disable-overlay" name="temporarily-disable-overlay" ${
+                options.temporarilyDisableOverlay ? "checked" : ""
+              } />
+              <p>${messages.temporarilyDisableOverlay}</p>
+          </label>
+          <label class="indent1">
+              <input type="checkbox" id="prevents-darkening-in-conjunction-with-nextup" name="prevents-darkening-in-conjunction-with-nextup" ${
+                options.preventsDarkeningInConjunctionWithNextup
+                  ? "checked"
+                  : ""
+              } />
+              <p>${messages.preventsDarkeningInConjunctionWithNextup}</p>
+          </label>
+          <label class="indent1">
+              <input type="checkbox" id="show-nextup" name="show-nextup" ${
+                options.showNextupOnOverlay ? "checked" : ""
+              } />
+              <p>
+                  ${messages.showNextupOnOverlay}
                   <span class="nextup-ext-opt-dialog-tooltip" title="${
-                    messages.preventsTransitionsToRecommendedVideos_Tooltip
+                    messages.showNextupOnOverlay_Tooltip
                   }"></span>
-                </p>
-            </label>
-            <label>
-                <input type="checkbox" id="hide-rationg" name="hide-rationg" ${
-                  options.hideRating ? "checked" : ""
-                } />
-                <p>${messages.hideRating}</p>
-            </label>
-            <label>
-                <input type="checkbox" id="prevents-darkening" name="prevents-darkening" ${
-                  options.preventsDarkening ? "checked" : ""
-                } />
-                <p>${messages.preventsDarkening}</p>
-            </label>
-            <label class="indent1">
-                <input type="checkbox" id="add-outlines-for-texts-and-icons" name="add-outlines-for-texts-and-icons" ${
-                  options.addOutlinesForTextsAndIcons ? "checked" : ""
-                } />
-                <p>${messages.addOutlinesForTextsAndIcons}</p>
-            </label>
-            <label>
-                <input type="checkbox" id="move-center-buttons-to-bottom" name="move-center-buttons-to-bottom" ${
-                  options.moveCenterButtonsToBottom ? "checked" : ""
-                } />
-                <p>${messages.moveCenterButtonsToBottom}</p>
-            </label>
-            <label>
-                <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
-                  options.shortcutKeyIsEnabled ? "checked" : ""
-                } />
-                <p>${messages.enableShortcutKey}</p>
-            </label>
-            <ul>
-                <li>
-                    <label>
-                        <span style="margin-right: 4px;">${
-                          messages.shortcutKeyForDialog
-                        }</span>
-                        <input type="text" id="shortcutkey-for-dialog" name="shortcutkey-for-dialog" />
-                        <span class="nextup-ext-opt-dialog-tooltip" title="${
-                          messages.shortcutKeyForDialog_Tooltip
-                        }"></span>
-                    </label>
-                </li>
-            </ul>
-            <div class="nextup-ext-opt-dialog-network-activity-monitoring">
-                <div class="group-title">
-                    <p>
-                        ${messages.monitorNetworkActivity}
-                        <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolution_Tooltip.replaceAll(
-                          regexForMultiineTooltips,
-                          ""
-                        )}"></span>
-                    </p>
-                </div>
-                <label>
-                    <input type="checkbox" id="force-highest-resolution" name="force-highest-resolution" ${
-                      options.forceHighestResolution_xhook ? "checked" : ""
-                    } />
-                    <p>${messages.forceHighestResolution}</p>
-                </label>
-                <label>
-                    <input type="checkbox" id="remove-ad-related-data" name="remove-ad-related-data" ${
-                      options.removeAdRelatedData ? "checked" : ""
-                    } />
-                    <p>${messages.removeAdRelatedData}</p>
-                </label>
-                <label>
-                    <input type="checkbox" id="enable-autoplay" name="enable-autoplay" ${
-                      options.enableAutoplay_xhook ? "checked" : ""
-                    } />
-                    <p>
-                        ${messages.enableAutoplay}
-                        <span class="nextup-ext-opt-dialog-tooltip" title="${
-                          messages.enableAutoplay_Tooltip
-                        }"></span>
-                    </p>
-                </label>
-                <label>
-                    <input type="checkbox" id="force-play-next-episode" name="force-play-next-episode" ${
-                      options.forcePlayNextEpisode_xhook ? "checked" : ""
-                    } />
-                    <p>
-                        ${messages.forcePlayNextEpisode}
-                        <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forcePlayNextEpisode_Tooltip.replaceAll(
-                          regexForMultiineTooltips,
-                          ""
-                        )}"></span>
-                    </p>
-                </label>
-            </div>
-            <div class="nextup-ext-opt-dialog-btn-wrapper">
-                <button id="nextup-ext-opt-dialog-close">${
-                  messages.close
-                }</button>
-                <div class="nextup-ext-opt-dialog-version"><span>v${scriptVersion}</span></div>
-            </div>
-        </div>
-    </dialog>
-    `;
-  document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
+              </p>
+          </label>
+          <label class="indent1">
+              <input type="checkbox" id="click-hide-button-for-all-nextup" name="click-hide-button-for-all-nextup" ${
+                options.clickHideButtonForAllNextup ? "checked" : ""
+              } />
+              <p>
+                  ${messages.clickHideButtonForAllNextup}
+                  <span class="nextup-ext-opt-dialog-tooltip" title="${messages.clickHideButtonForAllNextup_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}"></span>
+              </p>
+          </label>
+          <label>
+              <input type="checkbox" id="hide-reactions" name="hide-reactions" ${
+                options.hideReactions ? "checked" : ""
+              } />
+              <p>${messages.hideReactions}</p>
+          </label>
+          <label class="indent1">
+              <input type="checkbox" id="show-reactions" name="show-reactions" ${
+                options.showReactionsOnOverlay ? "checked" : ""
+              } />
+              <p>
+                ${messages.showReactionsOnOverlay}
+                <span class="nextup-ext-opt-dialog-tooltip" title="${
+                  messages.showReactionsOnOverlay_Tooltip
+                }"></span>
+              </p>
+          </label>
+          <label>
+              <input type="checkbox" id="prevents-transitions-to-recommended-videos" name="prevents-transitions-to-recommended-videos" ${
+                options.preventsTransitionsToRecommendedVideos ? "checked" : ""
+              } />
+              <p>
+                ${messages.preventsTransitionsToRecommendedVideos}
+                <span class="nextup-ext-opt-dialog-tooltip" title="${
+                  messages.preventsTransitionsToRecommendedVideos_Tooltip
+                }"></span>
+              </p>
+          </label>
+          <label>
+              <input type="checkbox" id="hide-rationg" name="hide-rationg" ${
+                options.hideRating ? "checked" : ""
+              } />
+              <p>${messages.hideRating}</p>
+          </label>
+          <label>
+              <input type="checkbox" id="prevents-darkening" name="prevents-darkening" ${
+                options.preventsDarkening ? "checked" : ""
+              } />
+              <p>${messages.preventsDarkening}</p>
+          </label>
+          <label class="indent1">
+              <input type="checkbox" id="add-outlines-for-texts-and-icons" name="add-outlines-for-texts-and-icons" ${
+                options.addOutlinesForTextsAndIcons ? "checked" : ""
+              } />
+              <p>${messages.addOutlinesForTextsAndIcons}</p>
+          </label>
+          <label>
+              <input type="checkbox" id="move-center-buttons-to-bottom" name="move-center-buttons-to-bottom" ${
+                options.moveCenterButtonsToBottom ? "checked" : ""
+              } />
+              <p>${messages.moveCenterButtonsToBottom}</p>
+          </label>
+          <label>
+              <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
+                options.shortcutKeyIsEnabled ? "checked" : ""
+              } />
+              <p>${messages.enableShortcutKey}</p>
+          </label>
+          <ul>
+              <li>
+                  <label>
+                      <span style="margin-right: 4px;">${
+                        messages.shortcutKeyForDialog
+                      }</span>
+                      <input type="text" id="shortcutkey-for-dialog" name="shortcutkey-for-dialog" />
+                      <span class="nextup-ext-opt-dialog-tooltip" title="${
+                        messages.shortcutKeyForDialog_Tooltip
+                      }"></span>
+                  </label>
+              </li>
+          </ul>
+          <div class="nextup-ext-opt-dialog-network-activity-monitoring">
+              <div class="group-title">
+                  <p>
+                      ${messages.monitorNetworkActivity}
+                      <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolution_Tooltip.replaceAll(
+                        regexForMultiineTooltips,
+                        ""
+                      )}"></span>
+                  </p>
+              </div>
+              <label>
+                  <input type="checkbox" id="force-highest-resolution" name="force-highest-resolution" ${
+                    options.forceHighestResolution_xhook ? "checked" : ""
+                  } />
+                  <p>${messages.forceHighestResolution}</p>
+              </label>
+              <label>
+                  <input type="checkbox" id="remove-ad-related-data" name="remove-ad-related-data" ${
+                    options.removeAdRelatedData ? "checked" : ""
+                  } />
+                  <p>${messages.removeAdRelatedData}</p>
+              </label>
+              <label>
+                  <input type="checkbox" id="enable-autoplay" name="enable-autoplay" ${
+                    options.enableAutoplay_xhook ? "checked" : ""
+                  } />
+                  <p>
+                      ${messages.enableAutoplay}
+                      <span class="nextup-ext-opt-dialog-tooltip" title="${
+                        messages.enableAutoplay_Tooltip
+                      }"></span>
+                  </p>
+              </label>
+              <label>
+                  <input type="checkbox" id="force-play-next-episode" name="force-play-next-episode" ${
+                    options.forcePlayNextEpisode_xhook ? "checked" : ""
+                  } />
+                  <p>
+                      ${messages.forcePlayNextEpisode}
+                      <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forcePlayNextEpisode_Tooltip.replaceAll(
+                        regexForMultiineTooltips,
+                        ""
+                      )}"></span>
+                  </p>
+              </label>
+          </div>
+      </div>
 
+      <div class="nextup-ext-opt-dialog-content nextup-ext-opt-dialog-about" data-tab-id="about">
+          <section>
+              <div class="group-title">
+                <p>Auto hide next up card for Amazon Prime Video</p>
+              </div>
+              <ul>
+                  <li>
+                      <a href="https://github.com/ryo-fujinone/auto-hide-next-up-card-for-amazon-prime-video" target="_blank">GitHub</a>
+                  </li>
+                  <li>
+                      <a href="https://ryo-fujinone.net/blog/" target="_blank">Blog</a>
+                  </li>
+                  <li>
+                      <a href="https://x.com/ryo_fujinone" target="_blank">X (@ryo_fujinone)</a>
+                  </li>
+              </ul>
+          </section>
+          <section>
+              <div class="group-title">
+                <p>Credits</p>
+              </div>
+              <ul>
+                  <li>
+                      <a href="https://github.com/jpillora/xhook" target="_blank">XHook@1.6.2</a>
+                      <span> / MIT</span>
+                  </li>
+              </ul>
+          </section>
+      </div>
+
+      <div class="nextup-ext-opt-dialog-version"><span>v${scriptVersion}</span></div>
+  </dialog>
+  `;
+
+  document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
   document.documentElement.dataset.nextupExtOptDialogCreated = true;
 
   const css = `
     .nextup-ext-opt-dialog {
-      padding: 0;
-      word-break: break-all;
-      border-radius: 1em;
-      box-shadow: 0px 4px 16px rgb(0 0 0 / 0.3);
+        padding: 5px 10px 10px 10px;
+        border: none;
+        border-radius: 1em;
+        box-shadow: 0px 4px 16px rgb(0 0 0 / 0.8);
+        outline: none;
     }
-    .dialog-inner {
-      padding: 14px;
+
+    .nextup-ext-opt-dialog-close-button {
+        position: absolute;
+        top: 8px;
+        right: 2px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #000;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        text-align: center;
     }
-    .group-title {
-      text-align: center;
-      margin-bottom: 7px;
-      font-weight: 700;
+    .nextup-ext-opt-dialog-close-button:hover {
+        background-color: rgba(0 0 0 / 0.1);
+    }
+
+    .nextup-ext-opt-dialog-tab-wrapper {
+        display: flex;
+        cursor: pointer;
+        margin-top: 5px;
+    }
+    .nextup-ext-opt-dialog-tab {
+        padding: 5px 15px;
+        background: #f1f1f1;
+        border: 1px solid #ccc;
+        border-bottom: none;
+        margin-right: 5px;
+        border-radius: 5px 5px 0 0;
+    }
+    .nextup-ext-opt-dialog-tab-active {
+        background: #fff;
+        border-top: 2px solid #ccc;
+    }
+
+    .nextup-ext-opt-dialog-content {
+        display: none;
+        border: 1px solid #ccc;
+        border-radius: 0 0 5px 5px;
+        margin-top: -1px;
+        padding: 15px;
+        height: 450px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        word-break: break-all;
+    }
+    .nextup-ext-opt-dialog-content-active {
+        display: block;
+        border-top: 1px solid #ccc;
+    }
+
+    .nextup-ext-opt-dialog .group-title {
+        text-align: center;
+        margin-bottom: 7px;
+        font-weight: 700;
     }
     .nextup-ext-opt-dialog-note {
       color: green;
     }
+
     .nextup-ext-opt-dialog label:has(input[type='checkbox']){
-      display: flex;
+        display: flex;
     }
     .nextup-ext-opt-dialog label.indent1 {
-      margin-left: 14px;
+        margin-left: 14px;
     }
     .nextup-ext-opt-dialog label p {
-      margin-bottom: 5px;
-      width: calc(100% - 24px);
-      font-weight: 400;
+        margin-bottom: 5px;
+        font-weight: 400;
     }
     .nextup-ext-opt-dialog ul li {
-      margin-left: 18px;
+        margin-left: 18px;
     }
     .nextup-ext-opt-dialog ul li span {
-      font-weight: 400;
+        font-weight: 400;
     }
     .nextup-ext-opt-dialog label input[type='text'] {
-      height: 20px;
+        height: 20px;
     }
-    .nextup-ext-opt-dialog-tooltip {
-      color: darkviolet;
-      text-decoration: underline;
-      cursor: help;
-      margin-left: 2px;
-    }
-    .nextup-ext-opt-dialog-tooltip:before {
-      content: "\\0028";
-    }
-    .nextup-ext-opt-dialog-tooltip:after {
-      content: "\\0029";
-    }
-
     .nextup-ext-opt-dialog-network-activity-monitoring {
-      border-top: 1px dotted;
-      margin-top: 10px;
-      padding-top: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px dotted;
+        border-top: 1px dotted;
+        margin-top: 10px;
+        padding-top: 10px;
     }
     .nextup-ext-opt-dialog-network-activity-monitoring > .group-title {
-      color: darkslateblue;
+        color: darkslateblue;
     }
 
+    .nextup-ext-opt-dialog-tooltip {
+        color: darkviolet;
+        text-decoration: underline;
+        cursor: help;
+        margin-left: 2px;
+    }
+    .nextup-ext-opt-dialog-tooltip:before {
+        content: "\\0028";
+    }
+    .nextup-ext-opt-dialog-tooltip:after {
+        content: "\\0029";
+    }
 
-    .nextup-ext-opt-dialog .nextup-ext-opt-dialog-btn-wrapper {
-      margin-top: 12px;
-      position: relative;
+    .nextup-ext-opt-dialog-about .group-title {
+        text-align: unset;
     }
-    .nextup-ext-opt-dialog div:has(#nextup-ext-opt-dialog-close):not(.dialog-inner) {
-      text-align: center;
+    .nextup-ext-opt-dialog-about section {
+        margin-bottom: 15px;
     }
-    #nextup-ext-opt-dialog-close {
-      border-color: black;
-      border: solid 1px;
-      background-color: #EEE
-    }
-    #nextup-ext-opt-dialog-close {
-      width: 120px;
-      letter-spacing: 4px;
-      border-radius: 0.5em;
-    }
-    #nextup-ext-opt-dialog-close:hover {
-      background-color: #DDD
-    }
+
     .nextup-ext-opt-dialog-version {
-      position: absolute;
-      bottom: 0px;
-      right: 0px;
+        text-align: right;
+        font-size: 12px;
+        color: #222;
+        padding-top: 10px;
     }
   `;
+
   addStyle(css);
 
   const tooltipElements = document.querySelectorAll(
@@ -847,6 +917,33 @@ const createOptionDialog = async (scriptVersion) => {
       Dialog.whenClosed();
     }
   }).observe(optDialog, { attributes: true, attributeFilter: ["open"] });
+
+  const closeBtn = optDialog.querySelector(
+    ".nextup-ext-opt-dialog-close-button"
+  );
+  closeBtn.addEventListener("click", () => {
+    optDialog.close();
+  });
+
+  const tabs = optDialog.querySelectorAll(".nextup-ext-opt-dialog-tab");
+  const contents = optDialog.querySelectorAll(".nextup-ext-opt-dialog-content");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) =>
+        t.classList.remove("nextup-ext-opt-dialog-tab-active")
+      );
+      contents.forEach((c) =>
+        c.classList.remove("nextup-ext-opt-dialog-content-active")
+      );
+
+      tab.classList.add("nextup-ext-opt-dialog-tab-active");
+      const targetId = tab.dataset.target;
+      const targetContent = optDialog.querySelector(
+        `.nextup-ext-opt-dialog-content[data-tab-id=${targetId}]`
+      );
+      targetContent.classList.add("nextup-ext-opt-dialog-content-active");
+    });
+  });
 
   optDialog.addEventListener(
     "click",
