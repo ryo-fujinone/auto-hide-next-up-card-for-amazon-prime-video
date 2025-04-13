@@ -2748,7 +2748,7 @@ const main = async () => {
         controller.markingCenterOverlaysWrapper();
 
         const video = player.querySelector("video");
-        if (!video || !video.checkVisibility()) {
+        if (!video?.checkVisibility()) {
           return;
         }
 
