@@ -1802,22 +1802,24 @@ class ElementController {
   // Preparation for detecting the display state of the overlay.
   markingCenterOverlaysWrapper() {
     if (this.centerOverlaysWrapperIsMarked) {
-      return;
+      return true;
     }
 
     const playPauseButton = this.player.querySelector(
       ".atvwebplayersdk-playpause-button"
     );
     if (!playPauseButton) {
-      return;
+      return false;
     }
     try {
       const centerOverlaysWrapper =
         playPauseButton.parentNode.parentNode.parentNode.parentNode;
       centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
       this.centerOverlaysWrapperIsMarked = true;
+      return true;
     } catch (e) {
       console.log(e);
+      return false;
     }
   }
 
@@ -1911,6 +1913,11 @@ class ElementController {
     if (!options.showSkipIntroBtnOnOverlay) {
       return;
     }
+
+    if (!this.markingCenterOverlaysWrapper()) {
+      return;
+    }
+
     const overlaysContainer = this.player.querySelector(
       ".atvwebplayersdk-overlays-container"
     );
@@ -2041,6 +2048,10 @@ class ElementController {
       this.preventsDarkeningInConjunctionWithNextup(options);
 
       if (options.showNextupOnOverlay) {
+        if (!this.markingCenterOverlaysWrapper()) {
+          return;
+        }
+
         const centerOverlaysWrapper = this.player.querySelector(
           "[data-ident='center-overlays-wrapper']"
         );
@@ -2098,6 +2109,10 @@ class ElementController {
       reactionsWrapper.style.display = "none";
 
       if (!options.showReactionsOnOverlay) {
+        return;
+      }
+
+      if (!this.markingCenterOverlaysWrapper()) {
         return;
       }
 
@@ -2753,8 +2768,6 @@ const main = async () => {
         }
 
         observer.disconnect();
-
-        controller.markingCenterOverlaysWrapper();
 
         if (canRestoreVolume) {
           canRestoreVolume = false;
