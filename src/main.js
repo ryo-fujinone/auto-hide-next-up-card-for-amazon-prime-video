@@ -1864,7 +1864,7 @@ class ElementController {
       }, 2000);
 
       const remainingTimeStr = remainingTimeElem.textContent;
-      const mached = remainingTimeStr.match(/(\d?\d):{0,2}(\d?\d)/);
+      const mached = remainingTimeStr.match(/(\d{1,2}):(\d{2})/);
       if (!mached) {
         video.muted = false;
         return;
