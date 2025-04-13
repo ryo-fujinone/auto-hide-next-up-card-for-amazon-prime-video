@@ -1231,9 +1231,30 @@ const createOptionBtnOnNavbar = () => {
         addStyle(css, "optionBtnOnNavbar");
       }
 
-      optBtnElement.addEventListener("click", (_) => {
-        const optDialog = getOptionDialog();
-        optDialog.showModal();
+      // Create buttons for mobile
+      let optBtnElement2;
+      try {
+        const accountDropdownContainer2 = document.querySelector(
+          "[data-testid='mobile-nav-wrapper'] [data-testid='pv-nav-account-dropdown-container']"
+        );
+        const liElement2 = accountDropdownContainer2.parentNode;
+        const cloneLi2 = cloneLi.cloneNode(true);
+        cloneLi2.setAttribute("id", "pv-nav-option-btn-container");
+        liElement2.after(cloneLi2);
+        optBtnElement2 = cloneLi2.querySelector("button");
+      } catch (e) {
+        console.log(e);
+      }
+
+      // Add event listeners to both buttons
+      [optBtnElement, optBtnElement2].forEach((optBtn) => {
+        if (!optBtn) {
+          return;
+        }
+        optBtn.addEventListener("click", (_) => {
+          const optDialog = getOptionDialog();
+          optDialog.showModal();
+        });
       });
     }
 
