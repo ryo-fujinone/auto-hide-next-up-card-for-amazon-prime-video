@@ -1858,14 +1858,18 @@ const injectXhook = (options = getDefaultOptions()) => {
 
   document.documentElement.dataset.options = JSON.stringify(options);
 
-  let xhookUrl = "https://unpkg.com/xhook@latest/dist/xhook.min.js";
-  try {
-    if (ScriptInfo.isChromeExtension()) {
+  let xhookUrl;
+  if (ScriptInfo.isChromeExtension()) {
+    try {
       xhookUrl = chrome?.runtime?.getURL("xhook.min.js");
-    }
-  } catch (e) {}
-  document.documentElement.dataset.xhookUrl = xhookUrl;
-  injectScript(runXhook);
+    } catch (e) {}
+  } else if (ScriptInfo.isUserScript()) {
+    xhookUrl = "https://unpkg.com/xhook@latest/dist/xhook.min.js";
+  }
+  if (xhookUrl) {
+    document.documentElement.dataset.xhookUrl = xhookUrl;
+    injectScript(runXhook);
+  }
 };
 
 class ElementController {
