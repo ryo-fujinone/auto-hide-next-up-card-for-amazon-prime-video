@@ -747,8 +747,8 @@ const createOptionDialog = async (scriptVersion) => {
               </div>
               <ul>
                   <li>
-                      <a href="https://github.com/jpillora/xhook" target="_blank">XHook@1.6.2</a>
-                      <span> / MIT</span>
+                      <a href="https://github.com/jpillora/xhook" target="_blank">xhook@1.6.2</a>
+                      <span> / Jaime Pillora / MIT</span>
                   </li>
               </ul>
           </section>
@@ -763,11 +763,12 @@ const createOptionDialog = async (scriptVersion) => {
 
   const css = `
     .nextup-ext-opt-dialog {
-        padding: 5px 10px 10px 10px;
+        padding: 5px 10px 1px 10px;
         border: none;
         border-radius: 1em;
         box-shadow: 0px 4px 16px rgb(0 0 0 / 0.8);
         outline: none;
+        background-color: #EEE;
     }
 
     .nextup-ext-opt-dialog-close-button {
@@ -816,6 +817,7 @@ const createOptionDialog = async (scriptVersion) => {
         overflow-y: auto;
         overflow-x: hidden;
         word-break: break-all;
+        background-color: white;
     }
     .nextup-ext-opt-dialog-content-active {
         display: block;
@@ -883,7 +885,7 @@ const createOptionDialog = async (scriptVersion) => {
         text-align: right;
         font-size: 12px;
         color: #222;
-        padding-top: 10px;
+        padding-top: 1px;
     }
   `;
 
