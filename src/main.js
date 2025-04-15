@@ -1283,16 +1283,15 @@ const createUserScriptMenu = () => {
   if (/ja|ja-JP/.test(window.navigator.language)) {
     name = "オプションダイアログを開く";
   }
-  GM_registerMenuCommand(
-    name,
-    () => {
-      const optDialog = getOptionDialog();
-      if (optDialog && !optDialog.hasAttribute("open")) {
-        optDialog.showModal();
-      }
-    },
-    {}
-  );
+  // Greasemonkey must use GM.registerMenuCommand, not GM_registerMenuCommand.
+  // Tampermonkey and Violentmonkey can use both functions.
+  const registerMenuCommand = GM.registerMenuCommand;
+  registerMenuCommand(name, () => {
+    const optDialog = getOptionDialog();
+    if (optDialog && !optDialog.hasAttribute("open")) {
+      optDialog.showModal();
+    }
+  });
 };
 
 // The runXhook function is executed as an inline script.

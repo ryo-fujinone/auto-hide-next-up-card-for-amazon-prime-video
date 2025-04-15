@@ -29,7 +29,11 @@
     "https://*.amazon.cn/*",
     "https://*.primevideo.com/*"
   ],
-  "grant": ["GM_registerMenuCommand", "GM_getResourceText"],
+  "grant": [
+    "GM_registerMenuCommand",
+    "GM.registerMenuCommand ",
+    "GM_getResourceText"
+  ],
   "resource": {
     "xhook": "https://unpkg.com/xhook@latest/dist/xhook.min.js"
   },
