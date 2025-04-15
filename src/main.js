@@ -1864,7 +1864,28 @@ const injectXhook = (options = getDefaultOptions()) => {
       xhookUrl = chrome?.runtime?.getURL("xhook.min.js");
     } catch (e) {}
   } else if (ScriptInfo.isUserScript()) {
-    xhookUrl = "https://unpkg.com/xhook@latest/dist/xhook.min.js";
+    /**
+     * GM_getResourceText/URL is not used because we want to share the way xhook is executed with Chrome's extension edition.
+     * Also, the Chrome Web Store is strict about remote code execution, so this script does not hardcode the CDN URL.
+     */
+    try {
+      const gmInfo = window.GM_info || GM_info;
+      const resources = gmInfo.script.resources;
+      if (Array.isArray(resources)) {
+        // Tampermonkey / Violentmonkey
+        const xhookResource = resources.find((r) => r.name === "xhook");
+        if (xhookResource.url) {
+          xhookUrl = xhookResource.url;
+        }
+      } else if (typeof resources === "object") {
+        // Greasemonkey
+        if (Object.hasOwn(resources, "xhook")) {
+          xhookUrl = resources.xhook.url;
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
   }
   if (xhookUrl) {
     document.documentElement.dataset.xhookUrl = xhookUrl;
