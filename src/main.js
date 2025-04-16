@@ -17,6 +17,7 @@ const getDefaultOptions = () => {
     preventsDarkening: false,
     addOutlinesForTextsAndIcons: false,
     moveCenterButtonsToBottom: false,
+    useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
       alt: true,
@@ -261,23 +262,44 @@ const getVisibleVideo = () => {
   return document.querySelector(".dv-player-fullscreen video");
 };
 
+const togglePlayAndPause = () => {
+  const uiContainer = document.querySelector(
+    ".dv-player-fullscreen .webPlayerSDKUiContainer"
+  );
+  if (uiContainer) {
+    uiContainer.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
+  }
+};
+
 const playVideo = () => {
-  const video = getVisibleVideo();
-  if (!video) {
+  const videos = document.querySelectorAll(".dv-player-fullscreen  video");
+  if (videos.length === 0) {
     return;
   }
-  if (video.paused) {
-    video.play();
+  if (videos.length === 1) {
+    const video = videos[0];
+    if (video.paused) {
+      video.play();
+    }
+  } else {
+    // LiveTV
+    togglePlayAndPause();
   }
 };
 
 const pauseVideo = () => {
-  const video = getVisibleVideo();
-  if (!video) {
+  const videos = document.querySelectorAll(".dv-player-fullscreen  video");
+  if (videos.length === 0) {
     return;
   }
-  if (!video.paused) {
-    video.pause();
+  if (videos.length === 1) {
+    const video = videos[0];
+    if (!video.paused) {
+      video.pause();
+    }
+  } else {
+    // LiveTV
+    togglePlayAndPause();
   }
 };
 
@@ -286,7 +308,6 @@ class Dialog {
   static #_clickedOutSide(e) {
     if (e.target.classList.contains("nextup-ext-opt-dialog")) {
       e.target.close();
-      this.whenClosed();
     }
   }
 
@@ -424,6 +445,12 @@ const createOptionMessages = () => {
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
+    useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
+    useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
+    なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
+    ライブ配信で動作確認が取れている機能は以下です。
+    ・オーバーレイ表示が有効な時に暗くならないようにする
+    ・中央のボタン（再生/停止、戻る、進む）を下部に移動する`,
     enableShortcutKey:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
@@ -487,6 +514,12 @@ const createOptionMessages = () => {
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
+    useOnLiveTv: "Experimental: Use this extension on LiveTV",
+    useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
+    Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
+    The following features have been confirmed to work with LiveTV.
+    - Prevents darkening when overlay display is enabled
+    - Move the center buttons(Play/Pause, Back and Forward) to the bottom`,
     enableShortcutKey:
       "Enable shortcut key to open the options dialog during video playback",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
@@ -656,6 +689,18 @@ const createOptionDialog = async (scriptVersion) => {
                 options.moveCenterButtonsToBottom ? "checked" : ""
               } />
               <p>${messages.moveCenterButtonsToBottom}</p>
+          </label>
+          <label>
+              <input type="checkbox" id="use-on-live-tv" name="use-on-live-tv" ${
+                options.useOnLiveTv ? "checked" : ""
+              } />
+              <p>
+                ${messages.useOnLiveTv}
+                <span class="nextup-ext-opt-dialog-tooltip" title="${messages.useOnLiveTv_Tooltip.replaceAll(
+                  regexForMultiineTooltips,
+                  ""
+                )}"></span>
+              </p>
           </label>
           <label>
               <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
@@ -1004,6 +1049,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "move-center-buttons-to-bottom":
           await saveOptions({ moveCenterButtonsToBottom: e.target.checked });
+          break;
+        case "use-on-live-tv":
+          await saveOptions({ useOnLiveTv: e.target.checked });
           break;
         case "enable-shortcutkey":
           await saveOptions({ shortcutKeyIsEnabled: e.target.checked });
@@ -2372,6 +2420,17 @@ class ElementController {
         addStyle(cssForImg, "addOutlinesForIcons");
       }
     }
+
+    if (options.useOnLiveTv) {
+      if (!document.querySelector("#preventsDarkening_LiveTv")) {
+        const cssForLiveTv = `
+          .atvwebplayersdk-miro-gradient-enabled {
+            display: none !important;
+          }
+        `;
+        addStyle(cssForLiveTv, "preventsDarkening_LiveTv");
+      }
+    }
   }
 
   // Move the center buttons(Play/Pause, Back and Forward) to the bottom.
@@ -2822,6 +2881,44 @@ class ElementController {
   }
 }
 
+const monitorLiveTvVideoElements = (player, options = getDefaultOptions()) => {
+  if (!options.useOnLiveTv) {
+    return;
+  }
+
+  let rendererContainer;
+
+  const videoElementsObserver = new MutationObserver((_) => {
+    if (!rendererContainer) {
+      return;
+    }
+
+    const videos = rendererContainer.querySelectorAll("video");
+    if (videos.length !== 2) {
+      return;
+    }
+    if (videos[0].style.display !== "none" || videos[1].style.display !== "") {
+      return;
+    }
+    if (videos[0].hasAttribute("src") || !videos[1].hasAttribute("src")) {
+      return;
+    }
+    videos[0].before(videos[1]);
+  });
+
+  new MutationObserver((_, observer) => {
+    rendererContainer = player.querySelector(".rendererContainer");
+    if (!rendererContainer) {
+      return;
+    }
+    observer.disconnect();
+    videoElementsObserver.observe(rendererContainer, {
+      ...observeConfig,
+      attributes: true,
+    });
+  }).observe(player, observeConfig);
+};
+
 const restoreVolume = (video, url) => {
   const searchParams = new URL(url).searchParams;
   if (
@@ -2869,6 +2966,12 @@ const main = async () => {
         } catch (e) {
           console.log(e);
         }
+      }
+
+      try {
+        monitorLiveTvVideoElements(player, options);
+      } catch (e) {
+        console.log(e);
       }
 
       const controller = new ElementController(player);
