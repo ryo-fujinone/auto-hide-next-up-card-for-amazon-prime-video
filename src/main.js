@@ -449,20 +449,20 @@ const createOptionMessages = () => {
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
     なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
     ライブ配信で動作確認が取れている機能は以下です。
-    ・オーバーレイ表示が有効な時に暗くならないようにする
-    ・中央のボタン（再生/停止、戻る、進む）を下部に移動する`,
+    - オーバーレイ表示が有効な時に暗くならないようにする
+    - 中央のボタン（再生/停止、戻る、進む）を下部に移動する`,
     enableShortcutKey:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須。",
     monitorNetworkActivity: "通信の監視・改変",
-    forceHighestResolution: "強制的に最高画質で再生する",
-    forceHighestResolution_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
-        プライムビデオの挙動に支障をきたす可能性があるため、ご理解の上ご活用ください。\n
+    monitorNetworkActivity_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
+        広告ブロック系の拡張機能との併用は避けることを推奨します。\n
         [強制的に最高画質で再生する] は他の監視・改変オプションを有効にする場合にセットで有効にすることを推奨します。
-        通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出る可能性があることが確認されています。
+        通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出る場合があることが確認されています。
         先読みで最低画質の動画が取得され、少しの間だけそれが再生される場合があるようです。
         [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
+    forceHighestResolution: "強制的に最高画質で再生する",
     removeAdRelatedData: "広告関連のデータを除去する",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
@@ -525,13 +525,13 @@ const createOptionMessages = () => {
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
     monitorNetworkActivity: "Monitor and modify network activity",
-    forceHighestResolution: "Force playback at highest resolution",
-    forceHighestResolution_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
-        Please understand that this may interfere with the behavior of Prime Video.\n
+    monitorNetworkActivity_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
+        It is not recommended to use in conjunction with ad-blocking extensions.\n
         It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
         This extension uses a library called xhook to monitor and modify communications, and it has been confirmed that if xhook is enabled, it may affect the preloading behavior for a short period of time after playback begins.
         It seems that in some cases the lowest quality video is retrieved in preload and it plays for a short while.
         It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
+    forceHighestResolution: "Force playback at highest resolution",
     removeAdRelatedData: "Remove ad related data",
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
@@ -725,7 +725,7 @@ const createOptionDialog = async (scriptVersion) => {
               <div class="group-title">
                   <p>
                       ${messages.monitorNetworkActivity}
-                      <span class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolution_Tooltip.replaceAll(
+                      <span class="nextup-ext-opt-dialog-tooltip" title="${messages.monitorNetworkActivity_Tooltip.replaceAll(
                         regexForMultiineTooltips,
                         ""
                       )}"></span>
