@@ -562,7 +562,7 @@ const createOptionDialog = async (scriptVersion) => {
   const regexForMultiineTooltips = /^[^\S\r\n]*/gm;
 
   const dialogHtmlStr = `
-  <dialog class="nextup-ext-opt-dialog">
+  <dialog class="nextup-ext-opt-dialog"><div class="nextup-ext-opt-dialog-inner">
       <button class="nextup-ext-opt-dialog-close-button">&times;</button>
       <div class="nextup-ext-opt-dialog-tab-wrapper">
           <div class="nextup-ext-opt-dialog-tab nextup-ext-opt-dialog-tab-active" data-target="options">Options</div>
@@ -800,7 +800,7 @@ const createOptionDialog = async (scriptVersion) => {
       </div>
 
       <div class="nextup-ext-opt-dialog-version"><span>v${scriptVersion}</span></div>
-  </dialog>
+  </div></dialog>
   `;
 
   document.body.insertAdjacentHTML("beforeend", dialogHtmlStr);
@@ -808,12 +808,15 @@ const createOptionDialog = async (scriptVersion) => {
 
   const css = `
     .nextup-ext-opt-dialog {
-        padding: 5px 10px 1px 10px;
+        padding: 0px;
         border: none;
         border-radius: 1em;
         box-shadow: 0px 4px 16px rgb(0 0 0 / 0.8);
         outline: none;
         background-color: #EEE;
+    }
+    .nextup-ext-opt-dialog-inner {
+        padding: 5px 10px 1px 10px;
     }
 
     .nextup-ext-opt-dialog-close-button {
