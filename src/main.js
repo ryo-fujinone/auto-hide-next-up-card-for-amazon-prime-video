@@ -818,7 +818,7 @@ const createOptionDialog = async (scriptVersion) => {
 
     .nextup-ext-opt-dialog-close-button {
         position: absolute;
-        top: 8px;
+        top: 2px;
         right: 2px;
         background: none;
         border: none;
