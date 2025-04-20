@@ -1352,15 +1352,6 @@ const runXhook = () => {
   delete document.documentElement.dataset.xhookUrl;
   delete document.documentElement.dataset.options;
 
-  const script = document.createElement("script");
-  script.src = xhookUrl;
-
-  const metadataResourceArray = [];
-  const nextUpV2ResourceArray = [];
-  const getVodPlaybackResourcesArray = [];
-
-  let mpdId;
-
   const isMpd = (request, response) => {
     if (!request.url.match(/\.mpd/)) {
       return false;
@@ -1432,13 +1423,34 @@ const runXhook = () => {
     return true;
   };
 
-  script.addEventListener("load", () => {
-    xhook.after(function (request, response) {
-      (() => {
-        if (!options.forceHighestResolution_xhook) {
-          return;
-        }
+  class XhookAfter {
+    static #queue = [];
+
+    static #mpdId;
+    static #metadataResourceArray = [];
+    static #nextUpV2ResourceArray = [];
+    static #getVodPlaybackResourcesArray = [];
+
+    static get mpdId() {
+      return this.#mpdId;
+    }
+
+    static get metadataResourceArray() {
+      return this.#metadataResourceArray;
+    }
+
+    static get nextUpV2ResourceArray() {
+      return this.#nextUpV2ResourceArray;
+    }
+
+    static get getVodPlaybackResourcesArray() {
+      return this.#getVodPlaybackResourcesArray;
+    }
+
+    static forceHighestResolution(request, response) {
+      return new Promise((resolve) => {
         if (!isMpd(request, response)) {
+          resolve();
           return;
         }
 
@@ -1449,6 +1461,7 @@ const runXhook = () => {
 
           const periods = dom.querySelectorAll("Period ");
           if (periods.length === 0) {
+            resolve();
             return;
           }
 
@@ -1479,16 +1492,18 @@ const runXhook = () => {
 
           const newMpd = dom.documentElement.outerHTML;
           response.text = newMpd;
+          resolve();
         } catch (e) {
           console.log(e);
+          resolve();
         }
-      })();
+      });
+    }
 
-      (() => {
-        if (!options.removeAdRelatedData) {
-          return;
-        }
+    static removeAdRelatedDataInMpd(request, response) {
+      return new Promise((resolve) => {
         if (!isMpd(request, response)) {
+          resolve();
           return;
         }
 
@@ -1499,6 +1514,7 @@ const runXhook = () => {
 
           const periods = dom.querySelectorAll("Period");
           if (periods.length === 0) {
+            resolve();
             return;
           }
 
@@ -1513,22 +1529,25 @@ const runXhook = () => {
 
           const period = dom.querySelector("Period:has(Role[value='main'])");
           if (!period) {
+            resolve();
             return;
           }
           period.removeAttribute("start");
 
           const newMpd = dom.documentElement.outerHTML;
           response.text = newMpd;
+          resolve();
         } catch (e) {
           console.log(e);
+          resolve();
         }
-      })();
+      });
+    }
 
-      (() => {
-        if (!options.removeAdRelatedData) {
-          return;
-        }
+    static removeAdRelatedDataInVod(request, response) {
+      return new Promise((resolve) => {
         if (!isGetVodPlaybackResources(request, response)) {
+          resolve();
           return;
         }
 
@@ -1536,91 +1555,72 @@ const runXhook = () => {
           const data = JSON.parse(response.text);
           const playbackUrls = data.vodPlaybackUrls?.result?.playbackUrls;
           if (!playbackUrls) {
+            resolve();
             return;
           }
           if (!playbackUrls.cuepoints) {
+            resolve();
             return;
           }
           delete playbackUrls.cuepoints;
           console.log("Removed ads (cuepoints)");
           response.text = JSON.stringify(data);
-
-          /**
-           * The following implementation will also work, but it is more reliable to remove the cuepoints themselves.
-           */
-          // const cuepoints =
-          //   data.vodPlaybackUrls?.result?.playbackUrls?.cuepoints;
-          // if (!cuepoints) {
-          //   return;
-          // }
-          // const encodedManifest = cuepoints.encodedManifest;
-          // if (!encodedManifest) {
-          //   return;
-          // }
-
-          // const manifest = atob(encodedManifest);
-          // const parser = new DOMParser();
-          // const dom = parser.parseFromString(manifest, "text/xml");
-          // const adSources = dom.querySelectorAll("AdSource");
-          // if (adSources.length === 0) {
-          //   return;
-          // }
-
-          // for (const adSource of adSources) {
-          //   adSource.remove();
-          // }
-
-          // const newManifest = dom.documentElement.outerHTML;
-          // const newEncodedManifest = btoa(newManifest);
-          // cuepoints.encodedManifest = newEncodedManifest;
-          // response.text = JSON.stringify(data);
-        } catch (e) {}
-      })();
-
-      (() => {
-        if (!options.enableAutoplay_xhook) {
-          return;
+          resolve();
+        } catch (e) {
+          resolve();
         }
+      });
+    }
+
+    static enableAutoplay(request, response) {
+      return new Promise((resolve) => {
         const _isGetSections = isGetSections(request, response);
         const _hasNextUpV2Resource = hasNextUpV2Resource(request, response);
         if (!_isGetSections && !_hasNextUpV2Resource) {
+          resolve();
           return;
         }
 
-        if (_isGetSections) {
+        if (_hasNextUpV2Resource) {
+          try {
+            const data = JSON.parse(response.text);
+            const autoplayConfig =
+              data?.resources?.nextUpV2?.card?.autoPlayConfig;
+            if (!autoplayConfig) {
+              resolve();
+              return;
+            }
+            autoplayConfig.autoplayEnabled = true;
+            response.text = JSON.stringify(data);
+            resolve();
+          } catch (e) {
+            console.log(e);
+            resolve();
+          }
+        } else if (_isGetSections) {
+          // This is probably no longer used in Japan, but I'll leave the code just in case.
           try {
             const data = JSON.parse(response.text);
             const autoplayConfig =
               data?.sections?.bottom?.collections?.collectionList?.[0]
                 ?.autoplayConfig;
             if (!autoplayConfig) {
+              resolve();
               return;
             }
             autoplayConfig.autoplayEnabled = true;
             response.text = JSON.stringify(data);
+            resolve();
           } catch (e) {
             console.log(e);
-          }
-        } else if (_hasNextUpV2Resource) {
-          try {
-            const data = JSON.parse(response.text);
-            const autoplayConfig =
-              data?.resources?.nextUpV2?.card?.autoPlayConfig;
-            if (!autoplayConfig) {
-              return;
-            }
-            autoplayConfig.autoplayEnabled = true;
-            response.text = JSON.stringify(data);
-          } catch (e) {
-            console.log(e);
+            resolve();
           }
         }
-      })();
+      });
+    }
 
-      (() => {
-        if (!options.forcePlayNextEpisode_xhook) {
-          return;
-        }
+    static forcePlayNextEpisode(request, response) {
+      return new Promise((resolve) => {
         const url = request.url;
         if (url.includes(".mp4")) {
           const pathname = new window.URL(url).pathname;
@@ -1628,62 +1628,133 @@ const runXhook = () => {
             /([0-9a-zA-Z-]+)_(video|audio)_\d+\.mp4$/
           );
           if (!found) {
+            resolve();
             return;
           }
-          mpdId = found[1];
+          this.#mpdId = found[1];
+          resolve();
         } else if (hasCatalogMetadataV2Resource(request, response)) {
           const entityId = new window.URL(url).searchParams.get("entityId");
           if (!entityId) {
+            resolve();
             return;
           }
-          if (metadataResourceArray.find((m) => m.entityId === entityId)) {
+          if (
+            this.#metadataResourceArray.find((m) => m.entityId === entityId)
+          ) {
+            resolve();
             return;
           }
 
           const data = JSON.parse(response.text);
-          metadataResourceArray.push({
+          this.#metadataResourceArray.push({
             entityId,
             data,
           });
-          if (metadataResourceArray > 20) {
-            metadataResourceArray.shift();
+          if (this.#metadataResourceArray > 20) {
+            this.#metadataResourceArray.shift();
           }
+          resolve();
         } else if (hasNextUpV2Resource(request, response)) {
           const entityId = new window.URL(url).searchParams.get("entityId");
           if (!entityId) {
+            resolve();
             return;
           }
-          if (nextUpV2ResourceArray.find((n) => n.entityId === entityId)) {
+          if (
+            this.#nextUpV2ResourceArray.find((n) => n.entityId === entityId)
+          ) {
+            resolve();
             return;
           }
 
           const data = JSON.parse(response.text);
-          nextUpV2ResourceArray.push({
+          this.#nextUpV2ResourceArray.push({
             entityId,
             data,
           });
-          if (nextUpV2ResourceArray > 20) {
-            nextUpV2ResourceArray.shift();
+          if (this.#nextUpV2ResourceArray > 20) {
+            this.#nextUpV2ResourceArray.shift();
           }
+          resolve();
         } else if (isGetVodPlaybackResources(request, response)) {
           const titleId = new window.URL(url).searchParams.get("titleId");
           if (!titleId) {
+            resolve();
             return;
           }
-          if (getVodPlaybackResourcesArray.find((g) => g.titleId === titleId)) {
+          if (
+            this.#getVodPlaybackResourcesArray.find(
+              (g) => g.titleId === titleId
+            )
+          ) {
+            resolve();
             return;
           }
 
           const data = JSON.parse(response.text);
-          getVodPlaybackResourcesArray.push({
+          this.#getVodPlaybackResourcesArray.push({
             titleId,
             data,
           });
-          if (getVodPlaybackResourcesArray > 20) {
-            getVodPlaybackResourcesArray.shift();
+          if (this.#getVodPlaybackResourcesArray > 20) {
+            this.#getVodPlaybackResourcesArray.shift();
           }
+          resolve();
+        } else {
+          resolve();
         }
-      })();
+      });
+    }
+
+    static async run(request, response) {
+      // https://zenn.dev/sora_kumo/articles/612ca66c68ff52
+      // Since response may be modified multiple times, sequential execution is preferred here.
+      // For readability, use for-of instead of forEach.
+      for (const q of this.#queue) {
+        try {
+          await q.call(this, request, response);
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      return;
+    }
+
+    static init(options) {
+      if (this.#queue.length) {
+        return;
+      }
+
+      if (options.forceHighestResolution_xhook) {
+        this.#queue.push(this.forceHighestResolution);
+      }
+      if (options.removeAdRelatedData) {
+        this.#queue.push(this.removeAdRelatedDataInMpd);
+        this.#queue.push(this.removeAdRelatedDataInVod);
+      }
+      if (options.enableAutoplay_xhook) {
+        this.#queue.push(this.enableAutoplay);
+      }
+      if (options.forcePlayNextEpisode_xhook) {
+        this.#queue.push(this.forcePlayNextEpisode);
+      }
+    }
+  }
+
+  XhookAfter.init(options);
+
+  const script = document.createElement("script");
+  script.src = xhookUrl;
+
+  script.addEventListener("load", () => {
+    xhook.after(async function (request, response, callback) {
+      await XhookAfter.run(request, response);
+
+      // To modify the response asynchronously, use the callback of xhook.after
+      // (If this is not done, it appears that only the first completed modification will be reflected.)
+      callback();
     });
   });
 
@@ -1725,8 +1796,8 @@ const runXhook = () => {
           return;
         }
 
-        const getVodPlaybackResources = getVodPlaybackResourcesArray.find(
-          (g) => {
+        const getVodPlaybackResources =
+          XhookAfter.getVodPlaybackResourcesArray.find((g) => {
             const playbackUrls = g.data?.vodPlaybackUrls?.result?.playbackUrls;
             if (!playbackUrls) {
               return;
@@ -1744,15 +1815,14 @@ const runXhook = () => {
               return;
             }
             const mpdUrl = urlSet.url;
-            return mpdUrl?.includes(mpdId);
-          }
-        );
+            return mpdUrl?.includes(XhookAfter.mpdId);
+          });
         if (!getVodPlaybackResources) {
           return;
         }
 
         const titleId = getVodPlaybackResources.titleId;
-        const metadataResource = metadataResourceArray.find(
+        const metadataResource = XhookAfter.metadataResourceArray.find(
           (m) => m.entityId === titleId
         );
         if (!metadataResource) {
@@ -1767,7 +1837,7 @@ const runXhook = () => {
           return;
         }
 
-        const nextUpV2Resource = nextUpV2ResourceArray.find(
+        const nextUpV2Resource = XhookAfter.nextUpV2ResourceArray.find(
           (n) => n.entityId === titleId
         );
         if (!nextUpV2Resource) {
