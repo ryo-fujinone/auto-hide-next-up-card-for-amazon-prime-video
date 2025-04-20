@@ -26,6 +26,7 @@ const getDefaultOptions = () => {
     },
     shortcutKeyIsEnabled: true,
     forceHighestResolution_xhook: false,
+    showVideoResolution_xhook: false,
     removeAdRelatedData: false,
     enableAutoplay_xhook: false,
     forcePlayNextEpisode_xhook: false,
@@ -463,6 +464,7 @@ const createOptionMessages = () => {
         先読みで最低画質の動画が取得され、少しの間だけそれが再生される場合があるようです。
         [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
     forceHighestResolution: "強制的に最高画質で再生する",
+    showVideoResolution: "左下に動画の解像度を表示する",
     removeAdRelatedData: "広告関連のデータを除去する",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
@@ -532,6 +534,7 @@ const createOptionMessages = () => {
         It seems that in some cases the lowest quality video is retrieved in preload and it plays for a short while.
         It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
     forceHighestResolution: "Force playback at highest resolution",
+    showVideoResolution: "Show video resolution in bottom left",
     removeAdRelatedData: "Remove ad related data",
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
@@ -785,6 +788,15 @@ const createOptionDialog = async (scriptVersion) => {
                         options.forceHighestResolution_xhook ? "checked" : ""
                       } />
                       <p>${messages.forceHighestResolution}</p>
+                  </label>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="show-video-resolution" name="show-video-resolution" ${
+                        options.showVideoResolution_xhook ? "checked" : ""
+                      } />
+                      <p>${messages.showVideoResolution}</p>
                   </label>
               </div>
 
@@ -1138,6 +1150,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "force-highest-resolution":
           await saveOptions({ forceHighestResolution_xhook: e.target.checked });
+          break;
+        case "show-video-resolution":
+          await saveOptions({ showVideoResolution_xhook: e.target.checked });
           break;
         case "remove-ad-related-data":
           await saveOptions({ removeAdRelatedData: e.target.checked });
@@ -1512,12 +1527,18 @@ const runXhook = () => {
     static #queue = [];
 
     static #mpdId;
+    static #mp4Url;
     static #metadataResourceArray = [];
     static #nextUpV2ResourceArray = [];
     static #getVodPlaybackResourcesArray = [];
+    static #resolutionInfoArray = [];
 
     static get mpdId() {
       return this.#mpdId;
+    }
+
+    static get mp4Url() {
+      return this.#mp4Url;
     }
 
     static get metadataResourceArray() {
@@ -1530,6 +1551,10 @@ const runXhook = () => {
 
     static get getVodPlaybackResourcesArray() {
       return this.#getVodPlaybackResourcesArray;
+    }
+
+    static get resolutionInfoArray() {
+      return this.#resolutionInfoArray;
     }
 
     static #pushMetadataResourceArray(obj = {}) {
@@ -1576,6 +1601,20 @@ const runXhook = () => {
       }
     }
 
+    static #pushResolutionInfoArray(obj = {}) {
+      const baseURL = obj.baseURL;
+      if (!baseURL) {
+        return;
+      }
+      if (this.#resolutionInfoArray.find((r) => r.baseURL === baseURL)) {
+        return;
+      }
+      this.#resolutionInfoArray.push(obj);
+      if (this.#resolutionInfoArray > 40) {
+        this.#resolutionInfoArray.shift();
+      }
+    }
+
     static forceHighestResolution(request, response) {
       if (!isMpd(request, response)) {
         return;
@@ -1586,7 +1625,7 @@ const runXhook = () => {
         const parser = new DOMParser();
         const dom = parser.parseFromString(mpd, "text/xml");
 
-        const periods = dom.querySelectorAll("Period ");
+        const periods = dom.querySelectorAll("Period");
         if (periods.length === 0) {
           return;
         }
@@ -1620,6 +1659,74 @@ const runXhook = () => {
         response.text = newMpd;
       } catch (e) {
         console.log(e);
+      }
+    }
+
+    static showVideoResolution(request, response) {
+      const url = request.url;
+      if (isMpd(request, response)) {
+        try {
+          const mpd = response.text;
+          const parser = new DOMParser();
+          const dom = parser.parseFromString(mpd, "text/xml");
+          const periods = dom.querySelectorAll("Period:has(ContentProtection)");
+          if (periods.length === 0) {
+            return;
+          }
+
+          for (const p of periods) {
+            const representations = p.querySelectorAll(
+              "AdaptationSet[contentType='video'] > Representation"
+            );
+            if (representations.length === 0) {
+              continue;
+            }
+            for (const rep of representations) {
+              const width = rep.getAttribute("width");
+              const height = rep.getAttribute("height");
+              const baseURL = rep.querySelector("BaseURL");
+              if (width && height && baseURL) {
+                this.#pushResolutionInfoArray({
+                  width,
+                  height,
+                  baseURL: baseURL.textContent,
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      } else if (url.includes(".mp4")) {
+        const pathname = new window.URL(url).pathname;
+        const found = pathname.match(/([0-9a-zA-Z-]+)_video_\d+\.mp4$/);
+        if (!found) {
+          return;
+        }
+        this.#mpdId = found[1];
+        this.#mp4Url = url;
+      } else if (hasCatalogMetadataV2Resource(request, response)) {
+        const entityId = new window.URL(url).searchParams.get("entityId");
+        if (!entityId) {
+          return;
+        }
+
+        const data = JSON.parse(response.text);
+        this.#pushMetadataResourceArray({
+          entityId,
+          data,
+        });
+      } else if (isGetVodPlaybackResources(request, response)) {
+        const titleId = new window.URL(url).searchParams.get("titleId");
+        if (!titleId) {
+          return;
+        }
+
+        const data = JSON.parse(response.text);
+        this.#pushGetVodPlaybackResourcesArray({
+          titleId,
+          data,
+        });
       }
     }
 
@@ -1793,6 +1900,9 @@ const runXhook = () => {
 
       if (options.forceHighestResolution_xhook) {
         this.#queue.push(this.forceHighestResolution);
+        if (options.showVideoResolution_xhook) {
+          this.#queue.push(this.showVideoResolution);
+        }
       }
       if (options.removeAdRelatedData) {
         this.#queue.push(this.removeAdRelatedDataInMpd);
@@ -1826,6 +1936,197 @@ const runXhook = () => {
   });
 
   document.head.appendChild(script);
+
+  const identificationGetVodPlaybackResources = () => {
+    const getVodPlaybackResources =
+      XhookAfter.getVodPlaybackResourcesArray.find((g) => {
+        const playbackUrls = g.data?.vodPlaybackUrls?.result?.playbackUrls;
+        if (!playbackUrls) {
+          return;
+        }
+        const urlSets = playbackUrls.urlSets;
+        if (!urlSets) {
+          return;
+        }
+        const defaultUrlSetId = playbackUrls.defaultUrlSetId;
+        if (!defaultUrlSetId) {
+          return;
+        }
+        const urlSet = urlSets.find((u) => u.urlSetId === defaultUrlSetId);
+        if (!urlSet) {
+          return;
+        }
+        const mpdUrl = urlSet.url;
+        return mpdUrl?.includes(XhookAfter.mpdId);
+      });
+    return getVodPlaybackResources;
+  };
+
+  const showVideoResolution = () => {
+    class ShowVideoResolution {
+      constructor(player, video) {
+        this.player = player;
+        this.video = video;
+        this.show = this._show.bind(this);
+        this.mp4Url;
+      }
+
+      _show(event) {
+        if (!event) {
+          return;
+        }
+        if (this.mp4Url === XhookAfter.mp4Url) {
+          return;
+        }
+
+        let targetElement = this.player.querySelector(
+          ".nextup-ext-resolution-info"
+        );
+        if (targetElement) {
+          targetElement.textContent = "";
+        }
+
+        let title = this.player.querySelector(
+          ".atvwebplayersdk-subtitle-text"
+        ).textContent;
+        if (!title) {
+          // For movies, etc., there is no subtitle-text
+          title = this.player.querySelector(
+            ".atvwebplayersdk-title-text"
+          ).textContent;
+        }
+        if (!title) {
+          return;
+        }
+
+        const getVodPlaybackResources = identificationGetVodPlaybackResources();
+        if (!getVodPlaybackResources) {
+          return;
+        }
+
+        const titleId = getVodPlaybackResources.titleId;
+        const metadataResource = XhookAfter.metadataResourceArray.find(
+          (m) => m.entityId === titleId
+        );
+        if (!metadataResource) {
+          return;
+        }
+
+        if (
+          !title.includes(
+            metadataResource.data.resources?.catalogMetadataV2?.catalog?.title
+          )
+        ) {
+          return;
+        }
+
+        const mp4Url = XhookAfter.mp4Url;
+        if (!mp4Url.includes(XhookAfter.mpdId)) {
+          return;
+        }
+
+        const resolution = XhookAfter.resolutionInfoArray.find((r) => {
+          return mp4Url.includes(r.baseURL);
+        });
+        if (!resolution) {
+          return;
+        }
+
+        if (targetElement) {
+          const timeindicator = this.player.querySelector(
+            ".atvwebplayersdk-timeindicator-text"
+          );
+          // If an ad is played, the timeindicator is removed/regenerated.
+          //
+          if (!timeindicator) {
+            targetElement.remove();
+            targetElement = null;
+            return;
+          }
+        }
+
+        if (!targetElement) {
+          try {
+            const timeindicator = this.player.querySelector(
+              ".atvwebplayersdk-timeindicator-text"
+            );
+            if (!timeindicator) {
+              return;
+            }
+            targetElement = timeindicator.cloneNode();
+            targetElement.classList.remove(
+              "atvwebplayersdk-timeindicator-text"
+            );
+            targetElement.classList.add("nextup-ext-resolution-info");
+            timeindicator.parentNode.append(targetElement);
+          } catch (e) {
+            console.log(e);
+            return;
+          }
+        }
+
+        const width = resolution.width;
+        const height = resolution.height;
+        const resolutionText = `${width}×${height}`;
+        targetElement.textContent = resolutionText;
+        this.mp4Url = mp4Url;
+      }
+
+      runVideoOpenCloseObserver() {
+        new MutationObserver((_, videoOpenObserver) => {
+          if (!this.player.classList.contains("dv-player-fullscreen")) {
+            return;
+          }
+          videoOpenObserver.disconnect();
+
+          this.video.addEventListener("timeupdate", this.show);
+
+          new MutationObserver((_, videoCloseObserver) => {
+            if (this.player.classList.contains("dv-player-fullscreen")) {
+              return;
+            }
+            videoCloseObserver.disconnect();
+
+            this.video.removeEventListener("timeupdate", this.show);
+            this.mp4Url = null;
+
+            this.runVideoOpenCloseObserver();
+          }).observe(this.player, {
+            attributes: true,
+            attributeFilter: ["class"],
+          });
+        }).observe(this.player, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
+      }
+    }
+
+    const random = window.crypto.randomUUID().replaceAll("-", "");
+
+    new MutationObserver((_) => {
+      const players = document.querySelectorAll(
+        `[id*='dv-web-player']:not([data-detected-from-ext${random}='true'])`
+      );
+      players.forEach((player) => {
+        player.dataset[`detectedFromExt${random}`] = "true";
+        new MutationObserver((_, observer) => {
+          const video = player.querySelector("video");
+          if (!video) {
+            return;
+          }
+          observer.disconnect();
+          const s = new ShowVideoResolution(player, video);
+          s.runVideoOpenCloseObserver();
+        }).observe(player, {
+          childList: true,
+          subtree: true,
+        });
+      });
+    }).observe(document, { childList: true, subtree: true });
+  };
+
+  showVideoResolution();
 
   const detectNextEpisodeId = () => {
     if (!options.forcePlayNextEpisode_xhook) {
@@ -1863,27 +2164,7 @@ const runXhook = () => {
           return;
         }
 
-        const getVodPlaybackResources =
-          XhookAfter.getVodPlaybackResourcesArray.find((g) => {
-            const playbackUrls = g.data?.vodPlaybackUrls?.result?.playbackUrls;
-            if (!playbackUrls) {
-              return;
-            }
-            const urlSets = playbackUrls.urlSets;
-            if (!urlSets) {
-              return;
-            }
-            const defaultUrlSetId = playbackUrls.defaultUrlSetId;
-            if (!defaultUrlSetId) {
-              return;
-            }
-            const urlSet = urlSets.find((u) => u.urlSetId === defaultUrlSetId);
-            if (!urlSet) {
-              return;
-            }
-            const mpdUrl = urlSet.url;
-            return mpdUrl?.includes(XhookAfter.mpdId);
-          });
+        const getVodPlaybackResources = identificationGetVodPlaybackResources();
         if (!getVodPlaybackResources) {
           return;
         }
@@ -2558,6 +2839,20 @@ class ElementController {
           }
         `;
         addStyle(cssForImg, "addOutlinesForIcons");
+      }
+
+      if (
+        options.forceHighestResolution_xhook &&
+        options.showVideoResolution_xhook
+      ) {
+        if (!document.querySelector("#preventsDarkening_ResolutionInfo")) {
+          const cssForResolutionInfo = `
+          .nextup-ext-resolution-info {
+            -webkit-text-stroke: 0.025em black;
+          }
+        `;
+          addStyle(cssForResolutionInfo, "preventsDarkening_ResolutionInfo");
+        }
       }
     }
 
