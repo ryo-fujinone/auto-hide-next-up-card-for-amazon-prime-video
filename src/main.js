@@ -1447,6 +1447,50 @@ const runXhook = () => {
       return this.#getVodPlaybackResourcesArray;
     }
 
+    static #pushMetadataResourceArray(obj = {}) {
+      const entityId = obj.entityId;
+      if (!entityId) {
+        return;
+      }
+      if (this.#metadataResourceArray.find((m) => m.entityId === entityId)) {
+        return;
+      }
+      this.#metadataResourceArray.push(obj);
+      if (this.#metadataResourceArray > 20) {
+        this.#metadataResourceArray.shift();
+      }
+    }
+
+    static #pushNextUpV2ResourceArray(obj = {}) {
+      const entityId = obj.entityId;
+      if (!entityId) {
+        return;
+      }
+      if (this.#nextUpV2ResourceArray.find((n) => n.entityId === entityId)) {
+        return;
+      }
+      this.#nextUpV2ResourceArray.push(obj);
+      if (this.#nextUpV2ResourceArray > 20) {
+        this.#nextUpV2ResourceArray.shift();
+      }
+    }
+
+    static #pushGetVodPlaybackResourcesArray(obj) {
+      const titleId = obj.titleId;
+      if (!titleId) {
+        return;
+      }
+      if (
+        this.#getVodPlaybackResourcesArray.find((g) => g.titleId === titleId)
+      ) {
+        return;
+      }
+      this.#getVodPlaybackResourcesArray.push(obj);
+      if (this.#getVodPlaybackResourcesArray > 20) {
+        this.#getVodPlaybackResourcesArray.shift();
+      }
+    }
+
     static forceHighestResolution(request, response) {
       return new Promise((resolve) => {
         if (!isMpd(request, response)) {
@@ -1639,21 +1683,12 @@ const runXhook = () => {
             resolve();
             return;
           }
-          if (
-            this.#metadataResourceArray.find((m) => m.entityId === entityId)
-          ) {
-            resolve();
-            return;
-          }
 
           const data = JSON.parse(response.text);
-          this.#metadataResourceArray.push({
+          this.#pushMetadataResourceArray({
             entityId,
             data,
           });
-          if (this.#metadataResourceArray > 20) {
-            this.#metadataResourceArray.shift();
-          }
           resolve();
         } else if (hasNextUpV2Resource(request, response)) {
           const entityId = new window.URL(url).searchParams.get("entityId");
@@ -1661,21 +1696,12 @@ const runXhook = () => {
             resolve();
             return;
           }
-          if (
-            this.#nextUpV2ResourceArray.find((n) => n.entityId === entityId)
-          ) {
-            resolve();
-            return;
-          }
 
           const data = JSON.parse(response.text);
-          this.#nextUpV2ResourceArray.push({
+          this.#pushNextUpV2ResourceArray({
             entityId,
             data,
           });
-          if (this.#nextUpV2ResourceArray > 20) {
-            this.#nextUpV2ResourceArray.shift();
-          }
           resolve();
         } else if (isGetVodPlaybackResources(request, response)) {
           const titleId = new window.URL(url).searchParams.get("titleId");
@@ -1683,23 +1709,12 @@ const runXhook = () => {
             resolve();
             return;
           }
-          if (
-            this.#getVodPlaybackResourcesArray.find(
-              (g) => g.titleId === titleId
-            )
-          ) {
-            resolve();
-            return;
-          }
 
           const data = JSON.parse(response.text);
-          this.#getVodPlaybackResourcesArray.push({
+          this.#pushGetVodPlaybackResourcesArray({
             titleId,
             data,
           });
-          if (this.#getVodPlaybackResourcesArray > 20) {
-            this.#getVodPlaybackResourcesArray.shift();
-          }
           resolve();
         } else {
           resolve();
