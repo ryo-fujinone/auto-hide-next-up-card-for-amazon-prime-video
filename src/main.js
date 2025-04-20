@@ -1437,7 +1437,15 @@ const runXhook = () => {
       return;
     }
     if (response.headers?.["content-type"] !== "text/xml") {
-      return false;
+      try {
+        const text = response.text;
+        const regex = new RegExp("^<MPD.+</MPD>$");
+        if (!regex.test(text)) {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
     }
     return true;
   };
