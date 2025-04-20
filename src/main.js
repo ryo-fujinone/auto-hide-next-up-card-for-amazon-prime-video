@@ -2000,8 +2000,8 @@ const injectXhook = (options = getDefaultOptions()) => {
     } catch (e) {}
   } else if (ScriptInfo.isUserScript()) {
     /**
-     * GM_getResourceText/URL is not used because we want to share the way xhook is executed with Chrome's extension edition.
-     * Also, the Chrome Web Store is strict about remote code execution, so this script does not hardcode the CDN URL.
+     * The Chrome Web Store is strict about remote code execution, so CDN URLs are not hardcoded
+     * Also, GM_getResourceText/URL is not used because we want to share the way xhook is executed with Chrome's extension edition.
      */
     try {
       const gmInfo = window.GM_info || GM_info;
