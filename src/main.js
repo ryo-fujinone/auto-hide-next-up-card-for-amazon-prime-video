@@ -1569,253 +1569,207 @@ const runXhook = () => {
     }
 
     static forceHighestResolution(request, response) {
-      return new Promise((resolve) => {
-        if (!isMpd(request, response)) {
-          resolve();
+      if (!isMpd(request, response)) {
+        return;
+      }
+
+      try {
+        const mpd = response.text;
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(mpd, "text/xml");
+
+        const periods = dom.querySelectorAll("Period ");
+        if (periods.length === 0) {
           return;
         }
 
-        try {
-          const mpd = response.text;
-          const parser = new DOMParser();
-          const dom = parser.parseFromString(mpd, "text/xml");
-
-          const periods = dom.querySelectorAll("Period ");
-          if (periods.length === 0) {
-            resolve();
-            return;
+        for (const p of periods) {
+          const representations = p.querySelectorAll(
+            "AdaptationSet[contentType='video'] > Representation"
+          );
+          if (representations.length === 0) {
+            continue;
           }
 
-          for (const p of periods) {
-            const representations = p.querySelectorAll(
-              "AdaptationSet[contentType='video'] > Representation"
-            );
-            if (representations.length === 0) {
-              continue;
+          const highestRepresentation = Array.from(representations).reduce(
+            (acc, cur) => {
+              return parseInt(acc.getAttribute("bandwidth")) >
+                parseInt(cur.getAttribute("bandwidth"))
+                ? acc
+                : cur;
             }
+          );
 
-            const highestRepresentation = Array.from(representations).reduce(
-              (acc, cur) => {
-                return parseInt(acc.getAttribute("bandwidth")) >
-                  parseInt(cur.getAttribute("bandwidth"))
-                  ? acc
-                  : cur;
-              }
-            );
-
-            highestRepresentation.setAttribute("highestRepresentation", "true");
-            for (const rep of representations) {
-              if (!rep.hasAttribute("highestRepresentation")) {
-                rep.remove();
-              }
+          highestRepresentation.setAttribute("highestRepresentation", "true");
+          for (const rep of representations) {
+            if (!rep.hasAttribute("highestRepresentation")) {
+              rep.remove();
             }
           }
-
-          const newMpd = dom.documentElement.outerHTML;
-          response.text = newMpd;
-          resolve();
-        } catch (e) {
-          console.log(e);
-          resolve();
         }
-      });
+
+        const newMpd = dom.documentElement.outerHTML;
+        response.text = newMpd;
+      } catch (e) {
+        console.log(e);
+      }
     }
 
     static removeAdRelatedDataInMpd(request, response) {
-      return new Promise((resolve) => {
-        if (!isMpd(request, response)) {
-          resolve();
+      if (!isMpd(request, response)) {
+        return;
+      }
+
+      try {
+        const mpd = response.text;
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(mpd, "text/xml");
+
+        const periods = dom.querySelectorAll("Period");
+        if (periods.length === 0) {
           return;
         }
 
-        try {
-          const mpd = response.text;
-          const parser = new DOMParser();
-          const dom = parser.parseFromString(mpd, "text/xml");
-
-          const periods = dom.querySelectorAll("Period");
-          if (periods.length === 0) {
-            resolve();
-            return;
+        for (const p of periods) {
+          const ad1 = p.querySelector("SupplementalProperty[value='Ad']");
+          const ad2 = p.querySelector("SupplementalProperty[value='FadeAd']");
+          if (!ad1 && !ad2) {
+            continue;
           }
-
-          for (const p of periods) {
-            const ad1 = p.querySelector("SupplementalProperty[value='Ad']");
-            const ad2 = p.querySelector("SupplementalProperty[value='FadeAd']");
-            if (!ad1 && !ad2) {
-              continue;
-            }
-            p.remove();
-            console.log("Removed ads (data in mpd)");
-          }
-
-          const newPeriods = dom.querySelectorAll("Period");
-          let duration;
-          for (const [i, p] of newPeriods.entries()) {
-            if (i === 0) {
-              p.removeAttribute("start");
-            } else {
-              p.setAttribute("start", duration);
-            }
-            const d = p.getAttribute("duration");
-            if (d) {
-              duration = d;
-            } else {
-              break;
-            }
-          }
-
-          const newMpd = dom.documentElement.outerHTML;
-          response.text = newMpd;
-          resolve();
-        } catch (e) {
-          console.log(e);
-          resolve();
+          p.remove();
+          console.log("Removed ads (data in mpd)");
         }
-      });
+
+        const newPeriods = dom.querySelectorAll("Period");
+        let duration;
+        for (const [i, p] of newPeriods.entries()) {
+          if (i === 0) {
+            p.removeAttribute("start");
+          } else {
+            p.setAttribute("start", duration);
+          }
+          const d = p.getAttribute("duration");
+          if (d) {
+            duration = d;
+          } else {
+            break;
+          }
+        }
+
+        const newMpd = dom.documentElement.outerHTML;
+        response.text = newMpd;
+      } catch (e) {
+        console.log(e);
+      }
     }
 
     static removeAdRelatedDataInVod(request, response) {
-      return new Promise((resolve) => {
-        if (!isGetVodPlaybackResources(request, response)) {
-          resolve();
+      if (!isGetVodPlaybackResources(request, response)) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(response.text);
+        const playbackUrls = data.vodPlaybackUrls?.result?.playbackUrls;
+        if (!playbackUrls) {
           return;
         }
-
-        try {
-          const data = JSON.parse(response.text);
-          const playbackUrls = data.vodPlaybackUrls?.result?.playbackUrls;
-          if (!playbackUrls) {
-            resolve();
-            return;
-          }
-          if (!playbackUrls.cuepoints) {
-            resolve();
-            return;
-          }
-          delete playbackUrls.cuepoints;
-          console.log("Removed ads (cuepoints)");
-          response.text = JSON.stringify(data);
-          resolve();
-        } catch (e) {
-          resolve();
+        if (!playbackUrls.cuepoints) {
+          return;
         }
-      });
+        delete playbackUrls.cuepoints;
+        console.log("Removed ads (cuepoints)");
+        response.text = JSON.stringify(data);
+      } catch (e) {}
     }
 
     static enableAutoplay(request, response) {
-      return new Promise((resolve) => {
-        const _isGetSections = isGetSections(request, response);
-        const _hasNextUpV2Resource = hasNextUpV2Resource(request, response);
-        if (!_isGetSections && !_hasNextUpV2Resource) {
-          resolve();
-          return;
-        }
+      const _isGetSections = isGetSections(request, response);
+      const _hasNextUpV2Resource = hasNextUpV2Resource(request, response);
+      if (!_isGetSections && !_hasNextUpV2Resource) {
+        return;
+      }
 
-        if (_hasNextUpV2Resource) {
-          try {
-            const data = JSON.parse(response.text);
-            const autoplayConfig =
-              data?.resources?.nextUpV2?.card?.autoPlayConfig;
-            if (!autoplayConfig) {
-              resolve();
-              return;
-            }
-            autoplayConfig.autoplayEnabled = true;
-            response.text = JSON.stringify(data);
-            resolve();
-          } catch (e) {
-            console.log(e);
-            resolve();
+      if (_hasNextUpV2Resource) {
+        try {
+          const data = JSON.parse(response.text);
+          const autoplayConfig =
+            data?.resources?.nextUpV2?.card?.autoPlayConfig;
+          if (!autoplayConfig) {
+            return;
           }
-        } else if (_isGetSections) {
-          // This is probably no longer used in Japan, but I'll leave the code just in case.
-          try {
-            const data = JSON.parse(response.text);
-            const autoplayConfig =
-              data?.sections?.bottom?.collections?.collectionList?.[0]
-                ?.autoplayConfig;
-            if (!autoplayConfig) {
-              resolve();
-              return;
-            }
-            autoplayConfig.autoplayEnabled = true;
-            response.text = JSON.stringify(data);
-            resolve();
-          } catch (e) {
-            console.log(e);
-            resolve();
-          }
+          autoplayConfig.autoplayEnabled = true;
+          response.text = JSON.stringify(data);
+        } catch (e) {
+          console.log(e);
         }
-      });
+      } else if (_isGetSections) {
+        try {
+          const data = JSON.parse(response.text);
+          const autoplayConfig =
+            data?.sections?.bottom?.collections?.collectionList?.[0]
+              ?.autoplayConfig;
+          if (!autoplayConfig) {
+            return;
+          }
+          autoplayConfig.autoplayEnabled = true;
+          response.text = JSON.stringify(data);
+        } catch (e) {
+          console.log(e);
+        }
+      }
     }
 
     static forcePlayNextEpisode(request, response) {
-      return new Promise((resolve) => {
-        const url = request.url;
-        if (url.includes(".mp4")) {
-          const pathname = new window.URL(url).pathname;
-          const found = pathname.match(
-            /([0-9a-zA-Z-]+)_(video|audio)_\d+\.mp4$/
-          );
-          if (!found) {
-            resolve();
-            return;
-          }
-          this.#mpdId = found[1];
-          resolve();
-        } else if (hasCatalogMetadataV2Resource(request, response)) {
-          const entityId = new window.URL(url).searchParams.get("entityId");
-          if (!entityId) {
-            resolve();
-            return;
-          }
-
-          const data = JSON.parse(response.text);
-          this.#pushMetadataResourceArray({
-            entityId,
-            data,
-          });
-          resolve();
-        } else if (hasNextUpV2Resource(request, response)) {
-          const entityId = new window.URL(url).searchParams.get("entityId");
-          if (!entityId) {
-            resolve();
-            return;
-          }
-
-          const data = JSON.parse(response.text);
-          this.#pushNextUpV2ResourceArray({
-            entityId,
-            data,
-          });
-          resolve();
-        } else if (isGetVodPlaybackResources(request, response)) {
-          const titleId = new window.URL(url).searchParams.get("titleId");
-          if (!titleId) {
-            resolve();
-            return;
-          }
-
-          const data = JSON.parse(response.text);
-          this.#pushGetVodPlaybackResourcesArray({
-            titleId,
-            data,
-          });
-          resolve();
-        } else {
-          resolve();
+      const url = request.url;
+      if (url.includes(".mp4")) {
+        const pathname = new window.URL(url).pathname;
+        const found = pathname.match(/([0-9a-zA-Z-]+)_(video|audio)_\d+\.mp4$/);
+        if (!found) {
+          return;
         }
-      });
+        this.#mpdId = found[1];
+      } else if (hasCatalogMetadataV2Resource(request, response)) {
+        const entityId = new window.URL(url).searchParams.get("entityId");
+        if (!entityId) {
+          return;
+        }
+
+        const data = JSON.parse(response.text);
+        this.#pushMetadataResourceArray({
+          entityId,
+          data,
+        });
+      } else if (hasNextUpV2Resource(request, response)) {
+        const entityId = new window.URL(url).searchParams.get("entityId");
+        if (!entityId) {
+          return;
+        }
+
+        const data = JSON.parse(response.text);
+        this.#pushNextUpV2ResourceArray({
+          entityId,
+          data,
+        });
+      } else if (isGetVodPlaybackResources(request, response)) {
+        const titleId = new window.URL(url).searchParams.get("titleId");
+        if (!titleId) {
+          return;
+        }
+
+        const data = JSON.parse(response.text);
+        this.#pushGetVodPlaybackResourcesArray({
+          titleId,
+          data,
+        });
+      } else {
+      }
     }
 
-    static async run(request, response) {
-      // https://zenn.dev/sora_kumo/articles/612ca66c68ff52
-      // Since response may be modified multiple times, sequential execution is preferred here.
-      // For readability, use for-of instead of forEach.
+    static run(request, response) {
       for (const q of this.#queue) {
         try {
-          await q.call(this, request, response);
+          q.call(this, request, response);
         } catch (e) {
           console.log(e);
         }
@@ -1851,12 +1805,15 @@ const runXhook = () => {
   script.src = xhookUrl;
 
   script.addEventListener("load", () => {
-    xhook.after(async function (request, response, callback) {
-      await XhookAfter.run(request, response);
-
-      // To modify the response asynchronously, use the callback of xhook.after
-      // (If this is not done, it appears that only the first completed modification will be reflected.)
-      callback();
+    xhook.after(function (request, response) {
+      /**
+       * Although xhook has the feature to modify responses asynchronously, it is not used here.
+       * Using that feature on Prime Video often results in an error message on the screen.
+       * Error messages are as follows
+       * > That shouldn't have happened.
+       * > It looks like something went wrong on our side. Let's find you a great video to watch instead.
+       */
+      XhookAfter.run(request, response);
     });
   });
 
