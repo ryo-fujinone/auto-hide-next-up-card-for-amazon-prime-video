@@ -1640,20 +1640,30 @@ const runXhook = () => {
           }
 
           for (const p of periods) {
-            const ad = p.querySelector("SupplementalProperty[value='Ad']");
-            if (!ad) {
+            const ad1 = p.querySelector("SupplementalProperty[value='Ad']");
+            const ad2 = p.querySelector("SupplementalProperty[value='FadeAd']");
+            if (!ad1 && !ad2) {
               continue;
             }
             p.remove();
             console.log("Removed ads (data in mpd)");
           }
 
-          const period = dom.querySelector("Period:has(Role[value='main'])");
-          if (!period) {
-            resolve();
-            return;
+          const newPeriods = dom.querySelectorAll("Period");
+          let duration;
+          for (const [i, p] of newPeriods.entries()) {
+            if (i === 0) {
+              p.removeAttribute("start");
+            } else {
+              p.setAttribute("start", duration);
+            }
+            const d = p.getAttribute("duration");
+            if (d) {
+              duration = d;
+            } else {
+              break;
+            }
           }
-          period.removeAttribute("start");
 
           const newMpd = dom.documentElement.outerHTML;
           response.text = newMpd;
