@@ -466,6 +466,9 @@ const createOptionMessages = () => {
     forceHighestResolution: "強制的に最高画質で再生する",
     showVideoResolution: "左下に動画の解像度を表示する",
     removeAdRelatedData: "広告関連のデータを除去する",
+    removeAdRelatedData_Tooltip: `この機能が有効な時は広告をスキップする機能は実行されません。
+        （完全な除去ができなかった場合に意図しないスキップが発生する可能性があるため）
+        この機能が有効な時に動画が途中で止まることがある場合は、この機能を無効にしてください。`,
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
       "この機能を使用してもプライムビデオの自動再生の設定は変更されません。",
@@ -536,6 +539,9 @@ const createOptionMessages = () => {
     forceHighestResolution: "Force playback at highest resolution",
     showVideoResolution: "Show video resolution in bottom left",
     removeAdRelatedData: "Remove ad related data",
+    removeAdRelatedData_Tooltip: `When this feature is enabled, the Skip Ads feature is not executed.
+        (Because of the possibility of unintended skipping if complete removal is not achieved)
+        If videos sometimes stop in the middle when this feature is enabled, please try disabling this feature.`,
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
       "Enabling this will not change the autoplay setting for Prime Video",
@@ -807,6 +813,10 @@ const createOptionDialog = async (scriptVersion) => {
                       } />
                       <p>${messages.removeAdRelatedData}</p>
                   </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.removeAdRelatedData_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="removeAdRelatedData"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -2438,6 +2448,10 @@ class ElementController {
 
   skipAds(options = getDefaultOptions()) {
     if (!options.skipAds) {
+      return;
+    }
+    if (options.removeAdRelatedData) {
+      // Because of the possibility of unintended skipping if complete removal is not achieved
       return;
     }
 
