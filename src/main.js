@@ -1552,7 +1552,7 @@ const runXhook = () => {
       }
     }
 
-    static #pushGetVodPlaybackResourcesArray(obj) {
+    static #pushGetVodPlaybackResourcesArray(obj = {}) {
       const titleId = obj.titleId;
       if (!titleId) {
         return;
