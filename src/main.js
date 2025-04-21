@@ -1533,6 +1533,42 @@ const runXhook = () => {
     return true;
   };
 
+  function parseISODuration(duration) {
+    const hoursMatch = duration.match(/(\d+(\.\d+)?)H/);
+    const minutesMatch = duration.match(/(\d+(\.\d+)?)M/);
+    const secondsMatch = duration.match(/(\d+(\.\d+)?)S/);
+
+    const hours = parseFloat(hoursMatch ? hoursMatch[1] : 0);
+    const minutes = parseFloat(minutesMatch ? minutesMatch[1] : 0);
+    const seconds = parseFloat(secondsMatch ? secondsMatch[1] : 0);
+
+    return hours * 3600 + minutes * 60 + seconds;
+  }
+
+  function formatISODuration(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const parts = [];
+    if (hours > 0) parts.push(`${hours}H`);
+    if (minutes > 0) parts.push(`${minutes}M`);
+
+    if (seconds > 0 || parts.length === 0) {
+      parts.push(`${seconds.toFixed(3)}S`);
+    }
+
+    return `PT${parts.join("")}`;
+  }
+
+  function sumDurations(durations) {
+    const totalSeconds = durations.reduce((acc, duration) => {
+      return acc + parseISODuration(duration);
+    }, 0);
+
+    return formatISODuration(totalSeconds);
+  }
+
   class XhookAfter {
     static #queue = [];
 
@@ -1766,18 +1802,16 @@ const runXhook = () => {
         }
 
         const newPeriods = dom.querySelectorAll("Period");
-        let duration;
+        let sumDuration;
         for (const [i, p] of newPeriods.entries()) {
+          const duration = p.getAttribute("duration");
           if (i === 0) {
+            sumDuration = duration;
             p.removeAttribute("start");
+            continue;
           } else {
-            p.setAttribute("start", duration);
-          }
-          const d = p.getAttribute("duration");
-          if (d) {
-            duration = d;
-          } else {
-            break;
+            p.setAttribute("start", sumDuration);
+            sumDuration = sumDurations([sumDuration, duration]);
           }
         }
 
