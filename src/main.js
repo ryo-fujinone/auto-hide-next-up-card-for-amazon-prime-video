@@ -2951,6 +2951,12 @@ class ElementController {
           .atvwebplayersdk-seekbar-range {
             box-shadow: 2px 2px 6px #888;
           }
+          .atvwebplayersdk-seekbar-range + span {
+            border-right: 5px solid rgb(85, 85, 85);
+          }
+          .atvwebplayersdk-progress-bar-handle {
+            box-shadow: 0px 0px 5px #222;
+          }
         `;
         addStyle(cssForShadows, "addShadowsToSeekBar");
       }
