@@ -32,7 +32,7 @@ const getDefaultOptions = () => {
     removeAdRelatedData: false,
     enableAutoplay_xhook: false,
     forcePlayNextEpisode_xhook: false,
-    scriptVersion: "2.11.1",
+    scriptVersion: "2.12.0",
   };
 };
 
