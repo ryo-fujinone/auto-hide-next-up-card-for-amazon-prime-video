@@ -17,6 +17,7 @@ const getDefaultOptions = () => {
     preventsDarkening: false,
     addOutlinesForTextsAndIcons: false,
     boldTextToImproveVisibility: false,
+    addShadowsToSeekBar: false,
     moveCenterButtonsToBottom: false,
     useOnLiveTv: false,
     shortcutKey: {
@@ -447,6 +448,7 @@ const createOptionMessages = () => {
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
     boldTextToImproveVisibility:
       "縁取りが有効な時に視認性向上のために文字を太くする",
+    addShadowsToSeekBar: "シークバーに影をつける",
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
@@ -527,6 +529,7 @@ const createOptionMessages = () => {
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
     boldTextToImproveVisibility:
       "Bold text to improve visibility when text outlines are enabled",
+    addShadowsToSeekBar: "Add shadows to the seek bar",
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
@@ -752,6 +755,15 @@ const createOptionDialog = async (scriptVersion) => {
                         options.boldTextToImproveVisibility ? "checked" : ""
                       } />
                       <p>${messages.boldTextToImproveVisibility}</p>
+                  </label>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="add-shadow-to-seek-bar" name="add-shadow-to-seek-bar" ${
+                        options.addShadowsToSeekBar ? "checked" : ""
+                      } />
+                      <p>${messages.addShadowsToSeekBar}</p>
                   </label>
               </div>
 
@@ -1182,6 +1194,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "bold-text-to-improve-visibility":
           await saveOptions({ boldTextToImproveVisibility: e.target.checked });
+          break;
+        case "add-shadow-to-seek-bar":
+          await saveOptions({ addShadowsToSeekBar: e.target.checked });
           break;
         case "move-center-buttons-to-bottom":
           await saveOptions({ moveCenterButtonsToBottom: e.target.checked });
@@ -2961,6 +2976,17 @@ class ElementController {
           `;
           addStyle(cssForBoldText, "boldTextToImproveVisibility");
         }
+      }
+    }
+
+    if (options.addShadowsToSeekBar) {
+      if (!document.querySelector("#addShadowsToSeekBar")) {
+        const cssForShadows = `
+          .atvwebplayersdk-seekbar-range {
+            box-shadow: 2px 2px 10px #666;
+          }
+        `;
+        addStyle(cssForShadows, "addShadowsToSeekBar");
       }
     }
 
