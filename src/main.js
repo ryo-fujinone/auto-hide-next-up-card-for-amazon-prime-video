@@ -429,10 +429,10 @@ const createOptionMessages = () => {
     clickHideButtonForAllNextup:
       "全てのNext upの非表示ボタンをクリックする（自動再生の完全なキャンセル）",
     clickHideButtonForAllNextup_Tooltip: `通常はこのオプションを有効にする必要はありません。\n
-    Next upには「通常のNext up」と「動画終了の数秒前に表示されるNext up」の2つが存在します。
-    自動再生が有効な場合はどちらにも非表示ボタンが表示されますが、後者の非表示ボタンはクリックすると自動再生が完全にキャンセルされ、動画が終了すると動画プレイヤーが閉じてしまいます。
-    そのため非表示ボタンの自動クリックは通常のNext upでのみ行うようにしていますが、このオプションを使用することでその条件を無視して非表示ボタンを自動クリックさせることが可能です。
-    このオプションは念の為に用意しているもので、通常は有効にする必要はありません。`,
+      Next upには「通常のNext up」と「動画終了の数秒前に表示されるNext up」の2つが存在します。
+      自動再生が有効な場合はどちらにも非表示ボタンが表示されますが、後者の非表示ボタンはクリックすると自動再生が完全にキャンセルされ、動画が終了すると動画プレイヤーが閉じてしまいます。
+      そのため非表示ボタンの自動クリックは通常のNext upでのみ行うようにしていますが、このオプションを使用することでその条件を無視して非表示ボタンを自動クリックさせることが可能です。
+      このオプションは念の為に用意しているもので、通常は有効にする必要はありません。`,
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
@@ -448,40 +448,46 @@ const createOptionMessages = () => {
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
-    なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
-    ライブ配信で動作確認が取れている機能は以下です。
-    - オーバーレイ表示が有効な時に暗くならないようにする
-    - 中央のボタン（再生/停止、戻る、進む）を下部に移動する`,
+      なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
+      ライブ配信で動作確認が取れている機能は以下です。
+      - オーバーレイ表示が有効な時に暗くならないようにする
+      - 中央のボタン（再生/停止、戻る、進む）を下部に移動する`,
     enableShortcutKey:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須。",
     monitorNetworkActivity: "通信の監視・改変",
     monitorNetworkActivity_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
-        広告ブロック系の拡張機能との併用は避けることを推奨します。\n
-        [強制的に最高画質で再生する] は他の監視・改変オプションを有効にする場合にセットで有効にすることを推奨します。
-        通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出る場合があることが確認されています。
-        先読みで最低画質の動画が取得され、少しの間だけそれが再生される場合があるようです。
-        [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
+      広告ブロック系の拡張機能との併用は避けることを推奨します。\n
+      [強制的に最高画質で再生する] は他の監視・改変オプションを有効にする場合にセットで有効にすることを推奨します。
+      通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出る場合があることが確認されています。
+      先読みで最低画質の動画が取得され、少しの間だけそれが再生される場合があるようです。
+      [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
     forceHighestResolution: "強制的に最高画質で再生する",
+    forceHighestResolution_Tooltip: `プライムビデオは通信状況やウィンドウサイズなどを基に画質を動的に制御します。
+      この機能はそのような動的制御の煩わしさに対処するための機能です。\n
+      HD画質（720p/1080p）での再生はWidevine L1が使用できる環境でのみ可能です。
+      Widevine L1が使用できない端末・ブラウザでは標準画質に制限されます。
+      また、ユーザーエージェントを基にしてWindows/macOS以外の環境では標準画質に制限されるようです。
+      Widevine L1が使用可能なAndroid端末などのブラウザ上で再生する場合、ユーザーエージェントを変更する拡張機能/ユーザースクリプトを使用することでHD画質で再生できる場合があります。`,
     showVideoResolution: "左下に動画の解像度を表示する",
     removeAdRelatedData: "広告関連のデータを除去する",
     removeAdRelatedData_Tooltip: `この機能が有効な時は広告をスキップする機能は実行されません。
-        （完全な除去ができなかった場合に意図しないスキップが発生する可能性があるため）
-        この機能が有効な時に動画が途中で止まることがある場合は、この機能を無効にしてください。`,
+      （完全な除去ができなかった場合に意図しないスキップが発生する可能性があるため）
+      この機能が有効な時に動画が途中で止まることがある場合は、この機能を無効にしてください。`,
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip:
       "この機能を使用してもプライムビデオの自動再生の設定は変更されません。",
     forcePlayNextEpisode:
       "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
-        また、自動再生の代替手段としても機能します。\n
-        Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
-        Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。\n
-        この機能はサジェストされたコンテンツに遷移した後の次のエピソードの再生をサポートしていません。
-        また、動作の安定性のために次のシーズンへの遷移もサポートしていません。\n
-        次のエピソードがあるかどうかの判定に1500ミリ秒の待機時間を設定しています。
-        最後まで再生して動画が閉じた場合やEscキーの入力で動画を閉じた場合、必要に応じて1500ミリ秒の間は画面を暗くします。`,
+      また、自動再生の代替手段としても機能します。\n
+      Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
+      Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。\n
+      この機能はサジェストされたコンテンツに遷移した後の次のエピソードの再生をサポートしていません。
+      また、動作の安定性のために次のシーズンへの遷移もサポートしていません。\n
+      次のエピソードがあるかどうかの判定に1500ミリ秒の待機時間を設定しています。
+      最後まで再生して動画が閉じた場合やEscキーの入力で動画を閉じた場合、必要に応じて1500ミリ秒の間は画面を暗くします。`,
     close: "閉じる",
   };
   const enMessages = {
@@ -502,10 +508,10 @@ const createOptionMessages = () => {
     clickHideButtonForAllNextup:
       "Click the hide button for all next-up-cards (cancel autoplay completely)",
     clickHideButtonForAllNextup_Tooltip: `Normally it is not necessary to enable this option.\n
-    There are two types of next up cards: “normal next up” and "next up displayed a few seconds before the end of the video".
-    A hide button appears on both when autoplay is enabled, but clicking the latter hide button cancels autoplay completely and closes the video player when the video ends.
-    Therefore, the auto-click of the hide button is only done with the normal next up card, but this option can be used to ignore that condition and have the hide button auto-click.
-    This option is provided just in case and does not normally need to be enabled.`,
+      There are two types of next up cards: “normal next up” and "next up displayed a few seconds before the end of the video".
+      A hide button appears on both when autoplay is enabled, but clicking the latter hide button cancels autoplay completely and closes the video player when the video ends.
+      Therefore, the auto-click of the hide button is only done with the normal next up card, but this option can be used to ignore that condition and have the hide button auto-click.
+      This option is provided just in case and does not normally need to be enabled.`,
     hideReactions: "Hide reactions (like/not for me)",
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
@@ -521,40 +527,46 @@ const createOptionMessages = () => {
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
-    Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
-    The following features have been confirmed to work with LiveTV.
-    - Prevents darkening when overlay display is enabled
-    - Move the center buttons(Play/Pause, Back and Forward) to the bottom`,
+      Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
+      The following features have been confirmed to work with LiveTV.
+      - Prevents darkening when overlay display is enabled
+      - Move the center buttons(Play/Pause, Back and Forward) to the bottom`,
     enableShortcutKey:
       "Enable shortcut key to open the options dialog during video playback",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
     monitorNetworkActivity: "Monitor and modify network activity",
     monitorNetworkActivity_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
-        It is not recommended to use in conjunction with ad-blocking extensions.\n
-        It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
-        This extension uses a library called xhook to monitor and modify communications, and it has been confirmed that if xhook is enabled, it may affect the preloading behavior for a short period of time after playback begins.
-        It seems that in some cases the lowest quality video is retrieved in preload and it plays for a short while.
-        It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
+      It is not recommended to use in conjunction with ad-blocking extensions.\n
+      It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
+      This extension uses a library called xhook to monitor and modify communications, and it has been confirmed that if xhook is enabled, it may affect the preloading behavior for a short period of time after playback begins.
+      It seems that in some cases the lowest quality video is retrieved in preload and it plays for a short while.
+      It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
     forceHighestResolution: "Force playback at highest resolution",
+    forceHighestResolution_Tooltip: `Prime Video dynamically controls video resolution based on network conditions and window size.
+      This feature is intended to address such dynamic control hassles.\n
+      Playback in HD quality (720p/1080p) is only possible in environments where Widevine L1 is available.
+      On devices and browsers that cannot use Widevine L1, the resolution will be limited to standard definition.
+      It also appears to be limited to standard definition in non-Windows/macOS environments based on user agent.
+      When playing on a browser in environments such as Android devices where Widevine L1 is available, you may be able to play the video in HD quality by using an extension/user script that changes the user agent.`,
     showVideoResolution: "Show video resolution in bottom left",
     removeAdRelatedData: "Remove ad related data",
     removeAdRelatedData_Tooltip: `When this feature is enabled, the Skip Ads feature is not executed.
-        (Because of the possibility of unintended skipping if complete removal is not achieved)
-        If videos sometimes stop in the middle when this feature is enabled, please try disabling this feature.`,
+      (Because of the possibility of unintended skipping if complete removal is not achieved)
+      If videos sometimes stop in the middle when this feature is enabled, please try disabling this feature.`,
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip:
       "Enabling this will not change the autoplay setting for Prime Video",
     forcePlayNextEpisode:
       "Experimental: Play the next episode if the video is automatically closed at the end of the video",
     forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
-        It also works as an alternative to autoplay.\n
-        For Chrome, you must allow [audio] permissions for the site.
-        For Firefox, you must allow the [Autoplay] permission for the site.\n
-        This feature does not support playing the next episode after transitioning to the suggested content.
-        Also, transitions to the next season are not supported for operational stability.\n
-        A wait time of 1500 milliseconds is set to determine if the next episode is available.
-        If the video is closed after playing to the end or by entering the Esc key, the screen is darkened for 1500 milliseconds if necessary.`,
+      It also works as an alternative to autoplay.\n
+      For Chrome, you must allow [audio] permissions for the site.
+      For Firefox, you must allow the [Autoplay] permission for the site.\n
+      This feature does not support playing the next episode after transitioning to the suggested content.
+      Also, transitions to the next season are not supported for operational stability.\n
+      A wait time of 1500 milliseconds is set to determine if the next episode is available.
+      If the video is closed after playing to the end or by entering the Esc key, the screen is darkened for 1500 milliseconds if necessary.`,
     close: "Close",
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
@@ -795,6 +807,10 @@ const createOptionDialog = async (scriptVersion) => {
                       } />
                       <p>${messages.forceHighestResolution}</p>
                   </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolution_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="forceHighestResolution"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
