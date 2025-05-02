@@ -2983,7 +2983,7 @@ class ElementController {
       if (!document.querySelector("#addShadowsToSeekBar")) {
         const cssForShadows = `
           .atvwebplayersdk-seekbar-range {
-            box-shadow: 2px 2px 10px #666;
+            box-shadow: 2px 2px 6px #888;
           }
         `;
         addStyle(cssForShadows, "addShadowsToSeekBar");
