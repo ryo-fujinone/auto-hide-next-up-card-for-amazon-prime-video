@@ -475,8 +475,8 @@ const createOptionMessages = () => {
     removeAdRelatedData_Tooltip:
       "この機能が有効な時に動画が途中で止まることがある場合は、この機能を無効にしてください。",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
-    enableAutoplay_Tooltip:
-      "この機能を使用してもプライムビデオの自動再生の設定は変更されません。",
+    enableAutoplay_Tooltip: `プライムビデオの設定を変更せずに自動再生を活用するための機能です。
+      他の視聴環境の都合で自動再生をオンにしたくない場合に役立ちます。`,
     forcePlayNextEpisode:
       "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
@@ -553,8 +553,8 @@ const createOptionMessages = () => {
     removeAdRelatedData_Tooltip:
       "If videos sometimes stop in the middle when this feature is enabled, please try disabling this feature.",
     enableAutoplay: "Change autoplay flag to true",
-    enableAutoplay_Tooltip:
-      "Enabling this will not change the autoplay setting for Prime Video",
+    enableAutoplay_Tooltip: `This feature is for using autoplay without changing Prime Video settings.
+      This is useful if you do not want to turn on automatic playback in consideration of other viewing devices.`,
     forcePlayNextEpisode:
       "Experimental: Play the next episode if the video is automatically closed at the end of the video",
     forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
@@ -839,9 +839,10 @@ const createOptionDialog = async (scriptVersion) => {
                       } />
                       <p>${messages.enableAutoplay}</p>
                   </label>
-                  <p class="nextup-ext-opt-dialog-tooltip" title="${
-                    messages.enableAutoplay_Tooltip
-                  }" data-msg-id="enableAutoplay"></p>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.enableAutoplay_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="enableAutoplay"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
