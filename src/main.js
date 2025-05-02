@@ -16,7 +16,6 @@ const getDefaultOptions = () => {
     hideRating: true,
     preventsDarkening: false,
     addOutlinesForTextsAndIcons: false,
-    boldTextToImproveVisibility: false,
     addShadowsToSeekBar: false,
     moveCenterButtonsToBottom: false,
     useOnLiveTv: false,
@@ -446,8 +445,6 @@ const createOptionMessages = () => {
     hideRating: "レーティングを非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
-    boldTextToImproveVisibility:
-      "縁取りが有効な時に視認性向上のために文字を太くする",
     addShadowsToSeekBar: "シークバーに影をつける",
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
@@ -527,8 +524,6 @@ const createOptionMessages = () => {
     hideRating: "Hide rating",
     preventsDarkening: "Prevents darkening when overlay display is enabled",
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
-    boldTextToImproveVisibility:
-      "Bold text to improve visibility when text outlines are enabled",
     addShadowsToSeekBar: "Add shadows to the seek bar",
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
@@ -746,15 +741,6 @@ const createOptionDialog = async (scriptVersion) => {
                         options.addOutlinesForTextsAndIcons ? "checked" : ""
                       } />
                       <p>${messages.addOutlinesForTextsAndIcons}</p>
-                  </label>
-              </div>
-
-              <div class="nextup-ext-opt-dialog-item-container">
-                  <label class="indent2">
-                      <input type="checkbox" id="bold-text-to-improve-visibility" name="bold-text-to-improve-visibility" ${
-                        options.boldTextToImproveVisibility ? "checked" : ""
-                      } />
-                      <p>${messages.boldTextToImproveVisibility}</p>
                   </label>
               </div>
 
@@ -1191,9 +1177,6 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "add-outlines-for-texts-and-icons":
           await saveOptions({ addOutlinesForTextsAndIcons: e.target.checked });
-          break;
-        case "bold-text-to-improve-visibility":
-          await saveOptions({ boldTextToImproveVisibility: e.target.checked });
           break;
         case "add-shadow-to-seek-bar":
           await saveOptions({ addShadowsToSeekBar: e.target.checked });
@@ -2891,23 +2874,34 @@ class ElementController {
         const cssForText = `
           .atvwebplayersdk-title-text {
             -webkit-text-stroke: 0.015em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 3px black;
           }
           .atvwebplayersdk-subtitle-text {
             -webkit-text-stroke: 0.015em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 3px black;
           }
           .atvwebplayersdk-timeindicator-text {
             -webkit-text-stroke: 0.025em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
           }
           .atvwebplayersdk-timeindicator-text span {
             opacity: 1;
-            font-weight: normal;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
           }
           .atvwebplayersdk-nexttitle-button div:not(:has(img)) {
             -webkit-text-stroke: 0.025em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
           }
           .atvwebplayersdk-hideabletopbuttons-container button + div div,
           .atvwebplayersdk-playerclose-button + div div {
             -webkit-text-stroke: 0.015em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
           }
         `;
         addStyle(cssForText, "addOutlinesForTexts");
@@ -2917,18 +2911,18 @@ class ElementController {
         const cssForImg = `
           .atvwebplayersdk-hideabletopbuttons-container button img,
           .atvwebplayersdk-playerclose-button img {
-            filter: drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black);
+            filter: drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black);
           }
           .nextup-ext-opt-btn img {
-            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) drop-shadow(0 0 0.015em black) !important;
+            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black) !important;
           }
           .atvwebplayersdk-fastseekback-button img,
           .atvwebplayersdk-playpause-button img,
           .atvwebplayersdk-fastseekforward-button img {
-            filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black);
+            filter: drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black);
           }
           .atvwebplayersdk-nexttitle-button img {
-            filter: drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.02em black) drop-shadow(0 0 0.015em black);
+            filter: drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black);
           }
         `;
         addStyle(cssForImg, "addOutlinesForIcons");
@@ -2942,39 +2936,11 @@ class ElementController {
           const cssForResolutionInfo = `
           .nextup-ext-resolution-info {
             -webkit-text-stroke: 0.025em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
           }
         `;
           addStyle(cssForResolutionInfo, "preventsDarkening_ResolutionInfo");
-        }
-      }
-
-      if (options.boldTextToImproveVisibility) {
-        if (!document.querySelector("#boldTextToImproveVisibility")) {
-          const cssForBoldText = `
-            .atvwebplayersdk-title-text {
-              font-weight: bold;
-            }
-            .atvwebplayersdk-subtitle-text {
-              font-weight: bold;
-            }
-            .atvwebplayersdk-timeindicator-text {
-              font-weight: bold;
-            }
-            .atvwebplayersdk-timeindicator-text span {
-              font-weight: bold;
-            }
-            .atvwebplayersdk-nexttitle-button div:not(:has(img)) {
-              font-weight: bold;
-            }
-            .atvwebplayersdk-hideabletopbuttons-container button + div div,
-            .atvwebplayersdk-playerclose-button + div div {
-              font-weight: bold;
-            }
-            .nextup-ext-resolution-info {
-              font-weight: bold;
-            }
-          `;
-          addStyle(cssForBoldText, "boldTextToImproveVisibility");
         }
       }
     }
