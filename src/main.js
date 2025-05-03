@@ -2669,15 +2669,15 @@ class ElementController {
     if (!options.temporarilyDisableOverlay) {
       return;
     }
-    const overlaysWrapper = this.player.querySelector(
-      ".atvwebplayersdk-overlays-wrapper"
+    const playerContainer = this.player.querySelector(
+      ".atvwebplayersdk-player-container"
     );
-    if (!overlaysWrapper) {
+    if (!playerContainer) {
       return;
     }
-    overlaysWrapper.style.display = "none";
+    playerContainer.style.display = "none";
     setTimeout(() => {
-      overlaysWrapper.style.display = "";
+      playerContainer.style.display = "";
     }, delay);
   }
 
