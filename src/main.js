@@ -2607,8 +2607,8 @@ class ElementController {
       return;
     }
 
-    const overlaysContainer = this.player.querySelector(
-      ".atvwebplayersdk-overlays-container"
+    const playerContainer = this.player.querySelector(
+      ".atvwebplayersdk-player-container"
     );
     const centerOverlaysWrapper = this.player.querySelector(
       "[data-ident='center-overlays-wrapper']"
@@ -2623,7 +2623,7 @@ class ElementController {
       } else {
         centerOverlaysWrapper.dataset.existsSkipIntroBtn = true;
       }
-    }).observe(overlaysContainer, observeConfig);
+    }).observe(playerContainer, observeConfig);
 
     new MutationObserver((_) => {
       const skipIntroBtn = this.player.querySelector(
