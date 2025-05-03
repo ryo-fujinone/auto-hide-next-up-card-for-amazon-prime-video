@@ -2654,10 +2654,10 @@ class ElementController {
 
     if (!document.querySelector("#preventsDarkeningInConjunctionWithNextup")) {
       const css = `
-        .atvwebplayersdk-overlays-container:has(.atvwebplayersdk-nextupcard-show) >.fkpovp9 {
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .fkpovp9 {
           opacity: 0 !important;
         }
-        .atvwebplayersdk-overlays-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style='cursor: pointer;']) >.fkpovp9 {
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .fkpovp9 {
           opacity: 1 !important;
         }
       `;
