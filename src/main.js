@@ -2862,7 +2862,7 @@ class ElementController {
 
     if (!document.querySelector("#preventsDarkening")) {
       const css = `
-        .atvwebplayersdk-overlays-container > div.fkpovp9 {
+        .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
           display: none !important;
           }
         `;
