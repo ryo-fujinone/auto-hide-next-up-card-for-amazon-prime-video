@@ -3427,14 +3427,14 @@ const monitorLiveTvVideoElements = (player, options = getDefaultOptions()) => {
     return;
   }
 
-  let rendererContainer;
+  let videoWrapper;
 
   const videoElementsObserver = new MutationObserver((_) => {
-    if (!rendererContainer) {
+    if (!videoWrapper) {
       return;
     }
 
-    const videos = rendererContainer.querySelectorAll("video");
+    const videos = videoWrapper.querySelectorAll("video");
     if (videos.length !== 2) {
       return;
     }
@@ -3448,12 +3448,12 @@ const monitorLiveTvVideoElements = (player, options = getDefaultOptions()) => {
   });
 
   new MutationObserver((_, observer) => {
-    rendererContainer = player.querySelector(".rendererContainer");
-    if (!rendererContainer) {
+    videoWrapper = player.querySelector(".atvwebplayersdk-video-surface");
+    if (!videoWrapper) {
       return;
     }
     observer.disconnect();
-    videoElementsObserver.observe(rendererContainer, {
+    videoElementsObserver.observe(videoWrapper, {
       ...observeConfig,
       attributes: true,
     });
