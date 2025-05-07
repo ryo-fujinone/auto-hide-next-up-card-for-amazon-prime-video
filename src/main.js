@@ -2573,7 +2573,7 @@ class ElementController {
       }
 
       canSkip = false;
-      adTime -= 1.5;
+      adTime -= 1;
       console.log(`Skip ${adTime} seconds`);
       video.currentTime += adTime;
       video.muted = false;
