@@ -3495,7 +3495,7 @@ const main = async () => {
 
   new MutationObserver((_) => {
     const players = document.querySelectorAll(
-      "[id*='dv-web-player']:not([data-detected-from-ext='true'])"
+      "[id^='dv-web-player']:not([data-detected-from-ext='true'])"
     );
     players.forEach(async (player) => {
       player.dataset.detectedFromExt = "true";
