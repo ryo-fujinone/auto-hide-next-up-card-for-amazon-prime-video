@@ -3448,7 +3448,14 @@ const monitorLiveTvVideoElements = (player, options = getDefaultOptions()) => {
   });
 
   new MutationObserver((_, observer) => {
-    videoWrapper = player.querySelector(".atvwebplayersdk-video-surface");
+    /**
+     * at amazon.co.jp
+     * .rendererContainer - before 2025/05/03 and after 2025/05/07
+     * .atvwebplayersdk-video-surface - existed from 2025/05/03 to 2025/05/07
+     */
+    const wrapper1 = player.querySelector(".rendererContainer");
+    const wrapper2 = player.querySelector(".atvwebplayersdk-video-surface");
+    videoWrapper = wrapper1 ?? wrapper2;
     if (!videoWrapper) {
       return;
     }
