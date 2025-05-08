@@ -30,6 +30,7 @@ const getDefaultOptions = () => {
     showVideoResolution_xhook: false,
     removeAdRelatedData: false,
     enableAutoplay_xhook: false,
+    removeNextupTimecodes_xhook: false,
     forcePlayNextEpisode_xhook: false,
     scriptVersion: "2.12.3",
   };
@@ -479,6 +480,11 @@ const createOptionMessages = () => {
     enableAutoplay: "自動再生のフラグをtrueに変更する",
     enableAutoplay_Tooltip: `プライムビデオの設定を変更せずに自動再生を活用するための機能です。
       他の視聴環境の都合で自動再生をオンにしたくない場合に役立ちます。`,
+    removeNextupTimecodes: "Next upのタイムコードを除去する",
+    removeNextupTimecodes_Tooltip: `通常はこの機能を有効にする必要はありません。\n
+      この機能は「通常のNext up」を無効化する機能です。
+      「動画終了の数秒前に表示されるNext up」は無効化されません。
+      「Next upを非表示にする」機能で問題が発生している場合に、この機能で対処できる可能性があります。`,
     forcePlayNextEpisode:
       "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
@@ -558,6 +564,11 @@ const createOptionMessages = () => {
     enableAutoplay: "Change autoplay flag to true",
     enableAutoplay_Tooltip: `This feature is for using autoplay without changing Prime Video settings.
       This is useful if you do not want to turn on automatic playback in consideration of other viewing devices.`,
+    removeNextupTimecodes: "Remove next up timecodes",
+    removeNextupTimecodes_Tooltip: `Normally there is no need to enable this feature.\n
+      This feature disables “normal next up”.
+      This feature does not disable the next up that appears a few seconds before the end of the video.
+      If you are having problems with the “Hide next up card” feature, this may help.`,
     forcePlayNextEpisode:
       "Experimental: Play the next episode if the video is automatically closed at the end of the video",
     forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
@@ -855,6 +866,19 @@ const createOptionDialog = async (scriptVersion) => {
                     regexForMultiineTooltips,
                     ""
                   )}" data-msg-id="enableAutoplay"></p>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label>
+                      <input type="checkbox" id="remove-nextup-timecodes" name="remove-nextup-timecodes" ${
+                        options.removeNextupTimecodes_xhook ? "checked" : ""
+                      } />
+                      <p>${messages.removeNextupTimecodes}</p>
+                  </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.removeNextupTimecodes_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="removeNextupTimecodes"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -1201,6 +1225,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "enable-autoplay":
           await saveOptions({ enableAutoplay_xhook: e.target.checked });
+          break;
+        case "remove-nextup-timecodes":
+          await saveOptions({ removeNextupTimecodes_xhook: e.target.checked });
           break;
         case "force-play-next-episode":
           await saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
@@ -1911,6 +1938,33 @@ const runXhook = () => {
       }
     }
 
+    static removeNextupTimecodes(request, response) {
+      if (!isGetVodPlaybackResources(request, response)) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(response.text);
+        const transitionTimecodes = data.transitionTimecodes?.result?.events;
+        if (!transitionTimecodes) {
+          return;
+        }
+
+        const filteredTimeCodes = transitionTimecodes.filter((t) => {
+          const isNextup = ["END_CREDITS", "NEXT_UP"].includes(t.eventType);
+          return !isNextup;
+        });
+        if (transitionTimecodes.length === filteredTimeCodes.length) {
+          return;
+        }
+
+        data.transitionTimecodes.result.events = filteredTimeCodes;
+        response.text = JSON.stringify(data);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
     static forcePlayNextEpisode(request, response) {
       const url = request.url;
       if (url.includes(".mp4")) {
@@ -1986,6 +2040,9 @@ const runXhook = () => {
       }
       if (options.enableAutoplay_xhook) {
         this.#queue.push(this.enableAutoplay);
+      }
+      if (options.removeNextupTimecodes_xhook) {
+        this.#queue.push(this.removeNextupTimecodes);
       }
       if (options.forcePlayNextEpisode_xhook) {
         this.#queue.push(this.forcePlayNextEpisode);
@@ -2378,6 +2435,7 @@ const injectXhook = (options = getDefaultOptions()) => {
     options.forceHighestResolution_xhook,
     options.removeAdRelatedData,
     options.enableAutoplay_xhook,
+    options.removeNextupTimecodes_xhook,
     options.forcePlayNextEpisode_xhook,
   ];
   const shouldInjectXhook = xhookOptions.some((opt) => opt);
