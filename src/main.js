@@ -415,7 +415,7 @@ const createOptionMessages = () => {
     promptReloadPage: "オプションを変更した場合はページをリロードしてください",
     skipAds: "広告をスキップする",
     skipAds_Tooltip:
-      "本編をスキップしてしまわないように1500ミリ秒分を残します。",
+      "本編をスキップしてしまわないように1000ミリ秒分を残します。",
     hideSkipIntroBtn: "イントロスキップボタンを非表示にする",
     showSkipIntroBtnOnOverlay:
       "オーバーレイ表示が有効な時はイントロスキップボタンを表示する",
@@ -494,7 +494,7 @@ const createOptionMessages = () => {
   const enMessages = {
     promptReloadPage: "If you change the options, please reload the page",
     skipAds: "Skip ads",
-    skipAds_Tooltip: "Leave 1500 ms for stability of operation",
+    skipAds_Tooltip: "Leave 1000 ms for stability of operation",
     hideSkipIntroBtn: "Hide skip intro button",
     showSkipIntroBtnOnOverlay:
       "Show skip intro button when overlay display is enabled",
