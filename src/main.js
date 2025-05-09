@@ -1112,6 +1112,7 @@ const createOptionDialog = async (scriptVersion) => {
   optDialog.toggleAttribute("open");
   optDialog.style.setProperty("visibility", "");
 
+  // Code to run when the dialog is opened and closed
   new MutationObserver(async (_) => {
     if (optDialog.hasAttribute("open")) {
       await Dialog.whenOpening();
@@ -1120,6 +1121,7 @@ const createOptionDialog = async (scriptVersion) => {
     }
   }).observe(optDialog, { attributes: true, attributeFilter: ["open"] });
 
+  // Close the dialog when the close button is pressed
   const closeBtn = optDialog.querySelector(
     ".nextup-ext-opt-dialog-close-button"
   );
@@ -1127,6 +1129,7 @@ const createOptionDialog = async (scriptVersion) => {
     optDialog.close();
   });
 
+  // Code for switching tabs
   const tabs = optDialog.querySelectorAll(".nextup-ext-opt-dialog-tab");
   const contents = optDialog.querySelectorAll(".nextup-ext-opt-dialog-content");
   tabs.forEach((tab) => {
@@ -1147,6 +1150,7 @@ const createOptionDialog = async (scriptVersion) => {
     });
   });
 
+  // Save when options are changed
   optDialog.addEventListener(
     "click",
     async (e) => {
