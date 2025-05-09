@@ -1232,9 +1232,6 @@ const createOptionDialog = async (scriptVersion) => {
         case "force-play-next-episode":
           await saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
           break;
-        case "nextup-ext-opt-dialog-close":
-          optDialog.close();
-          break;
         default:
           break;
       }
