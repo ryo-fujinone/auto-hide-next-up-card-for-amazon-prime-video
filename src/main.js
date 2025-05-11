@@ -2264,10 +2264,10 @@ const runXhook = () => {
 
     new MutationObserver((_) => {
       const players = document.querySelectorAll(
-        `[id*='dv-web-player']:not([data-detected-from-ext${random}='true'])`
+        `[id*='dv-web-player']:not([data-detected-from-nextup-ext${random}='true'])`
       );
       players.forEach((player) => {
-        player.dataset[`detectedFromExt${random}`] = "true";
+        player.dataset[`detectedFromNextupExt${random}`] = "true";
         new MutationObserver((_, observer) => {
           const video = player.querySelector("video");
           if (!video) {
@@ -2432,10 +2432,10 @@ const runXhook = () => {
 
     new MutationObserver((_) => {
       const players = document.querySelectorAll(
-        `[id*='dv-web-player']:not([data-detected-from-ext${random}='true'])`
+        `[id*='dv-web-player']:not([data-detected-from-nextup-ext${random}='true'])`
       );
       players.forEach((player) => {
-        player.dataset[`detectedFromExt${random}`] = "true";
+        player.dataset[`detectedFromNextupExt${random}`] = "true";
         new MutationObserver((_, observer) => {
           const video = player.querySelector("video");
           if (!video) {
@@ -3624,10 +3624,10 @@ const main = async () => {
 
   new MutationObserver((_) => {
     const players = document.querySelectorAll(
-      "[id^='dv-web-player']:not([data-detected-from-ext='true'])"
+      "[id^='dv-web-player']:not([data-detected-from-nextup-ext='true'])"
     );
     players.forEach(async (player) => {
-      player.dataset.detectedFromExt = "true";
+      player.dataset.detectedFromNextupExt = "true";
 
       if (canRunXhook) {
         canRunXhook = false;
