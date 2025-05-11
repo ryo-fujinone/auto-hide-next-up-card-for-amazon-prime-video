@@ -2547,6 +2547,57 @@ class ElementController {
     }).observe(this.player, { ...observeConfig, attributes: true });
   }
 
+  // for LiveTV
+  changeOrderOfVideoElements(options = getOptions()) {
+    if (!options.useOnLiveTv) {
+      return;
+    }
+
+    let videoWrapper;
+
+    const videoElementsObserver = new MutationObserver((_) => {
+      if (!videoWrapper) {
+        return;
+      }
+
+      const videos = videoWrapper.querySelectorAll("video");
+      if (videos.length !== 2) {
+        return;
+      }
+      if (
+        videos[0].style.display !== "none" ||
+        videos[1].style.display !== ""
+      ) {
+        return;
+      }
+      if (videos[0].hasAttribute("src") || !videos[1].hasAttribute("src")) {
+        return;
+      }
+      videos[0].before(videos[1]);
+    });
+
+    new MutationObserver((_, observer) => {
+      /**
+       * at amazon.co.jp
+       * .rendererContainer - before 2025/05/03 and after 2025/05/07
+       * .atvwebplayersdk-video-surface - existed from 2025/05/03 to 2025/05/07
+       */
+      const wrapper1 = this.player.querySelector(".rendererContainer");
+      const wrapper2 = this.player.querySelector(
+        ".atvwebplayersdk-video-surface"
+      );
+      videoWrapper = wrapper1 ?? wrapper2;
+      if (!videoWrapper) {
+        return;
+      }
+      observer.disconnect();
+      videoElementsObserver.observe(videoWrapper, {
+        ...observeConfig,
+        attributes: true,
+      });
+    }).observe(this.player, observeConfig);
+  }
+
   // Preparation for detecting the display state of the overlay.
   markingCenterOverlaysWrapper() {
     if (this.centerOverlaysWrapperIsMarked) {
@@ -3514,51 +3565,6 @@ class ElementController {
   }
 }
 
-const monitorLiveTvVideoElements = (player, options = getDefaultOptions()) => {
-  if (!options.useOnLiveTv) {
-    return;
-  }
-
-  let videoWrapper;
-
-  const videoElementsObserver = new MutationObserver((_) => {
-    if (!videoWrapper) {
-      return;
-    }
-
-    const videos = videoWrapper.querySelectorAll("video");
-    if (videos.length !== 2) {
-      return;
-    }
-    if (videos[0].style.display !== "none" || videos[1].style.display !== "") {
-      return;
-    }
-    if (videos[0].hasAttribute("src") || !videos[1].hasAttribute("src")) {
-      return;
-    }
-    videos[0].before(videos[1]);
-  });
-
-  new MutationObserver((_, observer) => {
-    /**
-     * at amazon.co.jp
-     * .rendererContainer - before 2025/05/03 and after 2025/05/07
-     * .atvwebplayersdk-video-surface - existed from 2025/05/03 to 2025/05/07
-     */
-    const wrapper1 = player.querySelector(".rendererContainer");
-    const wrapper2 = player.querySelector(".atvwebplayersdk-video-surface");
-    videoWrapper = wrapper1 ?? wrapper2;
-    if (!videoWrapper) {
-      return;
-    }
-    observer.disconnect();
-    videoElementsObserver.observe(videoWrapper, {
-      ...observeConfig,
-      attributes: true,
-    });
-  }).observe(player, observeConfig);
-};
-
 const restoreVolume = (video, url) => {
   const searchParams = new URL(url).searchParams;
   if (
@@ -3608,13 +3614,13 @@ const main = async () => {
         }
       }
 
+      const controller = new ElementController(player);
+
       try {
-        monitorLiveTvVideoElements(player, options);
+        controller.changeOrderOfVideoElements(options);
       } catch (e) {
         console.log(e);
       }
-
-      const controller = new ElementController(player);
 
       try {
         controller.createOptionBtn();
