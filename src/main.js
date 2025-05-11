@@ -262,7 +262,11 @@ const getShortcutKeyInput = () => {
 };
 
 const getVisibleVideo = () => {
-  return document.querySelector(".dv-player-fullscreen video");
+  const videos = document.querySelectorAll(".dv-player-fullscreen video");
+  if (videos.length === 0) {
+    return;
+  }
+  return Array.from(videos).find((v) => v.checkVisibility());
 };
 
 const togglePlayAndPause = () => {
@@ -275,7 +279,7 @@ const togglePlayAndPause = () => {
 };
 
 const playVideo = () => {
-  const videos = document.querySelectorAll(".dv-player-fullscreen  video");
+  const videos = document.querySelectorAll(".dv-player-fullscreen video");
   if (videos.length === 0) {
     return;
   }
@@ -285,13 +289,23 @@ const playVideo = () => {
       video.play();
     }
   } else {
-    // LiveTV
-    togglePlayAndPause();
+    // for LiveTV
+    const video = getVisibleVideo();
+    if (!video) {
+      return;
+    }
+    try {
+      if (video.paused) {
+        togglePlayAndPause();
+      }
+    } catch (e) {
+      console.log(e);
+    }
   }
 };
 
 const pauseVideo = () => {
-  const videos = document.querySelectorAll(".dv-player-fullscreen  video");
+  const videos = document.querySelectorAll(".dv-player-fullscreen video");
   if (videos.length === 0) {
     return;
   }
@@ -301,8 +315,18 @@ const pauseVideo = () => {
       video.pause();
     }
   } else {
-    // LiveTV
-    togglePlayAndPause();
+    // for LiveTV
+    const video = getVisibleVideo();
+    if (!video) {
+      return;
+    }
+    try {
+      if (!video.paused) {
+        togglePlayAndPause();
+      }
+    } catch (e) {
+      console.log(e);
+    }
   }
 };
 
