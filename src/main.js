@@ -1617,7 +1617,7 @@ const runXhook = () => {
     return true;
   };
 
-  function parseISODuration(duration) {
+  const parseISODuration = (duration) => {
     const hoursMatch = duration.match(/(\d+(\.\d+)?)H/);
     const minutesMatch = duration.match(/(\d+(\.\d+)?)M/);
     const secondsMatch = duration.match(/(\d+(\.\d+)?)S/);
@@ -1627,9 +1627,9 @@ const runXhook = () => {
     const seconds = parseFloat(secondsMatch ? secondsMatch[1] : 0);
 
     return hours * 3600 + minutes * 60 + seconds;
-  }
+  };
 
-  function formatISODuration(totalSeconds) {
+  const formatISODuration = (totalSeconds) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
@@ -1643,15 +1643,15 @@ const runXhook = () => {
     }
 
     return `PT${parts.join("")}`;
-  }
+  };
 
-  function sumDurations(durations) {
+  const sumDurations = (durations) => {
     const totalSeconds = durations.reduce((acc, duration) => {
       return acc + parseISODuration(duration);
     }, 0);
 
     return formatISODuration(totalSeconds);
-  }
+  };
 
   class XhookAfter {
     static #queue = [];
