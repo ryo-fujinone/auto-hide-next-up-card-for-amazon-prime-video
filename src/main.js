@@ -32,7 +32,7 @@ const getDefaultOptions = () => {
     enableAutoplay_xhook: false,
     removeNextupTimecodes_xhook: false,
     forcePlayNextEpisode_xhook: false,
-    scriptVersion: "2.12.3",
+    scriptVersion: "2.13.0",
   };
 };
 
