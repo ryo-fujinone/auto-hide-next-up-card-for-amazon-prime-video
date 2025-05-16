@@ -2646,6 +2646,26 @@ class ElementController {
     }
   }
 
+  markingToIdentifyNonDarkeningOverlays() {
+    const overlays = this.player.querySelectorAll(
+      "div:has(>.atvwebplayersdk-regulatory-overlay) > div"
+    );
+    if (overlays.length === 0) {
+      return;
+    }
+    if (this.player.querySelector("[data-non-darkening-overlay]")) {
+      return;
+    }
+
+    const selector =
+      "div:has(>.atvwebplayersdk-regulatory-overlay) > div:not(:has(>.atvwebplayersdk-loadingspinner-overlay) ~ div):not(:has(>.atvwebplayersdk-loadingspinner-overlay)):has(> div:nth-child(2):last-child)";
+    for (const overlay of overlays) {
+      if (!overlay.matches(selector)) {
+        overlay.dataset.nonDarkeningOverlay = "true";
+      }
+    }
+  }
+
   skipAds(options = getDefaultOptions()) {
     if (!options.skipAds) {
       return;
@@ -2787,12 +2807,34 @@ class ElementController {
     }
 
     if (!document.querySelector("#preventsDarkeningInConjunctionWithNextup")) {
+      /**
+       * at amazon.co.jp
+       * .fkpovp9 - before 2025/05/16
+       * .f1makowq - after 2025/05/16
+       * The style that hides .fkpovp9 will be removed in the future
+       */
       const css = `
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]),
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]) div {
+          background: rgba(0,0,0,0) !important;
+        }
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 0 !important;
         }
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 1 !important;
+        }
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
+          opacity: 0 !important;
+        }
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
+          opacity: 1 !important;
+        }
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) div:nth-child(1) {
+          background: linear-gradient(180deg,rgba(0, 0, 0, 0.5) 0%,rgba(0, 0, 0, 0.5) 49.48%,rgba(0, 0, 0, 0) 100%) !important;
+        }
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) div:nth-child(2) {
+          background: linear-gradient(180deg,rgba(0, 0, 0, 0) 0.98%,rgba(0, 0, 0, 0.7) 53.49%,rgba(0, 0, 0, 0.5) 100%) !important;
         }
       `;
       addStyle(css, "preventsDarkeningInConjunctionWithNextup");
@@ -2995,11 +3037,22 @@ class ElementController {
     }
 
     if (!document.querySelector("#preventsDarkening")) {
+      /**
+       * at amazon.co.jp
+       * .fkpovp9 - before 2025/05/16
+       * .f1makowq - after 2025/05/16
+       * The style that hides .fkpovp9 will be removed in the future
+       */
       const css = `
-        .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
+        div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]),
+        div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]) div{
+          background: rgba(0,0,0,0) !important;
+        }
+        .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay),
+        .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
           display: none !important;
-          }
-        `;
+        }
+      `;
       addStyle(css, "preventsDarkening");
     }
 
@@ -3685,6 +3738,12 @@ const main = async () => {
         }
 
         observer.disconnect();
+
+        try {
+          controller.markingToIdentifyNonDarkeningOverlays();
+        } catch (e) {
+          console.log(e);
+        }
 
         if (canRestoreVolume) {
           canRestoreVolume = false;
