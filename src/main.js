@@ -2637,7 +2637,13 @@ class ElementController {
     try {
       const centerOverlaysWrapper =
         playPauseButton.parentNode.parentNode.parentNode.parentNode;
-      centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
+      const hasCursorStyle1 =
+        centerOverlaysWrapper.style.cssText.includes("cursor: none");
+      const hasCursorStyle2 =
+        centerOverlaysWrapper.style.cssText.includes("cursor: pointer");
+      if (hasCursorStyle1 || hasCursorStyle2) {
+        centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
+      }
       this.centerOverlaysWrapperIsMarked = true;
       return true;
     } catch (e) {
@@ -2821,19 +2827,19 @@ class ElementController {
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 0 !important;
         }
-        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 1 !important;
         }
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 0 !important;
         }
-        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 1 !important;
         }
-        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) div:nth-child(1) {
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) div:nth-child(1) {
           background: linear-gradient(180deg,rgba(0, 0, 0, 0.5) 0%,rgba(0, 0, 0, 0.5) 49.48%,rgba(0, 0, 0, 0) 100%) !important;
         }
-        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has(.f1icw8u[style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) div:nth-child(2) {
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) div:nth-child(2) {
           background: linear-gradient(180deg,rgba(0, 0, 0, 0) 0.98%,rgba(0, 0, 0, 0.7) 53.49%,rgba(0, 0, 0, 0.5) 100%) !important;
         }
       `;
