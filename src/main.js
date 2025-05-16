@@ -2824,11 +2824,20 @@ class ElementController {
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]) div {
           background: rgba(0,0,0,0) !important;
         }
+
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 0 !important;
         }
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 1 !important;
+        }
+
+        /*
+          .f1makowq is generated before the nextup element is generated.
+          If the cursor is none, hide .f1makowq because .f1makowq flickers for just a moment before nextup is generated.
+        */
+        div:has(>.atvwebplayersdk-regulatory-overlay):has([data-ident='center-overlays-wrapper'][style*='cursor: none;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
+          visibility: hidden;
         }
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 0 !important;
@@ -2836,6 +2845,7 @@ class ElementController {
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
           opacity: 1 !important;
         }
+
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show):has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) div:nth-child(1) {
           background: linear-gradient(180deg,rgba(0, 0, 0, 0.5) 0%,rgba(0, 0, 0, 0.5) 49.48%,rgba(0, 0, 0, 0) 100%) !important;
         }
