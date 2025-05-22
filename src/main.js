@@ -3059,7 +3059,7 @@ class ElementController {
       return;
     }
 
-    //To avoid doing anything to 'Recommendations' when watching LiveTV
+    // To avoid doing anything to 'Recommendations' when watching LiveTV
     let isJumpLiveButtonVisible = false;
     const optionsWrapper = this.player.querySelector(
       ".atvwebplayersdk-options-wrapper"
@@ -3135,6 +3135,7 @@ class ElementController {
 
       if (!isOpenedByUser && !isJumpLiveButtonVisible) {
         try {
+          this.temporarilyDisableOverlay(options, 5000);
           hideButton.click();
         } catch (e) {
           console.log(e);
