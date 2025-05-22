@@ -466,6 +466,8 @@ const createOptionMessages = () => {
     showReactionsOnOverlay_Tooltip:
       "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます。",
     hideRecommendations: "おすすめの商品を非表示にする",
+    hideRecommendations_Tooltip: `Hideボタンの自動クリック時に「非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする」の設定が参照されます。
+      ライブ配信のカルーセルについては、この機能では非表示の対象にはしていません。`,
     showRecommendationsOnOverlay:
       "オーバーレイ表示が有効な時はおすすめの商品を表示する",
     preventsTransitionsToRecommendedVideos:
@@ -553,6 +555,8 @@ const createOptionMessages = () => {
     showReactionsOnOverlay_Tooltip:
       "If hide next up card is enabled, auto-clicking the hide button will remove next up card and reactions from the DOM",
     hideRecommendations: "Hide featured items",
+    hideRecommendations_Tooltip: `The setting “Disable overlay for 5 seconds when auto-clicking hide button” is referenced when the Hide button in “Featured items” is automatically clicked.
+      LiveTV carousels are not targeted for hiding in this feature.`,
     showRecommendationsOnOverlay:
       "Show featured items when overlay display is enabled",
     preventsTransitionsToRecommendedVideos:
@@ -753,6 +757,10 @@ const createOptionDialog = async (scriptVersion) => {
                       } />
                       <p>${messages.hideRecommendations}</p>
                   </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.hideRecommendations_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="hideRecommendations"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
