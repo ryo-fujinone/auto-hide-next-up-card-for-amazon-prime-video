@@ -3059,8 +3059,16 @@ class ElementController {
       return;
     }
 
+    if (!document.querySelector("#hideRecommendations")) {
+      const css = `
+        [id^='dv-web-player']:not([data-is-jump-live-button-visible='true']) .atvwebplayersdk-BelowFold {
+          display: none !important;
+        }
+      `;
+      addStyle(css, "hideRecommendations");
+    }
+
     // To avoid doing anything to 'Recommendations' when watching LiveTV
-    let isJumpLiveButtonVisible = false;
     const optionsWrapper = this.player.querySelector(
       ".atvwebplayersdk-options-wrapper"
     );
@@ -3074,12 +3082,12 @@ class ElementController {
             getComputedStyle(jumpLiveButton).display === "block" &&
             jumpLiveButton.style.display === ""
           ) {
-            isJumpLiveButtonVisible = true;
+            this.player.dataset.isJumpLiveButtonVisible = "true";
           } else {
-            isJumpLiveButtonVisible = false;
+            delete this.player.dataset.isJumpLiveButtonVisible;
           }
         } else {
-          isJumpLiveButtonVisible = false;
+          delete this.player.dataset.isJumpLiveButtonVisible;
         }
       };
       checkJumpLiveButtonStyles();
@@ -3132,6 +3140,9 @@ class ElementController {
       if (!hideButton) {
         return;
       }
+
+      const isJumpLiveButtonVisible =
+        this.player.dataset.isJumpLiveButtonVisible === "true";
 
       if (!isOpenedByUser && !isJumpLiveButtonVisible) {
         try {
