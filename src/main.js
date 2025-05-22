@@ -13,6 +13,7 @@ const getDefaultOptions = () => {
     hideReactions: true,
     showReactionsOnOverlay: false,
     hideRecommendations: true,
+    showRecommendationsOnOverlay: false,
     preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
     preventsDarkening: false,
@@ -465,6 +466,8 @@ const createOptionMessages = () => {
     showReactionsOnOverlay_Tooltip:
       "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます。",
     hideRecommendations: "おすすめの商品を非表示にする",
+    showRecommendationsOnOverlay:
+      "オーバーレイ表示が有効な時はおすすめの商品を表示する",
     preventsTransitionsToRecommendedVideos:
       "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ",
     preventsTransitionsToRecommendedVideos_Tooltip:
@@ -549,7 +552,9 @@ const createOptionMessages = () => {
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
       "If hide next up card is enabled, auto-clicking the hide button will remove next up card and reactions from the DOM",
-    hideRecommendations: "Hide featured items for you",
+    hideRecommendations: "Hide featured items",
+    showRecommendationsOnOverlay:
+      "Show featured items when overlay display is enabled",
     preventsTransitionsToRecommendedVideos:
       "Prevent transition to suggested content when video ends",
     preventsTransitionsToRecommendedVideos_Tooltip:
@@ -747,6 +752,15 @@ const createOptionDialog = async (scriptVersion) => {
                         options.hideRecommendations ? "checked" : ""
                       } />
                       <p>${messages.hideRecommendations}</p>
+                  </label>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="show-recommendations-on-overlay" name="show-recommendations-on-overlay" ${
+                        options.showRecommendationsOnOverlay ? "checked" : ""
+                      } />
+                      <p>${messages.showRecommendationsOnOverlay}</p>
                   </label>
               </div>
 
@@ -1230,6 +1244,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-recommendations":
           await saveOptions({ hideRecommendations: e.target.checked });
+          break;
+        case "show-recommendations-on-overlay":
+          await saveOptions({ showRecommendationsOnOverlay: e.target.checked });
           break;
         case "prevents-transitions-to-recommended-videos":
           await saveOptions({
@@ -3094,6 +3111,54 @@ class ElementController {
       new MutationObserver((_) => {
         checkJumpLiveButtonStyles();
       }).observe(optionsWrapper, { ...observeConfig, attributes: true });
+    }
+
+    if (
+      options.showRecommendationsOnOverlay &&
+      this.markingCenterOverlaysWrapper()
+    ) {
+      if (!document.querySelector("#showRecommendationsOnOverlay")) {
+        const css = `
+          [id^='dv-web-player']:not([data-is-jump-live-button-visible='true']) .atvwebplayersdk-player-container:has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .atvwebplayersdk-BelowFold {
+            display: block !important;
+          }
+        `;
+        addStyle(css, "showRecommendationsOnOverlay");
+      }
+
+      const centerOverlaysWrapper = this.player.querySelector(
+        "[data-ident='center-overlays-wrapper']"
+      );
+
+      new MutationObserver((_) => {
+        const belowFold = this.player.querySelector(
+          ".atvwebplayersdk-BelowFold"
+        );
+        if (!belowFold) {
+          return;
+        }
+        // BelowFold is removed when the overlay is hidden.
+        // Therefore, MutationObserver's disconnect() is probably unnecessary here.
+        new MutationObserver((_) => {
+          const isJumpLiveButtonVisible =
+            this.player.dataset.isJumpLiveButtonVisible === "true";
+          if (isJumpLiveButtonVisible) {
+            return;
+          }
+          try {
+            const position = getComputedStyle(belowFold).position;
+            if (position === "absolute") {
+              belowFold.style.setProperty("display", "flex", "important");
+            } else if (position === "static") {
+              belowFold.style.setProperty("display", "block", "important");
+            }
+          } catch (error) {
+            console.log(error);
+          }
+        }).observe(belowFold, { attributes: true });
+      }).observe(centerOverlaysWrapper, {
+        attributes: true,
+      });
     }
 
     // Monitor whether BelowFold has been opened by the user
