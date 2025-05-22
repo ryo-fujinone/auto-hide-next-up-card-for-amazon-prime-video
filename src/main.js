@@ -3172,6 +3172,11 @@ class ElementController {
         return;
       }
 
+      if (e.target.closest(".generic-carousel-scroll-handles")) {
+        isOpenedByUser = true;
+        return;
+      }
+
       const belowFold = this.player.querySelector(".atvwebplayersdk-BelowFold");
       if (belowFold) {
         if (getComputedStyle(belowFold).position === "absolute") {
