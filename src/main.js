@@ -12,6 +12,7 @@ const getDefaultOptions = () => {
     clickHideButtonForAllNextup: false,
     hideReactions: true,
     showReactionsOnOverlay: false,
+    hideRecommendations: true,
     preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
     preventsDarkening: false,
@@ -463,6 +464,7 @@ const createOptionMessages = () => {
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
       "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます。",
+    hideRecommendations: "おすすめの商品を非表示にする",
     preventsTransitionsToRecommendedVideos:
       "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ",
     preventsTransitionsToRecommendedVideos_Tooltip:
@@ -547,6 +549,7 @@ const createOptionMessages = () => {
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
       "If hide next up card is enabled, auto-clicking the hide button will remove next up card and reactions from the DOM",
+    hideRecommendations: "Hide featured items for you",
     preventsTransitionsToRecommendedVideos:
       "Prevent transition to suggested content when video ends",
     preventsTransitionsToRecommendedVideos_Tooltip:
@@ -736,6 +739,15 @@ const createOptionDialog = async (scriptVersion) => {
                   <p class="nextup-ext-opt-dialog-tooltip" title="${
                     messages.showReactionsOnOverlay_Tooltip
                   }" data-msg-id="showReactionsOnOverlay"></p>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label>
+                      <input type="checkbox" id="hide-recommendations" name="hide-recommendations" ${
+                        options.hideRecommendations ? "checked" : ""
+                      } />
+                      <p>${messages.hideRecommendations}</p>
+                  </label>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -1215,6 +1227,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "show-reactions":
           await saveOptions({ showReactionsOnOverlay: e.target.checked });
+          break;
+        case "hide-recommendations":
+          await saveOptions({ hideRecommendations: e.target.checked });
           break;
         case "prevents-transitions-to-recommended-videos":
           await saveOptions({
@@ -1935,6 +1950,12 @@ const runXhook = () => {
 
       if (_hasNextUpV2Resource) {
         try {
+          /**
+           * If nextUpV2.isMultiTitleExperience is true, autoplay does not seem to run.
+           * There is an autoPlayConfig in nextUpV2.carousel,
+           * but I have tried changing the values of isMultiTitleExperience and autoplayEnabled to no avail.
+           * (Setting isMultiTitleExperience to false disables ‘Featured items’)
+           */
           const data = JSON.parse(response.text);
           const autoplayConfig =
             data?.resources?.nextUpV2?.card?.autoPlayConfig;
@@ -3033,6 +3054,95 @@ class ElementController {
     }).observe(this.player, observeConfig);
   }
 
+  hideRecommendations(options = getDefaultOptions()) {
+    if (!options.hideRecommendations) {
+      return;
+    }
+
+    //To avoid doing anything to 'Recommendations' when watching LiveTV
+    let isJumpLiveButtonVisible = false;
+    const optionsWrapper = this.player.querySelector(
+      ".atvwebplayersdk-options-wrapper"
+    );
+    if (optionsWrapper) {
+      const checkJumpLiveButtonStyles = () => {
+        const jumpLiveButton = this.player.querySelector(
+          ".atvwebplayersdk-jumptolive-button"
+        );
+        if (jumpLiveButton) {
+          if (
+            getComputedStyle(jumpLiveButton).display === "block" &&
+            jumpLiveButton.style.display === ""
+          ) {
+            isJumpLiveButtonVisible = true;
+          } else {
+            isJumpLiveButtonVisible = false;
+          }
+        } else {
+          isJumpLiveButtonVisible = false;
+        }
+      };
+      checkJumpLiveButtonStyles();
+      new MutationObserver((_) => {
+        checkJumpLiveButtonStyles();
+      }).observe(optionsWrapper, { ...observeConfig, attributes: true });
+    }
+
+    // Monitor whether BelowFold has been opened by the user
+    let isOpenedByUser = false;
+    const hideButtonSelector =
+      ".atvwebplayersdk-BelowFold div:not(.atvwebplayersdk-carousel) > button:not([class^=generic-carousel-scroll])";
+
+    this.player.addEventListener("click", (e) => {
+      if (e.target.closest(hideButtonSelector)) {
+        isOpenedByUser = false;
+        return;
+      }
+
+      const belowFold = this.player.querySelector(".atvwebplayersdk-BelowFold");
+      if (belowFold) {
+        if (getComputedStyle(belowFold).position === "absolute") {
+          isOpenedByUser = false;
+          return;
+        }
+      }
+
+      if (this.player.querySelector(hideButtonSelector)) {
+        isOpenedByUser = false;
+        return;
+      }
+
+      if (e.target.closest(".atvwebplayersdk-BelowFold")) {
+        isOpenedByUser = true;
+        setTimeout(() => {
+          isOpenedByUser = false;
+        }, 3000);
+      }
+    });
+
+    const bottomContainer = this.player.querySelector(
+      "div:has(>.atvwebplayersdk-bottompanel-container)"
+    );
+    if (!bottomContainer) {
+      return;
+    }
+
+    new MutationObserver((_) => {
+      const hideButton = this.player.querySelector(hideButtonSelector);
+      if (!hideButton) {
+        return;
+      }
+
+      if (!isOpenedByUser && !isJumpLiveButtonVisible) {
+        try {
+          hideButton.click();
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }).observe(bottomContainer, observeConfig);
+  }
+
   hideRatingText(options = getDefaultOptions()) {
     if (!options.hideRating) {
       return;
@@ -3791,6 +3901,12 @@ const main = async () => {
 
         try {
           controller.hideReactions(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.hideRecommendations(options);
         } catch (e) {
           console.log(e);
         }
