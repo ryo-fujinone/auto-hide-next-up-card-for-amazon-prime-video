@@ -3353,6 +3353,19 @@ class ElementController {
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
+          /* Next up*/
+          .atvwebplayersdk-nextupcard-title, .atvwebplayersdk-nextupcardhide-button {
+            -webkit-text-stroke: 0.025em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
+          }
+          /* Reactions */
+          .atvwebplayersdk-player-container div:has(> div > button:nth-child(2):last-child):has(div > button div[style*='center center no-repeat']) div:not([style]):not(:has([style])) {
+            -webkit-text-stroke: 0.025em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
+          }
+          /* Recommendations */
           .atvwebplayersdk-BelowFold span, .atvwebplayersdk-BelowFold div {
             -webkit-text-stroke: 0.025em black;
             font-weight: bold !important;
