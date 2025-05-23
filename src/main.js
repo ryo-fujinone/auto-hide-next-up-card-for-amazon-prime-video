@@ -2911,8 +2911,8 @@ class ElementController {
        */
       const css = `
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]),
-        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]) div {
-          background: rgba(0,0,0,0) !important;
+        .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]) > div {
+          background: transparent !important;
         }
 
         .atvwebplayersdk-player-container:has(.atvwebplayersdk-nextupcard-show) .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay) {
@@ -3305,8 +3305,8 @@ class ElementController {
        */
       const css = `
         div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]),
-        div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]) div{
-          background: rgba(0,0,0,0) !important;
+        div:has(>.atvwebplayersdk-regulatory-overlay) > div:not([data-non-darkening-overlay]) > div{
+          background: transparent !important;
         }
         .fkpovp9:has(~.atvwebplayersdk-regulatory-overlay),
         .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
