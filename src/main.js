@@ -33,6 +33,7 @@ const getDefaultOptions = () => {
     removeAdRelatedData: false,
     enableAutoplay_xhook: false,
     removeNextupTimecodes_xhook: false,
+    disableRecommendations_xhook: false,
     forcePlayNextEpisode_xhook: false,
     scriptVersion: "2.13.1",
   };
@@ -515,7 +516,10 @@ const createOptionMessages = () => {
     removeNextupTimecodes_Tooltip: `通常はこの機能を有効にする必要はありません。\n
       この機能は「通常のNext up」を無効化する機能です。
       「動画終了の数秒前に表示されるNext up」は無効化されません。
-      「Next upを非表示にする」機能で問題が発生している場合に、この機能で対処できる可能性があります。`,
+      「Next upを非表示にする」機能で問題が発生している場合に、この機能で対処できる可能性があります。\n
+      なおこの機能を有効にすると、「おすすめの商品」の表示も無効化されます。
+      「おすすめの商品」のみを無効化したい場合はこの機能を有効にせず、「おすすめの商品を無効にする」を有効にしてください。`,
+    disableRecommendations: "おすすめの商品を無効にする",
     forcePlayNextEpisode:
       "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
@@ -604,7 +608,10 @@ const createOptionMessages = () => {
     removeNextupTimecodes_Tooltip: `Normally there is no need to enable this feature.\n
       This feature disables “normal next up”.
       This feature does not disable the next up that appears a few seconds before the end of the video.
-      If you are having problems with the “Hide next up card” feature, this may help.`,
+      If you are having problems with the “Hide next up card” feature, this may help.\n
+      If this feature is enabled, the “featured items” display will also be disabled.
+      If you wish to disable “featured items” only, please do not enable this feature and enable “Disable featured items”.`,
+    disableRecommendations: "Disable featured items",
     forcePlayNextEpisode:
       "Experimental: Play the next episode if the video is automatically closed at the end of the video",
     forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
@@ -937,6 +944,15 @@ const createOptionDialog = async (scriptVersion) => {
                     regexForMultiineTooltips,
                     ""
                   )}" data-msg-id="removeNextupTimecodes"></p>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label>
+                      <input type="checkbox" id="disable-recommendations" name="disable-recommendations" ${
+                        options.disableRecommendations_xhook ? "checked" : ""
+                      } />
+                      <p>${messages.disableRecommendations}</p>
+                  </label>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -1296,6 +1312,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "remove-nextup-timecodes":
           await saveOptions({ removeNextupTimecodes_xhook: e.target.checked });
+          break;
+        case "disable-recommendations":
+          await saveOptions({ disableRecommendations_xhook: e.target.checked });
           break;
         case "force-play-next-episode":
           await saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
@@ -1979,7 +1998,7 @@ const runXhook = () => {
            * If nextUpV2.isMultiTitleExperience is true, autoplay does not seem to run.
            * There is an autoPlayConfig in nextUpV2.carousel,
            * but I have tried changing the values of isMultiTitleExperience and autoplayEnabled to no avail.
-           * (Setting isMultiTitleExperience to false disables ‘Featured items’)
+           * (Setting isMultiTitleExperience to false disables recommendations)
            */
           const data = JSON.parse(response.text);
           const autoplayConfig =
@@ -2030,6 +2049,27 @@ const runXhook = () => {
         }
 
         data.transitionTimecodes.result.events = filteredTimeCodes;
+        response.text = JSON.stringify(data);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    static disableRecommendations(request, response) {
+      if (!hasNextUpV2Resource(request, response)) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(response.text);
+        const nextUpV2 = data?.resources?.nextUpV2;
+        if (!nextUpV2) {
+          return;
+        }
+        if (!Object.hasOwn(nextUpV2, "isMultiTitleExperience")) {
+          return;
+        }
+        nextUpV2.isMultiTitleExperience = false;
         response.text = JSON.stringify(data);
       } catch (e) {
         console.log(e);
@@ -2114,6 +2154,9 @@ const runXhook = () => {
       }
       if (options.removeNextupTimecodes_xhook) {
         this.#queue.push(this.removeNextupTimecodes);
+      }
+      if (options.disableRecommendations_xhook) {
+        this.#queue.push(this.disableRecommendations);
       }
       if (options.forcePlayNextEpisode_xhook) {
         this.#queue.push(this.forcePlayNextEpisode);
@@ -2507,6 +2550,7 @@ const injectXhook = (options = getDefaultOptions()) => {
     options.removeAdRelatedData,
     options.enableAutoplay_xhook,
     options.removeNextupTimecodes_xhook,
+    options.disableRecommendations_xhook,
     options.forcePlayNextEpisode_xhook,
   ];
   const shouldInjectXhook = xhookOptions.some((opt) => opt);
