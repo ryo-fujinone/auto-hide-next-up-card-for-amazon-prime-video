@@ -779,6 +779,7 @@ const createOptionDialog = async (scriptVersion) => {
                   </label>
               </div>
 
+              <!--
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
                       <input type="checkbox" id="prevents-transitions-to-recommended-videos" name="prevents-transitions-to-recommended-videos" ${
@@ -792,6 +793,7 @@ const createOptionDialog = async (scriptVersion) => {
                     messages.preventsTransitionsToRecommendedVideos_Tooltip
                   }" data-msg-id="preventsTransitionsToRecommendedVideos"></p>
               </div>
+              -->
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
@@ -4040,11 +4042,15 @@ const main = async () => {
           console.log(e);
         }
 
-        try {
-          controller.preventsTransitionsToRecommendedVideos(options);
-        } catch (e) {
-          console.log(e);
-        }
+        /**
+         * With the advent of recommendations (another variation of next up), this feature will probably be unnecessary.
+         * As a preliminary step to deletion, this feature is commented out.
+         */
+        // try {
+        //   controller.preventsTransitionsToRecommendedVideos(options);
+        // } catch (e) {
+        //   console.log(e);
+        // }
 
         try {
           controller.forcePlayNextEpisode(options);
