@@ -3130,13 +3130,15 @@ class ElementController {
       return;
     }
 
-    if (!document.querySelector("#hideRecommendations")) {
-      const css = `
-        [id^='dv-web-player']:not([data-is-jump-live-button-visible='true']) .atvwebplayersdk-BelowFold {
-          display: none !important;
-        }
-      `;
-      addStyle(css, "hideRecommendations");
+    if (!options.showRecommendationsOnOverlay) {
+      if (!document.querySelector("#hideRecommendations")) {
+        const css = `
+          [id^='dv-web-player']:not([data-is-jump-live-button-visible='true']) .atvwebplayersdk-BelowFold {
+            display: none !important;
+          }
+        `;
+        addStyle(css, "hideRecommendations");
+      }
     }
 
     // To avoid doing anything to 'Recommendations' when watching LiveTV
@@ -3165,54 +3167,6 @@ class ElementController {
       new MutationObserver((_) => {
         checkJumpLiveButtonStyles();
       }).observe(optionsWrapper, { ...observeConfig, attributes: true });
-    }
-
-    if (
-      options.showRecommendationsOnOverlay &&
-      this.markingCenterOverlaysWrapper()
-    ) {
-      if (!document.querySelector("#showRecommendationsOnOverlay")) {
-        const css = `
-          [id^='dv-web-player']:not([data-is-jump-live-button-visible='true']) .atvwebplayersdk-player-container:has([data-ident='center-overlays-wrapper'][style*='cursor: pointer;']) .atvwebplayersdk-BelowFold {
-            display: block !important;
-          }
-        `;
-        addStyle(css, "showRecommendationsOnOverlay");
-      }
-
-      const centerOverlaysWrapper = this.player.querySelector(
-        "[data-ident='center-overlays-wrapper']"
-      );
-
-      new MutationObserver((_) => {
-        const belowFold = this.player.querySelector(
-          ".atvwebplayersdk-BelowFold"
-        );
-        if (!belowFold) {
-          return;
-        }
-        // BelowFold is removed when the overlay is hidden.
-        // Therefore, MutationObserver's disconnect() is probably unnecessary here.
-        new MutationObserver((_) => {
-          const isJumpLiveButtonVisible =
-            this.player.dataset.isJumpLiveButtonVisible === "true";
-          if (isJumpLiveButtonVisible) {
-            return;
-          }
-          try {
-            const position = getComputedStyle(belowFold).position;
-            if (position === "absolute") {
-              belowFold.style.setProperty("display", "flex", "important");
-            } else if (position === "static") {
-              belowFold.style.setProperty("display", "block", "important");
-            }
-          } catch (error) {
-            console.log(error);
-          }
-        }).observe(belowFold, { attributes: true });
-      }).observe(centerOverlaysWrapper, {
-        attributes: true,
-      });
     }
 
     // Monitor whether BelowFold has been opened by the user
