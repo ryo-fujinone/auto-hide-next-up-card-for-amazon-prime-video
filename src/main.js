@@ -3353,6 +3353,11 @@ class ElementController {
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
+          .atvwebplayersdk-BelowFold span, .atvwebplayersdk-BelowFold div {
+            -webkit-text-stroke: 0.025em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
+          }
         `;
         addStyle(cssForText, "addOutlinesForTexts");
       }
@@ -3393,39 +3398,6 @@ class ElementController {
           addStyle(cssForResolutionInfo, "preventsDarkening_ResolutionInfo");
         }
       }
-
-      if (options.useOnLiveTv) {
-        if (!document.querySelector("#preventsDarkening_OutlinesForLiveTv")) {
-          const cssForLiveTv = `
-            .atvwebplayersdk-player-container:has(.atvwebplayersdk-carousel) .atvwebplayersdk-timeindicator-text {
-              opacity: 1;
-            }
-            .atvwebplayersdk-carousel-text {
-              -webkit-text-stroke: 0.025em black;
-              text-shadow: 1px 1px 2px black;
-            }
-            .atvwebplayersdk-hideBroadcasts-button div:not(:has(img)) {
-              font-weight: bold !important;
-              text-shadow: 1px 1px 2px black;
-            }
-            .atvwebplayersdk-hideBroadcasts-button div img {
-              filter: drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black);
-            }
-            .atvwebplayersdk-carouselitemtitle-text {
-              -webkit-text-stroke: 0.025em black;
-              font-weight: bold !important;
-              text-shadow: 1px 1px 2px black;
-            }
-            .atvwebplayersdk-carouselitemsubtitle-text {
-              -webkit-text-stroke: 0.025em black;
-              font-weight: bold !important;
-              text-shadow: 1px 1px 2px black;
-              opacity: 1;
-            }
-          `;
-          addStyle(cssForLiveTv, "preventsDarkening_OutlinesForLiveTv");
-        }
-      }
     }
 
     if (options.addShadowsToSeekBar) {
@@ -3442,17 +3414,6 @@ class ElementController {
           }
         `;
         addStyle(cssForShadows, "addShadowsToSeekBar");
-      }
-    }
-
-    if (options.useOnLiveTv) {
-      if (!document.querySelector("#preventsDarkening_LiveTv")) {
-        const cssForLiveTv = `
-          .atvwebplayersdk-miro-gradient-enabled {
-            display: none !important;
-          }
-        `;
-        addStyle(cssForLiveTv, "preventsDarkening_LiveTv");
       }
     }
   }
