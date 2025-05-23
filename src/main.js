@@ -3312,6 +3312,9 @@ class ElementController {
         .f1makowq:has(~.atvwebplayersdk-regulatory-overlay) {
           display: none !important;
         }
+        .atvwebplayersdk-BelowFold {
+          background: transparent !important;
+        }
       `;
       addStyle(css, "preventsDarkening");
     }
