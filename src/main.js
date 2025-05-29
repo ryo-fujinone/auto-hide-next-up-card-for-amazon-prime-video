@@ -3219,10 +3219,15 @@ class ElementController {
         return;
       }
 
+      let _isOpenedByUser = isOpenedByUser;
+      if (!options.showRecommendationsOnOverlay) {
+        _isOpenedByUser = false;
+      }
+
       const isJumpLiveButtonVisible =
         this.player.dataset.isJumpLiveButtonVisible === "true";
 
-      if (!isOpenedByUser && !isJumpLiveButtonVisible) {
+      if (!_isOpenedByUser && !isJumpLiveButtonVisible) {
         try {
           this.temporarilyDisableOverlay(options, 5000);
           hideButton.click();
