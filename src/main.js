@@ -3172,10 +3172,15 @@ class ElementController {
     // Monitor whether BelowFold has been opened by the user
     let isOpenedByUser = false;
     const hideButtonSelector =
-      ".atvwebplayersdk-BelowFold div:not(.atvwebplayersdk-carousel) > button:not([class^=generic-carousel-scroll])";
+      ".atvwebplayersdk-BelowFold div:not(.atvwebplayersdk-carousel) > button:not([class^=generic-carousel-scroll]):has(span)";
+    const stopAutoPlayButtonSelector =
+      ".atvwebplayersdk-BelowFold div:not(.atvwebplayersdk-carousel) > button[aria-label]:not([class^=generic-carousel-scroll])";
 
     this.player.addEventListener("click", (e) => {
-      if (e.target.closest(hideButtonSelector)) {
+      if (
+        e.target.closest(hideButtonSelector) ||
+        e.target.closest(stopAutoPlayButtonSelector)
+      ) {
         isOpenedByUser = false;
         return;
       }
@@ -3191,11 +3196,6 @@ class ElementController {
           isOpenedByUser = false;
           return;
         }
-      }
-
-      if (this.player.querySelector(hideButtonSelector)) {
-        isOpenedByUser = false;
-        return;
       }
 
       if (e.target.closest(".atvwebplayersdk-BelowFold")) {
@@ -3231,6 +3231,12 @@ class ElementController {
       if (!_isOpenedByUser && !isJumpLiveButtonVisible) {
         try {
           this.temporarilyDisableOverlay(options, 5000);
+          const stopAutoPlayButton = this.player.querySelector(
+            stopAutoPlayButtonSelector
+          );
+          if (stopAutoPlayButton) {
+            stopAutoPlayButton.click();
+          }
           hideButton.click();
         } catch (e) {
           console.log(e);
