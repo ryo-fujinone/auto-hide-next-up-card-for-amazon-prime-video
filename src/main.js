@@ -3206,12 +3206,10 @@ class ElementController {
       }
     });
 
-    const bottomContainer = this.player.querySelector(
-      "div:has(>.atvwebplayersdk-bottompanel-container)"
-    );
-    if (!bottomContainer) {
-      return;
-    }
+    const targetContainer =
+      this.player.querySelector(
+        "div:has(>.atvwebplayersdk-bottompanel-container)"
+      ) ?? this.player;
 
     new MutationObserver((_) => {
       const hideButton = this.player.querySelector(hideButtonSelector);
@@ -3242,7 +3240,7 @@ class ElementController {
           console.log(e);
         }
       }
-    }).observe(bottomContainer, observeConfig);
+    }).observe(targetContainer, observeConfig);
   }
 
   hideRatingText(options = getDefaultOptions()) {
