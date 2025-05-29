@@ -1997,10 +1997,8 @@ const runXhook = () => {
       if (_hasNextUpV2Resource) {
         try {
           /**
-           * If nextUpV2.isMultiTitleExperience is true, autoplay does not seem to run.
-           * There is an autoPlayConfig in nextUpV2.carousel,
-           * but I have tried changing the values of isMultiTitleExperience and autoplayEnabled to no avail.
-           * (Setting isMultiTitleExperience to false disables recommendations)
+           * If isMultiTitleExperience is true, this function does not enable autoplay.
+           * (If isMultiTitleExperience is true, nextUpV2.carousel will be used instead of nextUpV2.card.)
            */
           const data = JSON.parse(response.text);
           const autoplayConfig =
