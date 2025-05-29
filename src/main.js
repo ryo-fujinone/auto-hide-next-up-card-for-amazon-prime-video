@@ -3145,7 +3145,7 @@ class ElementController {
     const optionsWrapper = this.player.querySelector(
       ".atvwebplayersdk-options-wrapper"
     );
-    if (optionsWrapper) {
+    if (options.useOnLiveTv && optionsWrapper) {
       const checkJumpLiveButtonStyles = () => {
         const jumpLiveButton = this.player.querySelector(
           ".atvwebplayersdk-jumptolive-button"
@@ -3224,6 +3224,7 @@ class ElementController {
         _isOpenedByUser = false;
       }
 
+      // If useOnLiveTv is disabled, this will always be false
       const isJumpLiveButtonVisible =
         this.player.dataset.isJumpLiveButtonVisible === "true";
 
