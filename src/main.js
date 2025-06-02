@@ -995,8 +995,12 @@ const createOptionDialog = async (scriptVersion) => {
               </div>
               <ul>
                   <li>
-                      <a href="https://github.com/jpillora/xhook" target="_blank">xhook@1.6.2</a>
-                      <span> / Jaime Pillora / MIT</span>
+                      <p>xhook@1.6.2 / Jaime Pillora / MIT</p>
+                      <ul>
+                          <li>
+                              <a href="https://github.com/ryo-fujinone/xhook" target="_blank">forked by ryo-fujinone</a>
+                          </li>
+                      </ul>
                   </li>
               </ul>
           </section>
