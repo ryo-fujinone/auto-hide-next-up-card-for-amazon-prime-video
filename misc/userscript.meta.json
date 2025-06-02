@@ -2,7 +2,7 @@
   "name": "Auto hide next up card for Amazon Prime Video",
   "namespace": "http://tampermonkey.net/",
   "version": null,
-  "description": "Hide next up card and other obtrusive elements of Amazon Prime Video.",
+  "description": "Hides next up card and other obtrusive elements of Amazon Prime Video.",
   "author": "ryo-fujinone",
   "match": [
     "https://*.amazon.co.jp/*",
