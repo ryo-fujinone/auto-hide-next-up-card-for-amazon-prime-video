@@ -35,7 +35,7 @@
     "GM_getResourceText"
   ],
   "resource": {
-    "xhook": "https://unpkg.com/xhook@latest/dist/xhook.min.js"
+    "xhook": "https://cdn.jsdelivr.net/gh/ryo-fujinone/auto-hide-next-up-card-for-amazon-prime-video@78d9834a5e04046a2b75ed8777d88faf3d106064/src/xhook.min.js"
   },
   "license": "MIT; https://github.com/ryo-fujinone/auto-hide-next-up-card-for-amazon-prime-video/blob/main/LICENSE"
 }
