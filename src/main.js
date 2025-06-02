@@ -493,11 +493,7 @@ const createOptionMessages = () => {
     shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須。",
     monitorNetworkActivity: "通信の監視・改変",
     monitorNetworkActivity_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
-      広告ブロック系の拡張機能との併用は避けることを推奨します。\n
-      [強制的に最高画質で再生する] は他の監視・改変オプションを有効にする場合にセットで有効にすることを推奨します。
-      通信の監視・改変のためにxhookというライブラリを採用していますが、xhookが有効な場合には再生開始から少しの間の先読みの挙動に影響が出る場合があることが確認されています。
-      先読みで最低画質の動画が取得され、少しの間だけそれが再生される場合があるようです。
-      [強制的に最高画質で再生する] を有効にすることで最低画質で再生されることを避けることが可能です。`,
+      広告ブロック系の拡張機能との併用は避けることを推奨します。`,
     forceHighestResolution: "強制的に最高画質で再生する",
     forceHighestResolution_Tooltip: `プライムビデオは通信状況やウィンドウサイズなどを基に画質を動的に制御します。
       この機能はそのような動的制御の煩わしさに対処するための機能です。\n
@@ -585,11 +581,7 @@ const createOptionMessages = () => {
     shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
     monitorNetworkActivity: "Monitor and modify network activity",
     monitorNetworkActivity_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
-      It is not recommended to use in conjunction with ad-blocking extensions.\n
-      It is recommended that you enable the “Force playback at highest resolution” option when you enable other monitoring and modification options.
-      This extension uses a library called xhook to monitor and modify communications, and it has been confirmed that if xhook is enabled, it may affect the preloading behavior for a short period of time after playback begins.
-      It seems that in some cases the lowest quality video is retrieved in preload and it plays for a short while.
-      It is possible to avoid the playback in the lowest quality by enabling “Force playback at highest resolution”.`,
+      It is not recommended to use in conjunction with ad-blocking extensions.`,
     forceHighestResolution: "Force playback at highest resolution",
     forceHighestResolution_Tooltip: `Prime Video dynamically controls video resolution based on network conditions and window size.
       This feature is intended to address such dynamic control hassles.\n
