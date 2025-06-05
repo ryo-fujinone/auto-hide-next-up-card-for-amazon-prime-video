@@ -1409,7 +1409,7 @@ const createOptionBtnOnNavbar = () => {
       }
 
       const accountDropdownContainer = document.querySelector(
-        "#pv-nav-container [data-testid='pv-nav-account-dropdown-container']"
+        "#pv-nav-container [data-testid='pv-nav-account-and-profiles-dropdown-container']"
       );
       if (!accountDropdownContainer) {
         return;
@@ -1445,7 +1445,7 @@ const createOptionBtnOnNavbar = () => {
       liElement.after(cloneLi);
 
       const cloneLiStyle = cloneLi.getAttribute("style");
-      const cloneLiStyleRegex = /--nav-list-child-index:(\d+)/;
+      const cloneLiStyleRegex = /--nav-list-child-index:\s?(\d+);?/;
       const cloneLiStyleFound = cloneLiStyle?.match(cloneLiStyleRegex);
       if (cloneLiStyleFound) {
         let idx = parseInt(cloneLiStyleFound[1]);
@@ -1531,7 +1531,7 @@ const createOptionBtnOnNavbar = () => {
       let optBtnElement2;
       try {
         const accountDropdownContainer2 = document.querySelector(
-          "[data-testid='mobile-nav-wrapper'] [data-testid='pv-nav-account-dropdown-container']"
+          "[data-testid='mobile-nav-wrapper'] [data-testid='pv-nav-account-and-profiles-dropdown-container']"
         );
         const liElement2 = accountDropdownContainer2.parentNode;
         const cloneLi2 = cloneLi.cloneNode(true);
