@@ -1710,6 +1710,15 @@ const runXhook = () => {
     return formatISODuration(totalSeconds);
   };
 
+  const addStyle = (css, id) => {
+    const style = document.createElement("style");
+    if (id) {
+      style.setAttribute("id", id);
+    }
+    style.textContent = css;
+    document.head.appendChild(style);
+  };
+
   class XhookAfter {
     static #queue = [];
 
@@ -1918,6 +1927,8 @@ const runXhook = () => {
     }
 
     static removeAdRelatedDataInMpd(request, response) {
+      // Legacy
+      // Currently, ads can be removed using removeAdRelatedDataInVodPlaybackResources() and removeAdPlaylist().
       if (!isMpd(request, response)) {
         return;
       }
@@ -1963,24 +1974,75 @@ const runXhook = () => {
       }
     }
 
-    static removeAdRelatedDataInVod(request, response) {
+    static removeAdRelatedDataInVodPlaybackResources(request, response) {
       if (!isGetVodPlaybackResources(request, response)) {
         return;
       }
 
       try {
         const data = JSON.parse(response.text);
-        const playbackUrls = data.vodPlaybackUrls?.result?.playbackUrls;
-        if (!playbackUrls) {
-          return;
+        let removed = false;
+
+        // Legacy
+        if (delete data.vodPlaybackUrls?.result?.playbackUrls?.cuepoints) {
+          removed = true;
         }
-        if (!playbackUrls.cuepoints) {
-          return;
+
+        // Latest
+        // Based on uBlock Origin's filters (pauseBehavior, pauseAdsResolution, shouldShowOnScrubBar)
+        const playbackUrls =
+          data.vodPlaylistedPlaybackUrls?.result?.playbackUrls;
+        delete playbackUrls?.pauseBehavior;
+        delete playbackUrls?.pauseAdsResolution;
+        const intraTitlePlaylist = playbackUrls?.intraTitlePlaylist;
+        if (intraTitlePlaylist && Array.isArray(intraTitlePlaylist)) {
+          for (const obj of intraTitlePlaylist) {
+            if (obj.shouldShowOnScrubBar) {
+              delete obj.shouldShowOnScrubBar;
+            }
+          }
+          // Hide ad locations on the seek bar
+          // It seems uBlock Origin can remove ad locations on the seek bar using the three filters mentioned above.
+          // https://www.reddit.com/r/uBlockOrigin/comments/1n7ujvm/comment/ncdqugr/?force-legacy-sct=1
+          // For some technical reason, this script appears to require the following code.
+          const newIntraTitlePlaylist = [];
+          for (const obj of intraTitlePlaylist) {
+            if (obj.type === "Main") {
+              newIntraTitlePlaylist.push(obj);
+            } else {
+              removed = true;
+            }
+          }
+          playbackUrls.intraTitlePlaylist = newIntraTitlePlaylist;
         }
-        delete playbackUrls.cuepoints;
-        console.log("Removed ads (cuepoints)");
+
+        if (intraTitlePlaylist) {
+          if (!document.querySelector("#hideAdResumeMessage")) {
+            const css = `
+              .atvwebplayersdk-ad-resume-message {
+                display: none !important;
+              }
+            `;
+            addStyle(css, "hideAdResumeMessage");
+          }
+        }
+
+        if (removed) {
+          console.log("Removed ads (data in VodPlaybackResources)");
+        }
         response.text = JSON.stringify(data);
-      } catch (e) {}
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    static removeAdPlaylist(request, response) {
+      // This method serves as a fallback in case removeAdRelatedDataInVodPlaybackResources() fails.
+      if (!request.url.includes("getVideoAds")) {
+        return;
+      }
+      response.text = JSON.stringify({});
+      console.log("Removed ads (AdPlaylist)");
     }
 
     static enableAutoplay(request, response) {
@@ -2143,7 +2205,8 @@ const runXhook = () => {
       }
       if (options.removeAdRelatedData) {
         this.#queue.push(this.removeAdRelatedDataInMpd);
-        this.#queue.push(this.removeAdRelatedDataInVod);
+        this.#queue.push(this.removeAdRelatedDataInVodPlaybackResources);
+        this.#queue.push(this.removeAdPlaylist);
       }
       if (options.enableAutoplay_xhook) {
         this.#queue.push(this.enableAutoplay);
