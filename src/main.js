@@ -2244,28 +2244,35 @@ const runXhook = () => {
   document.head.appendChild(script);
 
   const identificationGetVodPlaybackResources = () => {
-    const getVodPlaybackResources =
-      XhookAfter.getVodPlaybackResourcesArray.find((g) => {
-        const playbackUrls = g.data?.vodPlaybackUrls?.result?.playbackUrls;
-        if (!playbackUrls) {
-          return;
-        }
-        const urlSets = playbackUrls.urlSets;
-        if (!urlSets) {
-          return;
-        }
-        const defaultUrlSetId = playbackUrls.defaultUrlSetId;
-        if (!defaultUrlSetId) {
-          return;
-        }
-        const urlSet = urlSets.find((u) => u.urlSetId === defaultUrlSetId);
-        if (!urlSet) {
-          return;
-        }
-        const mpdUrl = urlSet.url;
-        return mpdUrl?.includes(XhookAfter.mpdId);
-      });
-    return getVodPlaybackResources;
+    try {
+      const getVodPlaybackResources =
+        XhookAfter.getVodPlaybackResourcesArray.find((g) => {
+          const playbackUrls =
+            g.data?.vodPlaylistedPlaybackUrls?.result?.playbackUrls;
+          if (!playbackUrls) {
+            return;
+          }
+          const intraTitlePlaylist = playbackUrls.intraTitlePlaylist;
+          if (!intraTitlePlaylist) {
+            return;
+          }
+          const mainPlaylist = intraTitlePlaylist.find(
+            (pl) => pl.type === "Main" && Array.isArray(pl.urls)
+          );
+          if (!mainPlaylist) {
+            return;
+          }
+          const mpdUrls = mainPlaylist.urls.map((obj) => obj.url);
+          if (mpdUrls.length === 0) {
+            return;
+          }
+          return mpdUrls.some((url) => url.includes(XhookAfter.mpdId));
+        });
+      return getVodPlaybackResources;
+    } catch (e) {
+      // console.log(e);
+      return;
+    }
   };
 
   const showVideoResolution = () => {
@@ -2326,13 +2333,8 @@ const runXhook = () => {
           return;
         }
 
-        const mp4Url = XhookAfter.mp4Url;
-        if (!mp4Url.includes(XhookAfter.mpdId)) {
-          return;
-        }
-
         const resolution = XhookAfter.resolutionInfoArray.find((r) => {
-          return mp4Url.includes(r.baseURL);
+          return XhookAfter.mp4Url.includes(r.baseURL);
         });
         if (!resolution) {
           return;
@@ -2375,7 +2377,7 @@ const runXhook = () => {
         const height = resolution.height;
         const resolutionText = `${width}×${height}`;
         targetElement.textContent = resolutionText;
-        this.mp4Url = mp4Url;
+        this.mp4Url = XhookAfter.mp4Url;
       }
 
       runVideoOpenCloseObserver() {
