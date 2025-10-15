@@ -2299,6 +2299,9 @@ const runXhook = () => {
           targetElement.textContent = "";
         }
 
+        // mp4 may not have started playing yet when it loads.
+        // This can be addressed by verifying using the title name currently playing.
+
         let title = this.player.querySelector(
           ".atvwebplayersdk-subtitle-text"
         ).textContent;
@@ -2325,6 +2328,8 @@ const runXhook = () => {
           return;
         }
 
+        // Verify the title name
+
         if (
           !title.includes(
             metadataResource.data.resources?.catalogMetadataV2?.catalog?.title
@@ -2332,6 +2337,8 @@ const runXhook = () => {
         ) {
           return;
         }
+
+        // The following code must be executed after verifying the title name.
 
         const resolution = XhookAfter.resolutionInfoArray.find((r) => {
           return XhookAfter.mp4Url.includes(r.baseURL);
