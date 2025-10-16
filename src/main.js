@@ -2639,29 +2639,31 @@ const runXhook = () => {
         }
 
         const data = nextUpV2Resource.data;
-        const carouselItem = data.resources.nextUpV2.card.carouselItems[0];
-        if (!carouselItem) {
-          return;
-        }
+        if (!data.resources.nextUpV2.carousel) {
+          const carouselItem = data.resources.nextUpV2.card.carouselItems[0];
+          if (!carouselItem) {
+            return;
+          }
 
-        const autoplayConfig = data.resources?.nextUpV2?.card?.autoPlayConfig;
-        if (carouselItem.analytics?.slotType !== "NEXT_EPISODE_SLOT") {
-          this.player.dataset.nextEpisodeId = "null";
-          this.player.dataset.isNotNextEpisode = "true";
-        } else if (autoplayConfig?.autoplayCardPreferredImage !== "episode") {
-          this.player.dataset.nextEpisodeId = "null";
-          this.player.dataset.isNotNextEpisode = "true";
-        }
+          const autoplayConfig = data.resources?.nextUpV2?.card?.autoPlayConfig;
+          if (carouselItem.analytics?.slotType !== "NEXT_EPISODE_SLOT") {
+            this.player.dataset.nextEpisodeId = "null";
+          } else if (autoplayConfig?.autoplayCardPreferredImage !== "episode") {
+            this.player.dataset.nextEpisodeId = "null";
+          }
 
-        if (this.player.dataset.nextEpisodeId !== "null") {
-          const nextEpisodeId = carouselItem.titleId;
-          if (nextEpisodeId) {
-            if (!this.player.dataset.nextEpisodeId) {
-              this.player.dataset.nextEpisodeId = nextEpisodeId;
-            } else if (this.player.dataset.nextEpisodeId !== nextEpisodeId) {
-              this.player.dataset.nextEpisodeId = nextEpisodeId;
+          if (this.player.dataset.nextEpisodeId !== "null") {
+            const nextEpisodeId = carouselItem.titleId;
+            if (nextEpisodeId) {
+              if (!this.player.dataset.nextEpisodeId) {
+                this.player.dataset.nextEpisodeId = nextEpisodeId;
+              } else if (this.player.dataset.nextEpisodeId !== nextEpisodeId) {
+                this.player.dataset.nextEpisodeId = nextEpisodeId;
+              }
             }
           }
+        } else {
+          this.player.dataset.nextEpisodeId = "null";
         }
 
         this.video.removeEventListener("timeupdate", this.detect);
@@ -2702,7 +2704,6 @@ const runXhook = () => {
 
             this.video.removeEventListener("timeupdate", this.detect);
             this.videoSrcObserver.disconnect();
-            delete this.player.dataset.isNotNextEpisode;
 
             this.runVideoOpenCloseObserver();
           }).observe(this.player, {
