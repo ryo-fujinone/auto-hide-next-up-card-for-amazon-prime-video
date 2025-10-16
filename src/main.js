@@ -14,7 +14,6 @@ const getDefaultOptions = () => {
     showReactionsOnOverlay: false,
     hideRecommendations: true,
     showRecommendationsOnOverlay: false,
-    preventsTransitionsToRecommendedVideos: true,
     hideRating: true,
     preventsDarkening: false,
     addOutlinesForTextsAndIcons: false,
@@ -472,10 +471,6 @@ const createOptionMessages = () => {
       ライブ配信のカルーセルについては、この機能では非表示の対象にはしていません。`,
     showRecommendationsOnOverlay:
       "オーバーレイ表示が有効な時はおすすめの商品を表示する",
-    preventsTransitionsToRecommendedVideos:
-      "動画終了時にサジェストされたコンテンツに遷移するのを防ぐ",
-    preventsTransitionsToRecommendedVideos_Tooltip:
-      "動画終了時の次のエピソードへの遷移に影響はありません。\nまた、Next upがクリックされた場合は再生を継続します。",
     hideRating: "レーティングを非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
@@ -565,10 +560,6 @@ const createOptionMessages = () => {
       LiveTV carousels are not targeted for hiding in this feature.`,
     showRecommendationsOnOverlay:
       "Show featured items when overlay display is enabled",
-    preventsTransitionsToRecommendedVideos:
-      "Prevent transition to suggested content when video ends",
-    preventsTransitionsToRecommendedVideos_Tooltip:
-      "There is no impact on the transition to the next episode when the video ends.\nAlso, if next up card is clicked, playback will continue.",
     hideRating: "Hide rating",
     preventsDarkening: "Prevents darkening when overlay display is enabled",
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
@@ -781,22 +772,6 @@ const createOptionDialog = async (scriptVersion) => {
                       <p>${messages.showRecommendationsOnOverlay}</p>
                   </label>
               </div>
-
-              <!--
-              <div class="nextup-ext-opt-dialog-item-container">
-                  <label>
-                      <input type="checkbox" id="prevents-transitions-to-recommended-videos" name="prevents-transitions-to-recommended-videos" ${
-                        options.preventsTransitionsToRecommendedVideos
-                          ? "checked"
-                          : ""
-                      } />
-                      <p>${messages.preventsTransitionsToRecommendedVideos}</p>
-                  </label>
-                  <p class="nextup-ext-opt-dialog-tooltip" title="${
-                    messages.preventsTransitionsToRecommendedVideos_Tooltip
-                  }" data-msg-id="preventsTransitionsToRecommendedVideos"></p>
-              </div>
-              -->
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
@@ -1295,11 +1270,6 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "show-recommendations-on-overlay":
           await saveOptions({ showRecommendationsOnOverlay: e.target.checked });
-          break;
-        case "prevents-transitions-to-recommended-videos":
-          await saveOptions({
-            preventsTransitionsToRecommendedVideos: e.target.checked,
-          });
           break;
         case "hide-rationg":
           await saveOptions({ hideRating: e.target.checked });
@@ -3671,146 +3641,6 @@ class ElementController {
     });
   }
 
-  preventsTransitionsToRecommendedVideos(options = getDefaultOptions()) {
-    if (!options.preventsTransitionsToRecommendedVideos) {
-      return;
-    }
-
-    // The video titles are compared to determine if there has been a transition to a different video.
-    // Detection of transitions to another season is not supported.
-    let titleObserver;
-    let clickedNextup = false;
-
-    const parentObserver = new MutationObserver((_, outerObserver) => {
-      const title = this.player.querySelector(".atvwebplayersdk-title-text");
-      if (!title) {
-        return;
-      }
-      let titleText = title.textContent;
-      if (!titleText) {
-        return;
-      }
-      outerObserver.disconnect();
-
-      titleObserver = new MutationObserver((_) => {
-        const newTitleText = title.textContent;
-        if (!newTitleText) {
-          return;
-        }
-        console.log(`previous [${titleText}], current [${newTitleText}]`);
-        if (clickedNextup) {
-          console.log("Next up card was clicked by user");
-          const t = title.textContent;
-          if (t) {
-            titleText = t;
-          }
-          clickedNextup = false;
-          delete this.player.dataset.isNotNextEpisode;
-          return;
-        }
-        const closeBtn = this.player.querySelector(
-          ".atvwebplayersdk-playerclose-button"
-        );
-        if (!closeBtn) {
-          return;
-        }
-
-        let shouldPause = false;
-        if (titleText !== newTitleText) {
-          shouldPause = true;
-          closeBtn.click();
-        } else if (this.player.dataset.isNotNextEpisode === "true") {
-          // Season changes can be detected if "forcePlayNextEpisode_xhook" is enabled.
-          console.log("Prevented transition to another season");
-          shouldPause = true;
-          closeBtn.click();
-        }
-
-        // There were a few times when the video would start playing in the background for some reason.
-        // Therefore, pause() is executed just to be sure.
-        setTimeout(() => {
-          if (!shouldPause) {
-            return;
-          }
-          try {
-            const video = this.player.querySelector("video");
-            if (video) {
-              video.pause();
-            }
-          } catch (e) {
-            console.log(e);
-          }
-        }, 1000);
-      });
-      titleObserver.observe(title, observeConfig);
-    });
-
-    let nextupButtonObserver = "";
-    const nextupWrapperObserver = new MutationObserver((_, outerObserver) => {
-      const wrapper = this.player.querySelector(
-        ".atvwebplayersdk-nextupcard-wrapper"
-      );
-      if (!wrapper) {
-        return;
-      }
-      outerObserver.disconnect();
-
-      nextupButtonObserver = new MutationObserver((_) => {
-        const nextupButton = this.player.querySelector(
-          ".atvwebplayersdk-nextupcard-button"
-        );
-        if (!nextupButton) {
-          return;
-        }
-        // nextupButton will disappear, so there is no need to remove the event listener.
-        nextupButton.addEventListener("click", (e) => {
-          clickedNextup = true;
-          setTimeout(() => {
-            clickedNextup = false;
-          }, 5000);
-        });
-      });
-      nextupButtonObserver.observe(wrapper, observeConfig);
-    });
-
-    parentObserver.observe(this.player, { ...observeConfig, attributes: true });
-    nextupWrapperObserver.observe(this.player, {
-      ...observeConfig,
-      attributes: true,
-    });
-
-    // Stops parentObserver and titleObserver when the video is closed.
-    new MutationObserver((_, outerObserver) => {
-      if (!this.player.classList.contains("dv-player-fullscreen")) {
-        outerObserver.disconnect();
-        console.log("Video closed.");
-        parentObserver.disconnect();
-        if (titleObserver) {
-          titleObserver.disconnect();
-        }
-        nextupWrapperObserver.disconnect();
-        if (nextupButtonObserver) {
-          nextupButtonObserver.disconnect();
-        }
-
-        // Execute preventsTransitionsToRecommendedVideos method each time the video is opened.
-        new MutationObserver((_, observer) => {
-          if (this.player.classList.contains("dv-player-fullscreen")) {
-            observer.disconnect();
-            console.log("Video opened.");
-            this.preventsTransitionsToRecommendedVideos(options);
-          }
-        }).observe(this.player, {
-          attributes: true,
-          attributeFilter: ["class"],
-        });
-      }
-    }).observe(this.player, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-  }
-
   forcePlayNextEpisode(options = getDefaultOptions()) {
     if (!options.forcePlayNextEpisode_xhook) {
       return;
@@ -4232,16 +4062,6 @@ const main = async () => {
         } catch (e) {
           console.log(e);
         }
-
-        /**
-         * With the advent of recommendations (another variation of next up), this feature will probably be unnecessary.
-         * As a preliminary step to deletion, this feature is commented out.
-         */
-        // try {
-        //   controller.preventsTransitionsToRecommendedVideos(options);
-        // } catch (e) {
-        //   console.log(e);
-        // }
 
         try {
           controller.forcePlayNextEpisode(options);
