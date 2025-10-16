@@ -29,6 +29,7 @@ const getDefaultOptions = () => {
     },
     shortcutKeyIsEnabled: true,
     forceHighestResolution_xhook: false,
+    forceHighestResolutionLenient_xhook: false,
     showVideoResolution_xhook: false,
     removeAdRelatedData: false,
     enableAutoplay_xhook: false,
@@ -501,6 +502,11 @@ const createOptionMessages = () => {
       Widevine L1が使用できない端末・ブラウザでは標準画質に制限されます。
       また、ユーザーエージェントを基にしてWindows/macOS以外の環境では標準画質に制限されるようです。
       Widevine L1が使用可能なAndroid端末などのブラウザ上で再生する場合、ユーザーエージェントを変更する拡張機能/ユーザースクリプトを使用することでHD画質で再生できる場合があります。`,
+    forceHighestResolutionLenient:
+      "実験的: 最高品質ではない最高解像度での再生を許容する",
+    forceHighestResolutionLenient_Tooltip: `「強制的に最高画質で再生する」機能でエラーが発生する場合に有効にすることで、問題が解決する可能性があります。\n
+      「強制的に最高画質で再生する」機能では最高解像度の中の最高品質の再生を試みます。
+      このオプションを有効にすると、最高品質ではないが最高解像度ではある動画の再生が許容されます。`,
     showVideoResolution: "左下に動画の解像度を表示する",
     removeAdRelatedData: "広告関連のデータを除去する",
     removeAdRelatedData_Tooltip:
@@ -589,6 +595,11 @@ const createOptionMessages = () => {
       On devices and browsers that cannot use Widevine L1, the resolution will be limited to standard definition.
       It also appears to be limited to standard definition in non-Windows/macOS environments based on user agent.
       When playing on a browser in environments such as Android devices where Widevine L1 is available, you may be able to play the video in HD quality by using an extension/user script that changes the user agent.`,
+    forceHighestResolutionLenient:
+      "Experimental: Allow playback of videos that are not of the highest quality",
+    forceHighestResolutionLenient_Tooltip: `Enabling this option when an error occurs while using the “Force playback at highest resolution” feature may resolve the issue. \n
+      The “Force playback at highest resolution” feature attempts to play videos at the highest quality within the highest resolution available.
+      When this option is enabled, playback of videos that are at the highest resolution but not at the highest quality will be allowed.`,
     showVideoResolution: "Show video resolution in bottom left",
     removeAdRelatedData: "Remove ad related data",
     removeAdRelatedData_Tooltip:
@@ -891,6 +902,21 @@ const createOptionDialog = async (scriptVersion) => {
                     regexForMultiineTooltips,
                     ""
                   )}" data-msg-id="forceHighestResolution"></p>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="force-highest-resolution-lenient" name="force-highest-resolution-lenient" ${
+                        options.forceHighestResolutionLenient_xhook
+                          ? "checked"
+                          : ""
+                      } />
+                      <p>${messages.forceHighestResolutionLenient}</p>
+                  </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.forceHighestResolutionLenient_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="forceHighestResolutionLenient"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -1298,6 +1324,11 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "force-highest-resolution":
           await saveOptions({ forceHighestResolution_xhook: e.target.checked });
+          break;
+        case "force-highest-resolution-lenient":
+          await saveOptions({
+            forceHighestResolutionLenient_xhook: e.target.checked,
+          });
           break;
         case "show-video-resolution":
           await saveOptions({ showVideoResolution_xhook: e.target.checked });
@@ -1858,6 +1889,132 @@ const runXhook = () => {
       }
     }
 
+    static forceHighestResolutionLenient(request, response) {
+      // This method attempts to preserve more Representations than forceHighestResolution().
+      // - When multiple codecs are mixed, retain a Representation for each codec.
+      // - Playback of videos that are at the highest resolution but not at the highest quality will be allowed.
+      if (!isMpd(request, response)) {
+        return;
+      }
+
+      try {
+        const mpd = response.text;
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(mpd, "text/xml");
+
+        const periods = dom.querySelectorAll("Period");
+        if (periods.length === 0) {
+          return;
+        }
+
+        for (const p of periods) {
+          const VideoAdaptationSets = p.querySelectorAll(
+            "AdaptationSet[contentType='video']"
+          );
+          if (VideoAdaptationSets.length === 0) {
+            return;
+          }
+
+          for (const AdaptationSet of VideoAdaptationSets) {
+            // *The following is code for functional testing.*
+            // const test = AdaptationSet.querySelector("[id='video=501000']");
+            // const clone1 = test.cloneNode(true);
+            // clone1.setAttribute("id", "video=501001");
+            // clone1.setAttribute("codecs", "test");
+            // const clone2 = test.cloneNode(true);
+            // clone2.setAttribute("id", "video=5010090");
+            // clone2.setAttribute("codecs", "test");
+            // clone2.setAttribute("height", "999");
+            // AdaptationSet.append(clone1);
+            // AdaptationSet.append(clone2);
+
+            const representations = AdaptationSet.querySelectorAll(
+              "Representation[codecs][width][height]:has(BaseURL)"
+            );
+            if (representations.length === 0) {
+              continue;
+            }
+
+            const codecSet = Array.from(representations).reduce((acc, cur) => {
+              const codec = cur.getAttribute("codecs");
+              try {
+                if (codec) {
+                  const mached = codec.match(/^[^\.]+/);
+                  if (mached) {
+                    acc.add(mached[0]);
+                  } else {
+                    acc.add(codec);
+                  }
+                }
+              } catch (e) {
+                console.log(e);
+              }
+              return acc;
+            }, new Set());
+            if (codecSet.size === 0) {
+              return;
+            }
+
+            for (const codec of codecSet) {
+              const targetReps = Array.from(representations).filter((rep) => {
+                const targetCodec = rep.getAttribute("codecs");
+                return targetCodec?.includes(codec);
+              });
+              if (targetReps.length === 0) {
+                return;
+              }
+              const highestResolution = targetReps.reduce(
+                (acc, cur) => {
+                  try {
+                    const width = parseInt(cur.getAttribute("width"));
+                    const height = parseInt(cur.getAttribute("height"));
+                    if (width * height > acc.width * acc.height) {
+                      acc.width = width;
+                      acc.height = height;
+                    }
+                  } catch (e) {
+                    console.log(e);
+                  }
+                  return acc;
+                },
+                {
+                  width: 0,
+                  height: 0,
+                }
+              );
+              if (highestResolution.width === 0) {
+                return;
+              }
+
+              for (const rep of targetReps) {
+                const width = parseInt(rep.getAttribute("width"));
+                const height = parseInt(rep.getAttribute("height"));
+                if (
+                  !(
+                    width === highestResolution.width &&
+                    height === highestResolution.height
+                  )
+                ) {
+                  rep.setAttribute("sholudRemove", "true");
+                }
+              }
+            }
+
+            for (const rep of representations) {
+              if (rep.hasAttribute("sholudRemove")) {
+                rep.remove();
+              }
+            }
+          }
+        }
+
+        const newMpd = dom.documentElement.outerHTML;
+        response.text = newMpd;
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
     static showVideoResolution(request, response) {
       const url = request.url;
       if (isMpd(request, response)) {
@@ -2198,7 +2355,11 @@ const runXhook = () => {
       }
 
       if (options.forceHighestResolution_xhook) {
-        this.#queue.push(this.forceHighestResolution);
+        if (!options.forceHighestResolutionLenient_xhook) {
+          this.#queue.push(this.forceHighestResolution);
+        } else {
+          this.#queue.push(this.forceHighestResolutionLenient);
+        }
         if (options.showVideoResolution_xhook) {
           this.#queue.push(this.showVideoResolution);
         }
