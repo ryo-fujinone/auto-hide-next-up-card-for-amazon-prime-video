@@ -35,7 +35,7 @@ const getDefaultOptions = () => {
     removeNextupTimecodes_xhook: false,
     disableRecommendations_xhook: false,
     forcePlayNextEpisode_xhook: false,
-    scriptVersion: "2.14.4",
+    scriptVersion: "2.14.5",
   };
 };
 
