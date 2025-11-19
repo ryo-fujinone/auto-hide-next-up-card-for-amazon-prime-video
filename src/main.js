@@ -2433,15 +2433,19 @@ const runXhook = () => {
         // mp4 may not have started playing yet when it loads.
         // This can be addressed by verifying using the title name currently playing.
 
-        let title = this.player.querySelector(
+        let titleElement = this.player.querySelector(
           ".atvwebplayersdk-subtitle-text"
-        ).textContent;
-        if (!title) {
+        );
+        if (!titleElement) {
           // For movies, etc., there is no subtitle-text
-          title = this.player.querySelector(
+          titleElement = this.player.querySelector(
             ".atvwebplayersdk-title-text"
-          ).textContent;
+          );
         }
+        if (!titleElement) {
+          return;
+        }
+        const title = titleElement.textContent;
         if (!title) {
           return;
         }
