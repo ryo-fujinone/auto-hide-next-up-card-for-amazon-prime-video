@@ -34,6 +34,7 @@ const getDefaultOptions = () => {
     enableAutoplay_xhook: false,
     removeNextupTimecodes_xhook: false,
     disableRecommendations_xhook: false,
+    disableReactions_xhook: false,
     forcePlayNextEpisode_xhook: false,
     scriptVersion: "2.14.5",
   };
@@ -517,6 +518,7 @@ const createOptionMessages = () => {
       なおこの機能を有効にすると、「おすすめの商品」の表示も無効化されます。
       「おすすめの商品」のみを無効化したい場合はこの機能を有効にせず、「おすすめの商品を無効にする」を有効にしてください。`,
     disableRecommendations: "おすすめの商品を無効にする",
+    disableReactions: "Reactions（好き/好きではない）を無効にする",
     forcePlayNextEpisode:
       "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生で6回連続で再生した後に動画が閉じてしまう挙動への対処策として使用可能です。
@@ -606,6 +608,7 @@ const createOptionMessages = () => {
       If this feature is enabled, the “featured items” display will also be disabled.
       If you wish to disable “featured items” only, please do not enable this feature and enable “Disable featured items”.`,
     disableRecommendations: "Disable featured items",
+    disableReactions: "Disable reactions (like/not for me)",
     forcePlayNextEpisode:
       "Experimental: Play the next episode if the video is automatically closed at the end of the video",
     forcePlayNextEpisode_Tooltip: `This feature can be used as a workaround for the behavior of autoplay that closes the video after 6 consecutive plays.
@@ -947,6 +950,15 @@ const createOptionDialog = async (scriptVersion) => {
                         options.disableRecommendations_xhook ? "checked" : ""
                       } />
                       <p>${messages.disableRecommendations}</p>
+                  </label>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label>
+                      <input type="checkbox" id="disable-reactions" name="disable-reactions" ${
+                        options.disableReactions_xhook ? "checked" : ""
+                      } />
+                      <p>${messages.disableReactions}</p>
                   </label>
               </div>
 
@@ -1315,6 +1327,9 @@ const createOptionDialog = async (scriptVersion) => {
         case "disable-recommendations":
           await saveOptions({ disableRecommendations_xhook: e.target.checked });
           break;
+        case "disable-reactions":
+          await saveOptions({ disableReactions_xhook: e.target.checked });
+          break;
         case "force-play-next-episode":
           await saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
           break;
@@ -1648,6 +1663,22 @@ const runXhook = () => {
       return false;
     }
     if (!request.url.includes("nextUpV2")) {
+      return false;
+    }
+    if (response.status !== 200) {
+      return false;
+    }
+    if (response.headers?.["content-type"] !== "application/json") {
+      return false;
+    }
+    return true;
+  };
+
+  const hasReactionsResource = (request, response) => {
+    if (!request.url.includes("playerChromeResources")) {
+      return false;
+    }
+    if (!request.url.includes("reaction")) {
       return false;
     }
     if (response.status !== 200) {
@@ -2261,6 +2292,27 @@ const runXhook = () => {
       }
     }
 
+    static disableReactions(request, response) {
+      if (!hasReactionsResource(request, response)) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(response.text);
+        const reaction = data?.resources?.reaction;
+        if (!reaction) {
+          return;
+        }
+        if (!Object.hasOwn(reaction, "shouldShowReactions")) {
+          return;
+        }
+        reaction.shouldShowReactions = false;
+        response.text = JSON.stringify(data);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
     static forcePlayNextEpisode(request, response) {
       const url = request.url;
       if (url.includes(".mp4")) {
@@ -2347,6 +2399,9 @@ const runXhook = () => {
       }
       if (options.disableRecommendations_xhook) {
         this.#queue.push(this.disableRecommendations);
+      }
+      if (options.disableReactions_xhook) {
+        this.#queue.push(this.disableReactions);
       }
       if (options.forcePlayNextEpisode_xhook) {
         this.#queue.push(this.forcePlayNextEpisode);
@@ -2755,6 +2810,7 @@ const injectXhook = (options = getDefaultOptions()) => {
     options.enableAutoplay_xhook,
     options.removeNextupTimecodes_xhook,
     options.disableRecommendations_xhook,
+    options.disableReactions_xhook,
     options.forcePlayNextEpisode_xhook,
   ];
   const shouldInjectXhook = xhookOptions.some((opt) => opt);
