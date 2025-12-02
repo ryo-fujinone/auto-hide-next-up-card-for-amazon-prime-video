@@ -19,6 +19,7 @@ const getDefaultOptions = () => {
     addOutlinesForTextsAndIcons: false,
     addShadowsToSeekBar: false,
     moveCenterButtonsToBottom: false,
+    hideTitle: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -478,6 +479,10 @@ const createOptionMessages = () => {
     addShadowsToSeekBar: "シークバーに影をつける",
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
+    hideVariousTextAndButtons: "各種テキストやボタンを非表示にする",
+    hideVariousTextAndButtons_Tooltip: `Ctrlキー或いはShiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
+      右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
+    hideTitle: "タイトルを非表示にする",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -568,6 +573,10 @@ const createOptionMessages = () => {
     addShadowsToSeekBar: "Add shadows to the seek bar",
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
+    hideVariousTextAndButtons: "Hide various text and buttons",
+    hideVariousTextAndButtons_Tooltip: `Ctrlキー或いはShiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
+      右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
+    hideTitle: "Hide title",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -820,6 +829,34 @@ const createOptionDialog = async (scriptVersion) => {
                       <p>${messages.moveCenterButtonsToBottom}</p>
                   </label>
               </div>
+
+              <ul>
+                  <li>
+                      <div class="nextup-ext-opt-dialog-item-container">
+                          <label>
+                              <p style="margin-right: 4px;">${
+                                messages.hideVariousTextAndButtons
+                              }</p>
+                          </label>
+                          <p class="nextup-ext-opt-dialog-tooltip" title="${messages.hideVariousTextAndButtons_Tooltip.replaceAll(
+                            regexForMultiineTooltips,
+                            ""
+                          )}" data-msg-id="hideVariousTextAndButtons"></p>
+                      </div>
+                      <ul>
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-title" name="hide-title" ${
+                                    options.hideTitle ? "checked" : ""
+                                  } />
+                                  <p>${messages.hideTitle}</p>
+                              </label>
+                          </div>
+                        </li>
+                      </ul>
+                  </li>
+              </ul>
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
@@ -1100,10 +1137,7 @@ const createOptionDialog = async (scriptVersion) => {
         display: flex;
     }
     .nextup-ext-opt-dialog label.indent1 {
-        margin-left: 14px;
-    }
-    .nextup-ext-opt-dialog label.indent2 {
-        margin-left: 28px;
+        margin-left: 17.2px;
     }
     .nextup-ext-opt-dialog label p {
         margin-bottom: 5px;
@@ -1111,6 +1145,12 @@ const createOptionDialog = async (scriptVersion) => {
     }
     .nextup-ext-opt-dialog ul li {
         margin-left: 18px;
+    }
+    .nextup-ext-opt-dialog ul li.ml0 {
+        margin-left: 0;
+    }
+    .nextup-ext-opt-dialog ul li.list-style-none {
+        list-style: none;
     }
     .nextup-ext-opt-dialog ul li label:has(#shortcutkey-for-dialog){
         display: flex;
@@ -1297,6 +1337,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "move-center-buttons-to-bottom":
           await saveOptions({ moveCenterButtonsToBottom: e.target.checked });
+          break;
+        case "hide-title":
+          await saveOptions({ hideTitle: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3705,6 +3748,82 @@ class ElementController {
     });
   }
 
+  hideVariousTextAndButtons(options = getDefaultOptions()) {
+    const relatedOptions = [options.hideTitle];
+    const shouldRun = relatedOptions.some((opt) => opt);
+    if (!shouldRun) {
+      return;
+    }
+
+    if (!this.markingCenterOverlaysWrapper()) {
+      return;
+    }
+    const centerOverlaysWrapper = this.player.querySelector(
+      "[data-ident='center-overlays-wrapper']"
+    );
+
+    const targetkeys = ["Control", "Shift"];
+    this.player.classList.add("hide-various-text-and-buttons");
+
+    const isEditable = (elem) => {
+      return (
+        elem &&
+        (elem.isContentEditable ||
+          /^(input|textarea|select)$/i.test(elem.tagName))
+      );
+    };
+
+    this.player.addEventListener("keydown", (e) => {
+      if (e.repeat || isEditable(e.target)) {
+        return;
+      }
+      if (targetkeys.includes(e.key)) {
+        this.player.classList.remove("hide-various-text-and-buttons");
+      }
+    });
+
+    this.player.addEventListener("keyup", (e) => {
+      if (isEditable(e.target)) {
+        return;
+      }
+      if (targetkeys.includes(e.key)) {
+        this.player.classList.add("hide-various-text-and-buttons");
+      }
+    });
+
+    const hideTitle = () => {
+      if (!options.hideTitle) {
+        return;
+      }
+
+      if (!document.querySelector("style.hideTitle")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-title-text {
+            display: none;
+          }
+          .atvwebplayersdk-title-text.show {
+            display: unset;
+          }
+        `;
+        addStyle(css, "hideTitle");
+      }
+
+      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+        const title = this.player.querySelector(".atvwebplayersdk-title-text");
+        if (!title) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          title.classList.add("show");
+        } else {
+          title.classList.remove("show");
+        }
+      });
+    };
+
+    hideTitle();
+  }
+
   forcePlayNextEpisode(options = getDefaultOptions()) {
     if (!options.forcePlayNextEpisode_xhook) {
       return;
@@ -4123,6 +4242,12 @@ const main = async () => {
 
         try {
           controller.moveCenterButtonsToBottom(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.hideVariousTextAndButtons(options);
         } catch (e) {
           console.log(e);
         }
