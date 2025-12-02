@@ -23,6 +23,7 @@ const getDefaultOptions = () => {
     hideEpisodeTitle: false,
     hideVariousButtonsInTopRight: false,
     hideSeekBar: false,
+    hidePlaybackTime: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -488,6 +489,7 @@ const createOptionMessages = () => {
     hideTitle: "タイトルを非表示にする",
     hideEpisodeTitle: "エピソード名を非表示にする",
     hideVariousButtonsInTopRight: "右上の各種ボタンを非表示にする",
+    hidePlaybackTime: "再生時間表示を非表示にする",
     hideSeekBar: "シークバーを非表示にする",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
@@ -586,6 +588,7 @@ const createOptionMessages = () => {
     hideEpisodeTitle: "Hide episode title",
     hideVariousButtonsInTopRight: "Hide various buttons in the top right",
     hideSeekBar: "Hide seek bar",
+    hidePlaybackTime: "Hide playback time",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -898,6 +901,17 @@ const createOptionDialog = async (scriptVersion) => {
                                     options.hideSeekBar ? "checked" : ""
                                   } />
                                   <p>${messages.hideSeekBar}</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-playback-time" name="hide-playback-time" ${
+                                    options.hidePlaybackTime ? "checked" : ""
+                                  } />
+                                  <p>${messages.hidePlaybackTime}</p>
                               </label>
                           </div>
                         </li>
@@ -1396,6 +1410,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-seek-bar":
           await saveOptions({ hideSeekBar: e.target.checked });
+          break;
+        case "hide-playback-time":
+          await saveOptions({ hidePlaybackTime: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3810,6 +3827,7 @@ class ElementController {
       options.hideEpisodeTitle,
       options.hideVariousButtonsInTopRight,
       options.hideSeekBar,
+      options.hidePlaybackTime,
     ];
     const shouldRun = relatedOptions.some((opt) => opt);
     if (!shouldRun) {
@@ -4018,10 +4036,50 @@ class ElementController {
       });
     };
 
+    const hidePlaybackTime = () => {
+      if (!options.hidePlaybackTime) {
+        return;
+      }
+
+      if (!document.querySelector("style.hidePlaybackTime")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-timeindicator-text {
+            visibility: hidden;
+          }
+          .atvwebplayersdk-timeindicator-text.show {
+            visibility: visible;
+          }
+        `;
+        addStyle(css, "hidePlaybackTime");
+      }
+
+      let hideTimer = null;
+      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+        const timeindicator = this.player.querySelector(
+          ".atvwebplayersdk-timeindicator-text"
+        );
+        if (!seekBar) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          timeindicator.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            timeindicator.classList.remove("show");
+          }, 300);
+        } else {
+          timeindicator.classList.remove("show");
+        }
+      });
+    };
+
     hideTitle();
     hideEpisodeTitle();
     hideVariousButtonsInTopRight();
     hideSeekBar();
+    hidePlaybackTime();
   }
 
   forcePlayNextEpisode(options = getDefaultOptions()) {
