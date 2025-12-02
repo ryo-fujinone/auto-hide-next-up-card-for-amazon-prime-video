@@ -25,6 +25,7 @@ const getDefaultOptions = () => {
     hideSeekBar: false,
     hidePlaybackTime: false,
     hideCenterButtons: false,
+    hideNextEpisodeButton: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -493,6 +494,7 @@ const createOptionMessages = () => {
     hidePlaybackTime: "再生時間表示を非表示にする",
     hideSeekBar: "シークバーを非表示にする",
     hideCenterButtons: "中央のボタンを非表示にする",
+    hideNextEpisodeButton: "次のエピソードボタンを非表示にする",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -592,6 +594,7 @@ const createOptionMessages = () => {
     hideSeekBar: "Hide seek bar",
     hidePlaybackTime: "Hide playback time",
     hideCenterButtons: "Hide center buttons",
+    hideNextEpisodeButton: "Hide next episode button",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -926,6 +929,19 @@ const createOptionDialog = async (scriptVersion) => {
                                     options.hideCenterButtons ? "checked" : ""
                                   } />
                                   <p>${messages.hideCenterButtons}</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-next-episode-button" name="hide-next-episode-button" ${
+                                    options.hideNextEpisodeButton
+                                      ? "checked"
+                                      : ""
+                                  } />
+                                  <p>${messages.hideNextEpisodeButton}</p>
                               </label>
                           </div>
                         </li>
@@ -1430,6 +1446,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-center-buttons":
           await saveOptions({ hideCenterButtons: e.target.checked });
+          break;
+        case "hide-next-episode-button":
+          await saveOptions({ hideNextEpisodeButton: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3846,6 +3865,7 @@ class ElementController {
       options.hideSeekBar,
       options.hidePlaybackTime,
       options.hideCenterButtons,
+      options.hideNextEpisodeButton,
     ];
     const shouldRun = relatedOptions.some((opt) => opt);
     if (!shouldRun) {
@@ -4142,6 +4162,45 @@ class ElementController {
       });
     };
 
+    const hideNextEpisodeButton = () => {
+      if (!options.hideNextEpisodeButton) {
+        return;
+      }
+
+      if (!document.querySelector("style.hideNextEpisodeButton")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-nexttitle-button {
+            visibility: hidden;
+          }
+          .atvwebplayersdk-nexttitle-button.show {
+            visibility: visible;
+          }
+        `;
+        addStyle(css, "hideNextEpisodeButton");
+      }
+
+      let hideTimer = null;
+      this.player.addEventListener("mousemove", (e) => {
+        const nextTitleButton = this.player.querySelector(
+          ".atvwebplayersdk-nexttitle-button"
+        );
+        if (!nextTitleButton) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          nextTitleButton.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            nextTitleButton.classList.remove("show");
+          }, 300);
+        } else {
+          nextTitleButton.classList.remove("show");
+        }
+      });
+    };
+
     const fnList = [
       hideTitle,
       hideEpisodeTitle,
@@ -4149,6 +4208,7 @@ class ElementController {
       hideSeekBar,
       hidePlaybackTime,
       hideCenterButtons,
+      hideNextEpisodeButton,
     ];
     for (const fn of fnList) {
       try {
