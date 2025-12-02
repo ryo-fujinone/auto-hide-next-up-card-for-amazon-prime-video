@@ -2491,8 +2491,9 @@ const runXhook = () => {
         let titleElement = this.player.querySelector(
           ".atvwebplayersdk-subtitle-text"
         );
-        if (!titleElement) {
+        if (!titleElement || !titleElement?.textContent) {
           // For movies, etc., there is no subtitle-text
+          // Previously an empty element, as of December 2025, this element does not exist in movies or similar media.
           titleElement = this.player.querySelector(
             ".atvwebplayersdk-title-text"
           );
