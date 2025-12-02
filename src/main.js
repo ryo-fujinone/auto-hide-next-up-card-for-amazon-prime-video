@@ -2101,6 +2101,7 @@ const runXhook = () => {
           return;
         }
 
+        let removed = false;
         for (const p of periods) {
           const ad1 = p.querySelector("SupplementalProperty[value='Ad']");
           const ad2 = p.querySelector("SupplementalProperty[value='FadeAd']");
@@ -2108,7 +2109,11 @@ const runXhook = () => {
             continue;
           }
           p.remove();
+          removed = true;
           console.log("Removed ads (data in mpd)");
+        }
+        if (!removed) {
+          return;
         }
 
         const newPeriods = dom.querySelectorAll("Period");
