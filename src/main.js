@@ -3826,6 +3826,7 @@ class ElementController {
         addStyle(css, "hideTitle");
       }
 
+      let hideTimer = null;
       centerOverlaysWrapper.addEventListener("mousemove", (e) => {
         const title = this.player.querySelector(".atvwebplayersdk-title-text");
         if (!title) {
@@ -3833,6 +3834,12 @@ class ElementController {
         }
         if (e.ctrlKey || e.shiftKey) {
           title.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            title.classList.remove("show");
+          }, 300);
         } else {
           title.classList.remove("show");
         }
