@@ -20,6 +20,7 @@ const getDefaultOptions = () => {
     addShadowsToSeekBar: false,
     moveCenterButtonsToBottom: false,
     hideTitle: false,
+    hideEpisodeTitle: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -483,6 +484,7 @@ const createOptionMessages = () => {
     hideVariousTextAndButtons_Tooltip: `Ctrlキー或いはShiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
       右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
     hideTitle: "タイトルを非表示にする",
+    hideEpisodeTitle: "エピソード名を非表示にする",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -577,6 +579,7 @@ const createOptionMessages = () => {
     hideVariousTextAndButtons_Tooltip: `Ctrlキー或いはShiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
       右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
     hideTitle: "Hide title",
+    hideEpisodeTitle: "Hide episode title",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -843,6 +846,7 @@ const createOptionDialog = async (scriptVersion) => {
                             ""
                           )}" data-msg-id="hideVariousTextAndButtons"></p>
                       </div>
+
                       <ul>
                         <li class="list-style-none ml0">
                           <div class="nextup-ext-opt-dialog-item-container">
@@ -851,6 +855,17 @@ const createOptionDialog = async (scriptVersion) => {
                                     options.hideTitle ? "checked" : ""
                                   } />
                                   <p>${messages.hideTitle}</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-episode-title" name="hide-episode-title" ${
+                                    options.hideEpisodeTitle ? "checked" : ""
+                                  } />
+                                  <p>${messages.hideEpisodeTitle}</p>
                               </label>
                           </div>
                         </li>
@@ -1340,6 +1355,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-title":
           await saveOptions({ hideTitle: e.target.checked });
+          break;
+        case "hide-episode-title":
+          await saveOptions({ hideEpisodeTitle: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3799,10 +3817,10 @@ class ElementController {
       if (!document.querySelector("style.hideTitle")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-title-text {
-            display: none;
+            opacity: 0;
           }
           .atvwebplayersdk-title-text.show {
-            display: unset;
+            opacity: 1;
           }
         `;
         addStyle(css, "hideTitle");
@@ -3821,7 +3839,47 @@ class ElementController {
       });
     };
 
+    const hideEpisodeTitle = () => {
+      if (!options.hideTitle) {
+        return;
+      }
+
+      if (!document.querySelector("style.hideEpisodeTitle")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-subtitle-text {
+            opacity: 0;
+          }
+          .atvwebplayersdk-subtitle-text.show {
+            opacity: 1;
+          }
+        `;
+        addStyle(css, "hideEpisodeTitle");
+      }
+
+      let hideTimer = null;
+      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+        const episodeTitle = this.player.querySelector(
+          ".atvwebplayersdk-subtitle-text"
+        );
+        if (!episodeTitle) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          episodeTitle.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            episodeTitle.classList.remove("show");
+          }, 300);
+        } else {
+          episodeTitle.classList.remove("show");
+        }
+      });
+    };
+
     hideTitle();
+    hideEpisodeTitle();
   }
 
   forcePlayNextEpisode(options = getDefaultOptions()) {
