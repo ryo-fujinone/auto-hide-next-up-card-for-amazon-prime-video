@@ -3852,13 +3852,6 @@ class ElementController {
       return;
     }
 
-    if (!this.markingCenterOverlaysWrapper()) {
-      return;
-    }
-    const centerOverlaysWrapper = this.player.querySelector(
-      "[data-ident='center-overlays-wrapper']"
-    );
-
     const targetkeys = ["Control", "Shift"];
     this.player.classList.add("hide-various-text-and-buttons");
 
@@ -3906,7 +3899,7 @@ class ElementController {
       }
 
       let hideTimer = null;
-      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+      this.player.addEventListener("mousemove", (e) => {
         const title = this.player.querySelector(".atvwebplayersdk-title-text");
         if (!title) {
           return;
@@ -3943,7 +3936,7 @@ class ElementController {
       }
 
       let hideTimer = null;
-      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+      this.player.addEventListener("mousemove", (e) => {
         const episodeTitle = this.player.querySelector(
           ".atvwebplayersdk-subtitle-text"
         );
@@ -3988,7 +3981,7 @@ class ElementController {
       }
 
       let hideTimer = null;
-      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+      this.player.addEventListener("mousemove", (e) => {
         const buttonsContainer = this.player.querySelector(
           ".atvwebplayersdk-hideabletopbuttons-container"
         );
@@ -4033,7 +4026,7 @@ class ElementController {
       }
 
       let hideTimer = null;
-      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+      this.player.addEventListener("mousemove", (e) => {
         const seekBar = this.player.querySelector(
           ".atvwebplayersdk-seekbar-container"
         );
@@ -4072,7 +4065,7 @@ class ElementController {
       }
 
       let hideTimer = null;
-      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+      this.player.addEventListener("mousemove", (e) => {
         const timeindicator = this.player.querySelector(
           ".atvwebplayersdk-timeindicator-text"
         );
@@ -4123,7 +4116,7 @@ class ElementController {
       }
 
       let hideTimer = null;
-      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+      this.player.addEventListener("mousemove", (e) => {
         const playPauseButton = this.player.querySelector(
           ".atvwebplayersdk-playpause-button"
         );
