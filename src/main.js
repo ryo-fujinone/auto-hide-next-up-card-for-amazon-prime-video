@@ -22,6 +22,7 @@ const getDefaultOptions = () => {
     hideTitle: false,
     hideEpisodeTitle: false,
     hideVariousButtonsInTopRight: false,
+    hideSeekBar: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -487,6 +488,7 @@ const createOptionMessages = () => {
     hideTitle: "タイトルを非表示にする",
     hideEpisodeTitle: "エピソード名を非表示にする",
     hideVariousButtonsInTopRight: "右上の各種ボタンを非表示にする",
+    hideSeekBar: "シークバーを非表示にする",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -583,6 +585,7 @@ const createOptionMessages = () => {
     hideTitle: "Hide title",
     hideEpisodeTitle: "Hide episode title",
     hideVariousButtonsInTopRight: "Hide various buttons in the top right",
+    hideSeekBar: "Hide seek bar",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -884,6 +887,17 @@ const createOptionDialog = async (scriptVersion) => {
                                   <p>${
                                     messages.hideVariousButtonsInTopRight
                                   }</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-seek-bar" name="hide-seek-bar" ${
+                                    options.hideSeekBar ? "checked" : ""
+                                  } />
+                                  <p>${messages.hideSeekBar}</p>
                               </label>
                           </div>
                         </li>
@@ -1379,6 +1393,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-various-buttons-in-top-right":
           await saveOptions({ hideVariousButtonsInTopRight: e.target.checked });
+          break;
+        case "hide-seek-bar":
+          await saveOptions({ hideSeekBar: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3792,6 +3809,7 @@ class ElementController {
       options.hideTitle,
       options.hideEpisodeTitle,
       options.hideVariousButtonsInTopRight,
+      options.hideSeekBar,
     ];
     const shouldRun = relatedOptions.some((opt) => opt);
     if (!shouldRun) {
@@ -3961,9 +3979,49 @@ class ElementController {
       });
     };
 
+    const hideSeekBar = () => {
+      if (!options.hideSeekBar) {
+        return;
+      }
+
+      if (!document.querySelector("style.hideSeekBar")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-seekbar-container {
+            visibility: hidden;
+          }
+          .atvwebplayersdk-seekbar-container.show {
+            visibility: visible;
+          }
+        `;
+        addStyle(css, "hideSeekBar");
+      }
+
+      let hideTimer = null;
+      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+        const seekBar = this.player.querySelector(
+          ".atvwebplayersdk-seekbar-container"
+        );
+        if (!seekBar) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          seekBar.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            seekBar.classList.remove("show");
+          }, 300);
+        } else {
+          seekBar.classList.remove("show");
+        }
+      });
+    };
+
     hideTitle();
     hideEpisodeTitle();
     hideVariousButtonsInTopRight();
+    hideSeekBar();
   }
 
   forcePlayNextEpisode(options = getDefaultOptions()) {
