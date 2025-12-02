@@ -1686,13 +1686,13 @@ const createOptionBtnOnNavbar = () => {
         });
       }
 
-      if (!document.querySelector("#optionBtnOnNavbar")) {
+      if (!document.querySelector("#ext-optionBtnOnNavbar")) {
         const css = `
         body:has(.nextup-ext-opt-dialog[open]):not(:has(.dv-player-fullscreen)) {
           overflow: hidden !important;
         }
       `;
-        addStyle(css, "optionBtnOnNavbar");
+        addStyle(css, "ext-optionBtnOnNavbar");
       }
 
       // Create buttons for mobile
@@ -2332,13 +2332,13 @@ const runXhook = () => {
         }
 
         if (intraTitlePlaylist) {
-          if (!document.querySelector("#hideAdResumeMessage")) {
+          if (!document.querySelector("#ext-hideAdResumeMessage")) {
             const css = `
               .atvwebplayersdk-ad-resume-message {
                 display: none !important;
               }
             `;
-            addStyle(css, "hideAdResumeMessage");
+            addStyle(css, "ext-hideAdResumeMessage");
           }
         }
 
@@ -3182,7 +3182,7 @@ class ElementController {
       return;
     }
 
-    if (!document.querySelector("#skipAds")) {
+    if (!document.querySelector("#ext-skipAds")) {
       const css = `
         .atvwebplayersdk-ad-timer-countdown {
           display: none !important;
@@ -3194,7 +3194,7 @@ class ElementController {
           display: none !important;
         }
       `;
-      addStyle(css, "skipAds");
+      addStyle(css, "ext-skipAds");
     }
 
     let canSkip = true;
@@ -3255,13 +3255,13 @@ class ElementController {
       return;
     }
 
-    if (!document.querySelector("#hideSkipIntroBtn")) {
+    if (!document.querySelector("#ext-hideSkipIntroBtn")) {
       const css = `
         .atvwebplayersdk-skipelement-button {
           display: none !important;
         }
       `;
-      addStyle(css, "hideSkipIntroBtn");
+      addStyle(css, "ext-hideSkipIntroBtn");
     }
 
     if (!options.showSkipIntroBtnOnOverlay) {
@@ -3317,7 +3317,9 @@ class ElementController {
       return;
     }
 
-    if (!document.querySelector("#preventsDarkeningInConjunctionWithNextup")) {
+    if (
+      !document.querySelector("#ext-preventsDarkeningInConjunctionWithNextup")
+    ) {
       /**
        * at amazon.co.jp
        * .fkpovp9 - before 2025/05/16
@@ -3358,7 +3360,7 @@ class ElementController {
           background: linear-gradient(180deg,rgba(0, 0, 0, 0) 0.98%,rgba(0, 0, 0, 0.7) 53.49%,rgba(0, 0, 0, 0.5) 100%) !important;
         }
       `;
-      addStyle(css, "preventsDarkeningInConjunctionWithNextup");
+      addStyle(css, "ext-preventsDarkeningInConjunctionWithNextup");
     }
   }
 
@@ -3383,13 +3385,13 @@ class ElementController {
       return;
     }
 
-    if (!document.querySelector("#hideNextupCard")) {
+    if (!document.querySelector("#ext-hideNextupCard")) {
       const css = `
         .atvwebplayersdk-nextupcard-wrapper {
           display: none !important;
         }
       `;
-      addStyle(css, "hideNextupCard");
+      addStyle(css, "ext-hideNextupCard");
     }
 
     new MutationObserver((_, outerObserver) => {
@@ -3544,13 +3546,13 @@ class ElementController {
     }
 
     if (!options.showRecommendationsOnOverlay) {
-      if (!document.querySelector("#hideRecommendations")) {
+      if (!document.querySelector("#ext-hideRecommendations")) {
         const css = `
           [id^='dv-web-player']:not([data-is-jump-live-button-visible='true']) .atvwebplayersdk-BelowFold {
             display: none !important;
           }
         `;
-        addStyle(css, "hideRecommendations");
+        addStyle(css, "ext-hideRecommendations");
       }
     }
 
@@ -3660,13 +3662,13 @@ class ElementController {
     if (!options.hideRating) {
       return;
     }
-    if (!document.querySelector("#hideRatingText")) {
+    if (!document.querySelector("#ext-hideRatingText")) {
       const css = `
         .atvwebplayersdk-regulatory-overlay {
           display: none !important;
         }
       `;
-      addStyle(css, "hideRatingText");
+      addStyle(css, "ext-hideRatingText");
     }
   }
 
@@ -3675,7 +3677,7 @@ class ElementController {
       return;
     }
 
-    if (!document.querySelector("#preventsDarkening")) {
+    if (!document.querySelector("#ext-preventsDarkening")) {
       /**
        * at amazon.co.jp
        * .fkpovp9 - before 2025/05/16
@@ -3695,11 +3697,11 @@ class ElementController {
           background: transparent !important;
         }
       `;
-      addStyle(css, "preventsDarkening");
+      addStyle(css, "ext-preventsDarkening");
     }
 
     if (options.addOutlinesForTextsAndIcons) {
-      if (!document.querySelector("#addOutlinesForTexts")) {
+      if (!document.querySelector("#ext-addOutlinesForTexts")) {
         const cssForText = `
           .atvwebplayersdk-title-text {
             -webkit-text-stroke: 0.015em black;
@@ -3751,10 +3753,10 @@ class ElementController {
             text-shadow: 1px 1px 2px black;
           }
         `;
-        addStyle(cssForText, "addOutlinesForTexts");
+        addStyle(cssForText, "ext-addOutlinesForTexts");
       }
 
-      if (!document.querySelector("#addOutlinesForIcons")) {
+      if (!document.querySelector("#ext-addOutlinesForIcons")) {
         const cssForImg = `
           .atvwebplayersdk-hideabletopbuttons-container button img,
           .atvwebplayersdk-playerclose-button img {
@@ -3772,14 +3774,14 @@ class ElementController {
             filter: drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black);
           }
         `;
-        addStyle(cssForImg, "addOutlinesForIcons");
+        addStyle(cssForImg, "ext-addOutlinesForIcons");
       }
 
       if (
         options.forceHighestResolution_xhook &&
         options.showVideoResolution_xhook
       ) {
-        if (!document.querySelector("#preventsDarkening_ResolutionInfo")) {
+        if (!document.querySelector("#ext-preventsDarkening_ResolutionInfo")) {
           const cssForResolutionInfo = `
           .nextup-ext-resolution-info {
             -webkit-text-stroke: 0.025em black;
@@ -3787,13 +3789,16 @@ class ElementController {
             text-shadow: 1px 1px 2px black;
           }
         `;
-          addStyle(cssForResolutionInfo, "preventsDarkening_ResolutionInfo");
+          addStyle(
+            cssForResolutionInfo,
+            "ext-preventsDarkening_ResolutionInfo"
+          );
         }
       }
     }
 
     if (options.addShadowsToSeekBar) {
-      if (!document.querySelector("#addShadowsToSeekBar")) {
+      if (!document.querySelector("#ext-addShadowsToSeekBar")) {
         const cssForShadows = `
           .atvwebplayersdk-seekbar-range {
             box-shadow: 2px 2px 6px #888;
@@ -3805,7 +3810,7 @@ class ElementController {
             box-shadow: 0px 0px 5px #222;
           }
         `;
-        addStyle(cssForShadows, "addShadowsToSeekBar");
+        addStyle(cssForShadows, "ext-addShadowsToSeekBar");
       }
     }
   }
@@ -3906,7 +3911,7 @@ class ElementController {
         return;
       }
 
-      if (!document.querySelector("style.hideTitle")) {
+      if (!document.querySelector("#ext-hideTitle")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-title-text {
             opacity: 0;
@@ -3915,7 +3920,7 @@ class ElementController {
             opacity: 1;
           }
         `;
-        addStyle(css, "hideTitle");
+        addStyle(css, "ext-hideTitle");
       }
 
       let hideTimer = null;
@@ -3943,7 +3948,7 @@ class ElementController {
         return;
       }
 
-      if (!document.querySelector("style.hideEpisodeTitle")) {
+      if (!document.querySelector("#ext-hideEpisodeTitle")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-subtitle-text {
             opacity: 0;
@@ -3952,7 +3957,7 @@ class ElementController {
             opacity: 1;
           }
         `;
-        addStyle(css, "hideEpisodeTitle");
+        addStyle(css, "ext-hideEpisodeTitle");
       }
 
       let hideTimer = null;
@@ -3982,7 +3987,7 @@ class ElementController {
         return;
       }
 
-      if (!document.querySelector("style.hideVariousButtonsInTopRight")) {
+      if (!document.querySelector("#ext-hideVariousButtonsInTopRight")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-hideabletopbuttons-container {
             opacity: 0;
@@ -3997,7 +4002,7 @@ class ElementController {
             opacity: 1;
           }
         `;
-        addStyle(css, "hideVariousButtonsInTopRight");
+        addStyle(css, "ext-hideVariousButtonsInTopRight");
       }
 
       let hideTimer = null;
@@ -4033,7 +4038,7 @@ class ElementController {
         return;
       }
 
-      if (!document.querySelector("style.hideSeekBar")) {
+      if (!document.querySelector("#ext-hideSeekBar")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-seekbar-container {
             visibility: hidden;
@@ -4042,7 +4047,7 @@ class ElementController {
             visibility: visible;
           }
         `;
-        addStyle(css, "hideSeekBar");
+        addStyle(css, "ext-hideSeekBar");
       }
 
       let hideTimer = null;
@@ -4072,7 +4077,7 @@ class ElementController {
         return;
       }
 
-      if (!document.querySelector("style.hidePlaybackTime")) {
+      if (!document.querySelector("#ext-hidePlaybackTime")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-timeindicator-text {
             visibility: hidden;
@@ -4081,7 +4086,7 @@ class ElementController {
             visibility: visible;
           }
         `;
-        addStyle(css, "hidePlaybackTime");
+        addStyle(css, "ext-hidePlaybackTime");
       }
 
       let hideTimer = null;
@@ -4111,7 +4116,7 @@ class ElementController {
         return;
       }
 
-      if (!document.querySelector("style.hideCenterButtons")) {
+      if (!document.querySelector("#ext-hideCenterButtons")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-fastseekback-button {
             visibility: hidden;
@@ -4132,7 +4137,7 @@ class ElementController {
             visibility: visible;
           }
         `;
-        addStyle(css, "hideCenterButtons");
+        addStyle(css, "ext-hideCenterButtons");
       }
 
       let hideTimer = null;
@@ -4167,7 +4172,7 @@ class ElementController {
         return;
       }
 
-      if (!document.querySelector("style.hideNextEpisodeButton")) {
+      if (!document.querySelector("#ext-hideNextEpisodeButton")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-nexttitle-button {
             visibility: hidden;
@@ -4176,7 +4181,7 @@ class ElementController {
             visibility: visible;
           }
         `;
-        addStyle(css, "hideNextEpisodeButton");
+        addStyle(css, "ext-hideNextEpisodeButton");
       }
 
       let hideTimer = null;
