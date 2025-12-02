@@ -21,6 +21,7 @@ const getDefaultOptions = () => {
     moveCenterButtonsToBottom: false,
     hideTitle: false,
     hideEpisodeTitle: false,
+    hideVariousButtonsInTopRight: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -485,6 +486,7 @@ const createOptionMessages = () => {
       右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
     hideTitle: "タイトルを非表示にする",
     hideEpisodeTitle: "エピソード名を非表示にする",
+    hideVariousButtonsInTopRight: "右上の各種ボタンを非表示にする",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -576,10 +578,11 @@ const createOptionMessages = () => {
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     hideVariousTextAndButtons: "Hide various text and buttons",
-    hideVariousTextAndButtons_Tooltip: `Ctrlキー或いはShiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
-      右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
+    hideVariousTextAndButtons_Tooltip: `While holding down the Ctrl or Shift key and using the mouse, hidden elements will be displayed.
+      The various buttons in the top right remain clickable even when hidden.`,
     hideTitle: "Hide title",
     hideEpisodeTitle: "Hide episode title",
+    hideVariousButtonsInTopRight: "Hide various buttons in the top right",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -866,6 +869,21 @@ const createOptionDialog = async (scriptVersion) => {
                                     options.hideEpisodeTitle ? "checked" : ""
                                   } />
                                   <p>${messages.hideEpisodeTitle}</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-various-buttons-in-top-right" name="hide-various-buttons-in-top-right" ${
+                                    options.hideVariousButtonsInTopRight
+                                      ? "checked"
+                                      : ""
+                                  } />
+                                  <p>${
+                                    messages.hideVariousButtonsInTopRight
+                                  }</p>
                               </label>
                           </div>
                         </li>
@@ -1358,6 +1376,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-episode-title":
           await saveOptions({ hideEpisodeTitle: e.target.checked });
+          break;
+        case "hide-various-buttons-in-top-right":
+          await saveOptions({ hideVariousButtonsInTopRight: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3767,7 +3788,11 @@ class ElementController {
   }
 
   hideVariousTextAndButtons(options = getDefaultOptions()) {
-    const relatedOptions = [options.hideTitle];
+    const relatedOptions = [
+      options.hideTitle,
+      options.hideEpisodeTitle,
+      options.hideVariousButtonsInTopRight,
+    ];
     const shouldRun = relatedOptions.some((opt) => opt);
     if (!shouldRun) {
       return;
@@ -3847,7 +3872,7 @@ class ElementController {
     };
 
     const hideEpisodeTitle = () => {
-      if (!options.hideTitle) {
+      if (!options.hideEpisodeTitle) {
         return;
       }
 
@@ -3885,8 +3910,60 @@ class ElementController {
       });
     };
 
+    const hideVariousButtonsInTopRight = () => {
+      if (!options.hideVariousButtonsInTopRight) {
+        return;
+      }
+
+      if (!document.querySelector("style.hideVariousButtonsInTopRight")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-hideabletopbuttons-container {
+            opacity: 0;
+          }
+          .hide-various-text-and-buttons .atvwebplayersdk-closebutton-wrapper {
+            opacity: 0;
+          }
+          .atvwebplayersdk-hideabletopbuttons-container.show {
+            opacity: 1;
+          }
+          .atvwebplayersdk-closebutton-wrapper.show {
+            opacity: 1;
+          }
+        `;
+        addStyle(css, "hideVariousButtonsInTopRight");
+      }
+
+      let hideTimer = null;
+      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+        const buttonsContainer = this.player.querySelector(
+          ".atvwebplayersdk-hideabletopbuttons-container"
+        );
+        const closeButtonWrapper = this.player.querySelector(
+          ".atvwebplayersdk-closebutton-wrapper"
+        );
+        if (!buttonsContainer || !closeButtonWrapper) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          buttonsContainer.classList.add("show");
+          closeButtonWrapper.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            buttonsContainer.classList.remove("show");
+            closeButtonWrapper.classList.remove("show");
+          }, 300);
+        } else {
+          buttonsContainer.classList.remove("show");
+          closeButtonWrapper.classList.remove("show");
+        }
+      });
+    };
+
     hideTitle();
     hideEpisodeTitle();
+    hideVariousButtonsInTopRight();
   }
 
   forcePlayNextEpisode(options = getDefaultOptions()) {
