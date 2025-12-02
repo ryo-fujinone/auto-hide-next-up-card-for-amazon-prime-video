@@ -24,6 +24,7 @@ const getDefaultOptions = () => {
     hideVariousButtonsInTopRight: false,
     hideSeekBar: false,
     hidePlaybackTime: false,
+    hideCenterButtons: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -491,6 +492,7 @@ const createOptionMessages = () => {
     hideVariousButtonsInTopRight: "右上の各種ボタンを非表示にする",
     hidePlaybackTime: "再生時間表示を非表示にする",
     hideSeekBar: "シークバーを非表示にする",
+    hideCenterButtons: "中央のボタンを非表示にする",
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -589,6 +591,7 @@ const createOptionMessages = () => {
     hideVariousButtonsInTopRight: "Hide various buttons in the top right",
     hideSeekBar: "Hide seek bar",
     hidePlaybackTime: "Hide playback time",
+    hideCenterButtons: "Hide center buttons",
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -912,6 +915,17 @@ const createOptionDialog = async (scriptVersion) => {
                                     options.hidePlaybackTime ? "checked" : ""
                                   } />
                                   <p>${messages.hidePlaybackTime}</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-center-buttons" name="hide-center-buttons" ${
+                                    options.hideCenterButtons ? "checked" : ""
+                                  } />
+                                  <p>${messages.hideCenterButtons}</p>
                               </label>
                           </div>
                         </li>
@@ -1413,6 +1427,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-playback-time":
           await saveOptions({ hidePlaybackTime: e.target.checked });
+          break;
+        case "hide-center-buttons":
+          await saveOptions({ hideCenterButtons: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3828,6 +3845,7 @@ class ElementController {
       options.hideVariousButtonsInTopRight,
       options.hideSeekBar,
       options.hidePlaybackTime,
+      options.hideCenterButtons,
     ];
     const shouldRun = relatedOptions.some((opt) => opt);
     if (!shouldRun) {
@@ -4058,7 +4076,7 @@ class ElementController {
         const timeindicator = this.player.querySelector(
           ".atvwebplayersdk-timeindicator-text"
         );
-        if (!seekBar) {
+        if (!timeindicator) {
           return;
         }
         if (e.ctrlKey || e.shiftKey) {
@@ -4075,11 +4093,77 @@ class ElementController {
       });
     };
 
-    hideTitle();
-    hideEpisodeTitle();
-    hideVariousButtonsInTopRight();
-    hideSeekBar();
-    hidePlaybackTime();
+    const hideCenterButtons = () => {
+      if (!options.hideCenterButtons) {
+        return;
+      }
+
+      if (!document.querySelector("style.hideCenterButtons")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-fastseekback-button {
+            visibility: hidden;
+          }
+          .hide-various-text-and-buttons .atvwebplayersdk-playpause-button {
+            visibility: hidden;
+          }
+          .hide-various-text-and-buttons .atvwebplayersdk-fastseekforward-button {
+            visibility: hidden;
+          }
+          .atvwebplayersdk-fastseekback-button.show {
+            visibility: visible;
+          }
+          .atvwebplayersdk-playpause-button.show {
+            visibility: visible;
+          }
+          .atvwebplayersdk-fastseekforward-button.show {
+            visibility: visible;
+          }
+        `;
+        addStyle(css, "hideCenterButtons");
+      }
+
+      let hideTimer = null;
+      centerOverlaysWrapper.addEventListener("mousemove", (e) => {
+        const playPauseButton = this.player.querySelector(
+          ".atvwebplayersdk-playpause-button"
+        );
+        const container = playPauseButton.parentNode.parentNode.parentNode;
+        const computedStyle = window.getComputedStyle(container);
+        if (parseFloat(computedStyle.marginTop) > 0) {
+          return;
+        }
+        if (!container) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          container.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            container.classList.remove("show");
+          }, 300);
+        } else {
+          container.classList.remove("show");
+        }
+      });
+    };
+
+    const fnList = [
+      hideTitle,
+      hideEpisodeTitle,
+      hideVariousButtonsInTopRight,
+      hideSeekBar,
+      hidePlaybackTime,
+      hideCenterButtons,
+    ];
+    for (const fn of fnList) {
+      try {
+        fn();
+      } catch (e) {
+        console.log(e);
+      }
+    }
   }
 
   forcePlayNextEpisode(options = getDefaultOptions()) {
