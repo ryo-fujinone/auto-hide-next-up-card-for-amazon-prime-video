@@ -2367,8 +2367,6 @@ const runXhook = () => {
           console.log(e);
         }
       }
-
-      return;
     }
 
     static init(options) {
@@ -2543,7 +2541,6 @@ const runXhook = () => {
             ".atvwebplayersdk-timeindicator-text"
           );
           // If an ad is played, the timeindicator is removed/regenerated.
-          //
           if (!timeindicator) {
             targetElement.remove();
             targetElement = null;
