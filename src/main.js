@@ -27,6 +27,7 @@ const getDefaultOptions = () => {
     hideCenterButtons: false,
     hideNextEpisodeButton: false,
     tweakHideSkipIntroButton: false,
+    tweakShowVideoResolutionInfo: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -496,9 +497,12 @@ const createOptionMessages = () => {
     hideSeekBar: "シークバーを非表示にする",
     hideCenterButtons: "中央のボタンを非表示にする",
     hideNextEpisodeButton: "次のエピソードボタンを非表示にする",
-    tweakHideSkipIntroButton: "イントロスキップボタンの非表示機能の調整",
+    tweakHideSkipIntroButton: "イントロスキップボタンの非表示機能を調整する",
     tweakHideSkipIntroButton_Tooltip: `「オーバーレイ表示が有効な時はイントロスキップボタンを表示する」が有効になっている場合の挙動を調整します。
       Ctrl/Shiftキーを押しながらマウスを操作している間のみ、イントロスキップボタンが表示状態になります。`,
+    tweakShowVideoResolutionInfo: "動画の解像度を表示する機能を調整する",
+    tweakShowVideoResolutionInfo_Tooltip: `「左下に動画の解像度を表示する」が有効になっている場合の挙動を調整します。
+      Ctrl/Shiftキーを押しながらマウスを操作している間のみ、解像度が表示状態になります。`,
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -602,6 +606,9 @@ const createOptionMessages = () => {
     tweakHideSkipIntroButton: "Tweak the feature to hide skip intro button",
     tweakHideSkipIntroButton_Tooltip: `Tweaks the behavior when [Show skip intro button when overlay display is enabled] is enabled.
       The intro skip button will only be shown while you are operating the mouse with the Ctrl/Shift keys pressed.`,
+    tweakShowVideoResolutionInfo: "Tweak the feature to show video resolution",
+    tweakShowVideoResolutionInfo_Tooltip: `Tweaks the behavior when [Show video resolution in bottom left] is enabled.
+      The video resolution will only be shown while you are operating the mouse with the Ctrl/Shift keys pressed.`,
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -963,6 +970,29 @@ const createOptionDialog = async (scriptVersion) => {
                                   } />
                                   <p>${messages.tweakHideSkipIntroButton}</p>
                               </label>
+                              <p class="nextup-ext-opt-dialog-tooltip" title="${messages.tweakHideSkipIntroButton_Tooltip.replaceAll(
+                                regexForMultiineTooltips,
+                                ""
+                              )}" data-msg-id="tweakHideSkipIntroButton"></p>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="tweak-show-video-resolution-info" name="tweak-show-video-resolution-info" ${
+                                    options.tweakShowVideoResolutionInfo
+                                      ? "checked"
+                                      : ""
+                                  } />
+                                  <p>${
+                                    messages.tweakShowVideoResolutionInfo
+                                  }</p>
+                              </label>
+                              <p class="nextup-ext-opt-dialog-tooltip" title="${messages.tweakShowVideoResolutionInfo_Tooltip.replaceAll(
+                                regexForMultiineTooltips,
+                                ""
+                              )}" data-msg-id="tweakShowVideoResolutionInfo"></p>
                           </div>
                         </li>
                       </ul>
@@ -1472,6 +1502,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "tweak-hide-skip-intro-button":
           await saveOptions({ tweakHideSkipIntroButton: e.target.checked });
+          break;
+        case "tweak-show-video-resolution-info":
+          await saveOptions({ tweakShowVideoResolutionInfo: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3895,6 +3928,7 @@ class ElementController {
       options.hideCenterButtons,
       options.hideNextEpisodeButton,
       options.tweakHideSkipIntroButton,
+      options.tweakShowVideoResolutionInfo,
     ];
     const shouldRun = relatedOptions.some((opt) => opt);
     if (!shouldRun) {
@@ -4269,6 +4303,48 @@ class ElementController {
       });
     };
 
+    const tweakShowVideoResolutionInfo = () => {
+      if (
+        !options.showVideoResolution_xhook ||
+        !options.tweakShowVideoResolutionInfo
+      ) {
+        return;
+      }
+
+      if (!document.querySelector("#ext-hideVideoResolutionInfo")) {
+        const css = `
+          .hide-various-text-and-buttons .nextup-ext-resolution-info {
+            visibility: hidden;
+          }
+          .nextup-ext-resolution-info.show {
+            visibility: visible;
+          }
+        `;
+        addStyle(css, "ext-hideVideoResolutionInfo");
+      }
+
+      let hideTimer = null;
+      this.player.addEventListener("mousemove", (e) => {
+        const resolutionInfo = this.player.querySelector(
+          ".nextup-ext-resolution-info"
+        );
+        if (!resolutionInfo) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          resolutionInfo.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            resolutionInfo.classList.remove("show");
+          }, 300);
+        } else {
+          resolutionInfo.classList.remove("show");
+        }
+      });
+    };
+
     const fnList = [
       hideTitle,
       hideEpisodeTitle,
@@ -4278,6 +4354,7 @@ class ElementController {
       hideCenterButtons,
       hideNextEpisodeButton,
       tweakHideSkipIntroButton,
+      tweakShowVideoResolutionInfo,
     ];
     for (const fn of fnList) {
       try {
