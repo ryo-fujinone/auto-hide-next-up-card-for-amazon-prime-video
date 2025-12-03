@@ -4279,7 +4279,7 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideSkipIntroButton")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-skipelement-button {
+          .atvwebplayersdk-skipelement-button {
             visibility: hidden;
           }
           .atvwebplayersdk-skipelement-button.show {
