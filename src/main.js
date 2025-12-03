@@ -508,7 +508,8 @@ const createOptionMessages = () => {
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
       ライブ配信で動作確認が取れている機能は以下です。
       - オーバーレイ表示が有効な時に暗くならないようにする
-      - 中央のボタン（再生/停止、戻る、進む）を下部に移動する`,
+      - 中央のボタン（再生/停止、戻る、進む）を下部に移動する
+      - 各種テキストやボタンを非表示にする`,
     enableShortcutKey:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
@@ -614,7 +615,8 @@ const createOptionMessages = () => {
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
       The following features have been confirmed to work with LiveTV.
       - Prevents darkening when overlay display is enabled
-      - Move the center buttons(Play/Pause, Back and Forward) to the bottom`,
+      - Move the center buttons(Play/Pause, Back and Forward) to the bottom
+      - Hide various text and buttons`,
     enableShortcutKey:
       "Enable shortcut key to open the options dialog during video playback",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
