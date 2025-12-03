@@ -3129,6 +3129,14 @@ class ElementController {
         const optDialog = getOptionDialog();
         optDialog.showModal();
       });
+
+      new MutationObserver((_, observer2) => {
+        if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
+          return;
+        }
+        observer2.disconnect();
+        this.createOptionBtn();
+      }).observe(btnsContainer, { ...observeConfig, attributes: true });
     }).observe(this.player, { ...observeConfig, attributes: true });
   }
 
