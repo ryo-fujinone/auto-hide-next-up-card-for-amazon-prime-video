@@ -26,6 +26,7 @@ const getDefaultOptions = () => {
     hidePlaybackTime: false,
     hideCenterButtons: false,
     hideNextEpisodeButton: false,
+    tweakHideSkipIntroButton: false,
     useOnLiveTv: false,
     shortcutKey: {
       ctrl: false,
@@ -486,7 +487,7 @@ const createOptionMessages = () => {
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     hideVariousTextAndButtons: "各種テキストやボタンを非表示にする",
-    hideVariousTextAndButtons_Tooltip: `Ctrlキー或いはShiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
+    hideVariousTextAndButtons_Tooltip: `Ctrl/Shiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
       右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
     hideTitle: "タイトルを非表示にする",
     hideEpisodeTitle: "エピソード名を非表示にする",
@@ -495,6 +496,9 @@ const createOptionMessages = () => {
     hideSeekBar: "シークバーを非表示にする",
     hideCenterButtons: "中央のボタンを非表示にする",
     hideNextEpisodeButton: "次のエピソードボタンを非表示にする",
+    tweakHideSkipIntroButton: "イントロスキップボタンの非表示機能の調整",
+    tweakHideSkipIntroButton_Tooltip: `「オーバーレイ表示が有効な時はイントロスキップボタンを表示する」が有効になっている場合の挙動を調整します。
+      Ctrl/Shiftキーを押しながらマウスを操作している間のみ、イントロスキップボタンが表示状態になります。`,
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -595,6 +599,9 @@ const createOptionMessages = () => {
     hidePlaybackTime: "Hide playback time",
     hideCenterButtons: "Hide center buttons",
     hideNextEpisodeButton: "Hide next episode button",
+    tweakHideSkipIntroButton: "Tweak the feature to hide skip intro button",
+    tweakHideSkipIntroButton_Tooltip: `Tweaks the behavior when [Show skip intro button when overlay display is enabled] is enabled.
+      The intro skip button will only be shown while you are operating the mouse with the Ctrl/Shift keys pressed.`,
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -942,6 +949,19 @@ const createOptionDialog = async (scriptVersion) => {
                                       : ""
                                   } />
                                   <p>${messages.hideNextEpisodeButton}</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="tweak-hide-skip-intro-button" name="tweak-hide-skip-intro-button" ${
+                                    options.tweakHideSkipIntroButton
+                                      ? "checked"
+                                      : ""
+                                  } />
+                                  <p>${messages.tweakHideSkipIntroButton}</p>
                               </label>
                           </div>
                         </li>
@@ -1449,6 +1469,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "hide-next-episode-button":
           await saveOptions({ hideNextEpisodeButton: e.target.checked });
+          break;
+        case "tweak-hide-skip-intro-button":
+          await saveOptions({ tweakHideSkipIntroButton: e.target.checked });
           break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
@@ -3251,7 +3274,7 @@ class ElementController {
   }
 
   hideSkipIntroBtn(options = getDefaultOptions()) {
-    if (!options.hideSkipIntroBtn) {
+    if (!options.hideSkipIntroBtn || options.tweakHideSkipIntroButton) {
       return;
     }
 
@@ -3871,6 +3894,7 @@ class ElementController {
       options.hidePlaybackTime,
       options.hideCenterButtons,
       options.hideNextEpisodeButton,
+      options.tweakHideSkipIntroButton,
     ];
     const shouldRun = relatedOptions.some((opt) => opt);
     if (!shouldRun) {
@@ -4206,6 +4230,45 @@ class ElementController {
       });
     };
 
+    const tweakHideSkipIntroButton = () => {
+      if (!options.tweakHideSkipIntroButton) {
+        return;
+      }
+
+      if (!document.querySelector("#ext-hideSkipIntroButton")) {
+        const css = `
+          .hide-various-text-and-buttons .atvwebplayersdk-skipelement-button {
+            visibility: hidden;
+          }
+          .atvwebplayersdk-skipelement-button.show {
+            visibility: visible;
+          }
+        `;
+        addStyle(css, "ext-hideSkipIntroButton");
+      }
+
+      let hideTimer = null;
+      this.player.addEventListener("mousemove", (e) => {
+        const skipIntroBtn = this.player.querySelector(
+          ".atvwebplayersdk-skipelement-button"
+        );
+        if (!skipIntroBtn) {
+          return;
+        }
+        if (e.ctrlKey || e.shiftKey) {
+          skipIntroBtn.classList.add("show");
+          if (hideTimer) {
+            clearTimeout(hideTimer);
+          }
+          hideTimer = setTimeout(() => {
+            skipIntroBtn.classList.remove("show");
+          }, 300);
+        } else {
+          skipIntroBtn.classList.remove("show");
+        }
+      });
+    };
+
     const fnList = [
       hideTitle,
       hideEpisodeTitle,
@@ -4214,6 +4277,7 @@ class ElementController {
       hidePlaybackTime,
       hideCenterButtons,
       hideNextEpisodeButton,
+      tweakHideSkipIntroButton,
     ];
     for (const fn of fnList) {
       try {
