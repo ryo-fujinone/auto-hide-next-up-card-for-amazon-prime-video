@@ -3908,8 +3908,8 @@ class ElementController {
         const height = parseFloat(elementComputedStyle.height);
         const newWidth = width * 0.65;
         const newHeight = height * 0.65;
-        element.style.width = newWidth + "px";
-        element.style.height = newHeight + "px";
+        element.style.setProperty("width", newWidth + "px", "important");
+        element.style.setProperty("height", newHeight + "px", "important");
       }
     };
 
