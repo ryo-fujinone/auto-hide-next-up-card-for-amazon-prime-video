@@ -498,7 +498,7 @@ const createOptionMessages = () => {
     hideCenterButtons: "中央のボタンを非表示にする",
     hideNextEpisodeButton: "次のエピソードボタンを非表示にする",
     tweakHideSkipIntroButton: "イントロスキップボタンの非表示機能を調整する",
-    tweakHideSkipIntroButton_Tooltip: `「オーバーレイ表示が有効な時はイントロスキップボタンを表示する」が有効になっている場合の挙動を調整します。
+    tweakHideSkipIntroButton_Tooltip: `「イントロスキップボタンを非表示にする」が有効になっている場合の挙動を調整します。
       Ctrl/Shiftキーを押しながらマウスを操作している間のみ、イントロスキップボタンが表示状態になります。`,
     tweakShowVideoResolutionInfo: "動画の解像度を表示する機能を調整する",
     tweakShowVideoResolutionInfo_Tooltip: `「左下に動画の解像度を表示する」が有効になっている場合の挙動を調整します。
@@ -605,7 +605,7 @@ const createOptionMessages = () => {
     hideCenterButtons: "Hide center buttons",
     hideNextEpisodeButton: "Hide next episode button",
     tweakHideSkipIntroButton: "Tweak the feature to hide skip intro button",
-    tweakHideSkipIntroButton_Tooltip: `Tweaks the behavior when [Show skip intro button when overlay display is enabled] is enabled.
+    tweakHideSkipIntroButton_Tooltip: `Tweaks the behavior when [Hide skip intro button] is enabled.
       The intro skip button will only be shown while you are operating the mouse with the Ctrl/Shift keys pressed.`,
     tweakShowVideoResolutionInfo: "Tweak the feature to show video resolution",
     tweakShowVideoResolutionInfo_Tooltip: `Tweaks the behavior when [Show video resolution in bottom left] is enabled.
@@ -4275,7 +4275,7 @@ class ElementController {
     };
 
     const tweakHideSkipIntroButton = () => {
-      if (!options.tweakHideSkipIntroButton) {
+      if (!options.hideSkipIntroBtn || !options.tweakHideSkipIntroButton) {
         return;
       }
 
