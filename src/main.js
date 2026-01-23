@@ -3841,7 +3841,7 @@ class ElementController {
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
           .nextup-ext-opt-btn img {
-            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black) !important;
           }
           .atvwebplayersdk-fastseekback-button img,
           .atvwebplayersdk-playpause-button img,
