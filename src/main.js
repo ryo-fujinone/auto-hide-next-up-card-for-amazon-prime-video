@@ -3774,17 +3774,20 @@ class ElementController {
       if (!document.querySelector("#ext-addOutlinesForTexts")) {
         const cssForText = `
           .atvwebplayersdk-title-text {
-            -webkit-text-stroke: 0.015em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.05em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 3px black;
           }
           .atvwebplayersdk-subtitle-text {
-            -webkit-text-stroke: 0.015em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.05em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 3px black;
           }
           .atvwebplayersdk-timeindicator-text {
-            -webkit-text-stroke: 0.025em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
@@ -3794,31 +3797,36 @@ class ElementController {
             text-shadow: 1px 1px 2px black;
           }
           .atvwebplayersdk-nexttitle-button div:not(:has(img)) {
-            -webkit-text-stroke: 0.025em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
           .atvwebplayersdk-hideabletopbuttons-container button + div div,
           .atvwebplayersdk-playerclose-button + div div {
-            -webkit-text-stroke: 0.015em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
           /* Next up*/
           .atvwebplayersdk-nextupcard-title, .atvwebplayersdk-nextupcardhide-button {
-            -webkit-text-stroke: 0.025em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
           /* Reactions */
           .atvwebplayersdk-player-container div:has(> div > button:nth-child(2):last-child):has(div > button div[style*='center center no-repeat']) div:not([style]):not(:has([style])) {
-            -webkit-text-stroke: 0.025em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
           /* Recommendations */
           .atvwebplayersdk-BelowFold span, .atvwebplayersdk-BelowFold div {
-            -webkit-text-stroke: 0.025em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
@@ -3830,18 +3838,18 @@ class ElementController {
         const cssForImg = `
           .atvwebplayersdk-hideabletopbuttons-container button img,
           .atvwebplayersdk-playerclose-button img {
-            filter: drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black);
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
           .nextup-ext-opt-btn img {
-            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black) drop-shadow(0 0 0.025em black) !important;
+            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
           .atvwebplayersdk-fastseekback-button img,
           .atvwebplayersdk-playpause-button img,
           .atvwebplayersdk-fastseekforward-button img {
-            filter: drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black);
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
           .atvwebplayersdk-nexttitle-button img {
-            filter: drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black) drop-shadow(0 0 0.03em black);
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
         `;
         addStyle(cssForImg, "ext-addOutlinesForIcons");
@@ -3854,7 +3862,8 @@ class ElementController {
         if (!document.querySelector("#ext-preventsDarkening_ResolutionInfo")) {
           const cssForResolutionInfo = `
           .nextup-ext-resolution-info {
-            -webkit-text-stroke: 0.025em black;
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
