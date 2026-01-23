@@ -4223,27 +4223,32 @@ class ElementController {
 
       let hideTimer = null;
       this.player.addEventListener("mousemove", (e) => {
-        const playPauseButton = this.player.querySelector(
-          ".atvwebplayersdk-playpause-button"
+        const centerButtons = this.player.querySelectorAll(
+          ".atvwebplayersdk-fastseekback-button, .atvwebplayersdk-playpause-button, .atvwebplayersdk-fastseekforward-button"
         );
-        const container = playPauseButton.parentNode.parentNode.parentNode;
-        const computedStyle = window.getComputedStyle(container);
-        if (parseFloat(computedStyle.marginTop) > 0) {
-          return;
-        }
-        if (!container) {
+        if (!centerButtons.length && centerButtons.length > 3) {
           return;
         }
         if (e.ctrlKey || e.shiftKey) {
-          container.classList.add("show");
+          if (!centerButtons[0].classList.contains("show")) {
+            for (const btn of centerButtons) {
+              btn.classList.add("show");
+            }
+          }
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            container.classList.remove("show");
+            for (const btn of centerButtons) {
+              btn.classList.remove("show");
+            }
           }, 300);
         } else {
-          container.classList.remove("show");
+          if (centerButtons[0].classList.contains("show")) {
+            for (const btn of centerButtons) {
+              btn.classList.remove("show");
+            }
+          }
         }
       });
     };
