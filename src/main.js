@@ -45,7 +45,7 @@ const getDefaultOptions = () => {
     disableRecommendations_xhook: false,
     disableReactions_xhook: false,
     forcePlayNextEpisode_xhook: false,
-    scriptVersion: "2.15.1",
+    scriptVersion: "2.15.2",
   };
 };
 
