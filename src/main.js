@@ -519,11 +519,13 @@ const createOptionMessages = () => {
       広告ブロック系の拡張機能との併用は避けることを推奨します。`,
     forceHighestResolution: "強制的に最高画質で再生する",
     forceHighestResolution_Tooltip: `プライムビデオは通信状況やウィンドウサイズなどを基に画質を動的に制御します。
-      この機能はそのような動的制御の煩わしさに対処するための機能です。\n
-      HD画質（720p/1080p）での再生はWidevine L1が使用できる環境でのみ可能です。
-      Widevine L1が使用できない端末・ブラウザでは標準画質に制限されます。
-      また、ユーザーエージェントを基にしてWindows/macOS以外の環境では標準画質に制限されるようです。
-      Widevine L1が使用可能なAndroid端末などのブラウザ上で再生する場合、ユーザーエージェントを変更する拡張機能/ユーザースクリプトを使用することでHD画質で再生できる場合があります。`,
+      この機能は、最高画質を強制するために、マニフェスト（MPD）から最高画質以外の情報を除去します。\n
+      HD画質（720p/1080p）で再生できるかどうかは、OS・ブラウザ・端末によって変わります。
+      ユーザーエージェント要件とWidevine要件があると思われ、両方が満たされない場合、標準画質に制限されるようです。
+      WindowsとmacOSの場合、Widevine要件（VMP）を満たすブラウザでのみHD画質で再生可能だと思われます。
+      （プライムビデオはChrome、Firefox、Edge、Safari、Operaを公式にサポートし、その他Brave、VivaldiでもHDで再生可能）
+      Androidのブラウザを使用する場合、ユーザーエージェントをWindowsかmacOSに偽装することでHD画質で再生できる可能性があります。
+      Linuxの場合、HD画質での再生に必要なWidevine要件を満たすことはできません。`,
     forceHighestResolutionLenient:
       "実験的: 最高品質ではない最高解像度での再生を許容する",
     forceHighestResolutionLenient_Tooltip: `「強制的に最高画質で再生する」機能でエラーが発生する場合に有効にすることで、問題が解決する可能性があります。\n
@@ -625,12 +627,14 @@ const createOptionMessages = () => {
     monitorNetworkActivity_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
       It is not recommended to use in conjunction with ad-blocking extensions.`,
     forceHighestResolution: "Force playback at highest resolution",
-    forceHighestResolution_Tooltip: `Prime Video dynamically controls video resolution based on network conditions and window size.
-      This feature is intended to address such dynamic control hassles.\n
-      Playback in HD quality (720p/1080p) is only possible in environments where Widevine L1 is available.
-      On devices and browsers that cannot use Widevine L1, the resolution will be limited to standard definition.
-      It also appears to be limited to standard definition in non-Windows/macOS environments based on user agent.
-      When playing on a browser in environments such as Android devices where Widevine L1 is available, you may be able to play the video in HD quality by using an extension/user script that changes the user agent.`,
+    forceHighestResolution_Tooltip: `Prime Video dynamically controls video quality based on factors like network conditions and window size.
+      This feature removes information other than the highest quality from the manifest (MPD) to enforce the highest possible quality.\n
+      Whether HD quality (720p/1080p) playback is possible varies by OS, browser, and device.
+      It appears there are user agent requirements and Widevine requirements; if both are not met, playback may be restricted to standard quality.
+      For Windows and macOS, HD playback seems only possible in browsers meeting the Widevine requirements (VMP).
+      (Prime Video officially supports Chrome, Firefox, Edge, Safari, and Opera; Brave and Vivaldi also support HD playback)
+      When using an Android browser, spoofing the user agent to Windows or macOS may enable HD playback.
+      Linux cannot meet the Widevine requirements necessary for HD playback.`,
     forceHighestResolutionLenient:
       "Experimental: Allow playback of videos that are not of the highest quality",
     forceHighestResolutionLenient_Tooltip: `Enabling this option when an error occurs while using the “Force playback at highest resolution” feature may resolve the issue. \n
