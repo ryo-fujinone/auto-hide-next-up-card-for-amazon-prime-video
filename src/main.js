@@ -4226,7 +4226,7 @@ class ElementController {
         const centerButtons = this.player.querySelectorAll(
           ".atvwebplayersdk-fastseekback-button, .atvwebplayersdk-playpause-button, .atvwebplayersdk-fastseekforward-button"
         );
-        if (!centerButtons.length && centerButtons.length > 3) {
+        if (!centerButtons.length || centerButtons.length > 3) {
           return;
         }
         if (e.ctrlKey || e.shiftKey) {
