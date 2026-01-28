@@ -1,4 +1,4 @@
-const observeConfig = Object.freeze({ childList: true, subtree: true });
+const OBSERVER_CONFIG = Object.freeze({ childList: true, subtree: true });
 
 const getDefaultOptions = () => {
   return {
@@ -1688,7 +1688,7 @@ const createOptionBtnOnNavbar = () => {
         const detectNavbarRemove = new MutationObserver(
           this.detectNavbarRemove
         );
-        detectNavbarRemove.observe(document, observeConfig);
+        detectNavbarRemove.observe(document, OBSERVER_CONFIG);
         setTimeout(() => {
           detectNavbarRemove.disconnect();
         }, 10000);
@@ -1813,7 +1813,7 @@ const createOptionBtnOnNavbar = () => {
       this._create();
       if (!document.querySelector("#pv-nav-option-btn-container")) {
         new MutationObserver(this.create).observe(document, {
-          ...observeConfig,
+          ...OBSERVER_CONFIG,
           attributes: true,
         });
       }
@@ -3167,8 +3167,8 @@ class ElementController {
         }
         observer2.disconnect();
         this.createOptionBtn();
-      }).observe(btnsContainer, { ...observeConfig, attributes: true });
-    }).observe(this.player, { ...observeConfig, attributes: true });
+      }).observe(btnsContainer, { ...OBSERVER_CONFIG, attributes: true });
+    }).observe(this.player, { ...OBSERVER_CONFIG, attributes: true });
   }
 
   // for LiveTV
@@ -3216,10 +3216,10 @@ class ElementController {
       }
       observer.disconnect();
       videoElementsObserver.observe(videoWrapper, {
-        ...observeConfig,
+        ...OBSERVER_CONFIG,
         attributes: true,
       });
-    }).observe(this.player, observeConfig);
+    }).observe(this.player, OBSERVER_CONFIG);
   }
 
   // Preparation for detecting the display state of the overlay.
@@ -3342,7 +3342,7 @@ class ElementController {
       setTimeout(() => {
         canSkip = true;
       }, 3000);
-    }).observe(this.player, { ...observeConfig, characterData: true });
+    }).observe(this.player, { ...OBSERVER_CONFIG, characterData: true });
   }
 
   hideSkipIntroBtn(options = getDefaultOptions()) {
@@ -3383,7 +3383,7 @@ class ElementController {
       } else {
         centerOverlaysWrapper.dataset.existsSkipIntroBtn = true;
       }
-    }).observe(playerContainer, observeConfig);
+    }).observe(playerContainer, OBSERVER_CONFIG);
 
     new MutationObserver((_) => {
       const skipIntroBtn = this.player.querySelector(
@@ -3526,7 +3526,7 @@ class ElementController {
             }
           }
         }
-      }).observe(wrapper, observeConfig);
+      }).observe(wrapper, OBSERVER_CONFIG);
 
       this.preventsDarkeningInConjunctionWithNextup(options);
 
@@ -3545,7 +3545,7 @@ class ElementController {
           } else {
             centerOverlaysWrapper.dataset.existsNextup = true;
           }
-        }).observe(wrapper, observeConfig);
+        }).observe(wrapper, OBSERVER_CONFIG);
 
         new MutationObserver((_) => {
           const img = wrapper.querySelector("img");
@@ -3563,7 +3563,7 @@ class ElementController {
           attributes: true,
         });
       }
-    }).observe(this.player, { ...observeConfig, attributes: true });
+    }).observe(this.player, { ...OBSERVER_CONFIG, attributes: true });
   }
 
   hideReactions(options = getDefaultOptions()) {
@@ -3609,7 +3609,7 @@ class ElementController {
         } else {
           centerOverlaysWrapper.dataset.existsReactions = true;
         }
-      }).observe(reactionsWrapper, observeConfig);
+      }).observe(reactionsWrapper, OBSERVER_CONFIG);
 
       const changeReactionsStyle = (_) => {
         const reactionsBtns = reactionsWrapper.querySelectorAll("button");
@@ -3632,7 +3632,7 @@ class ElementController {
           attributes: true,
         }
       );
-    }).observe(this.player, observeConfig);
+    }).observe(this.player, OBSERVER_CONFIG);
   }
 
   hideRecommendations(options = getDefaultOptions()) {
@@ -3676,7 +3676,7 @@ class ElementController {
       checkJumpLiveButtonStyles();
       new MutationObserver((_) => {
         checkJumpLiveButtonStyles();
-      }).observe(optionsWrapper, { ...observeConfig, attributes: true });
+      }).observe(optionsWrapper, { ...OBSERVER_CONFIG, attributes: true });
     }
 
     // Monitor whether BelowFold has been opened by the user
@@ -3750,7 +3750,7 @@ class ElementController {
           console.log(e);
         }
       }
-    }).observe(targetContainer, observeConfig);
+    }).observe(targetContainer, OBSERVER_CONFIG);
   }
 
   hideRatingText(options = getDefaultOptions()) {
@@ -4526,18 +4526,18 @@ class ElementController {
       observer.disconnect();
 
       titleObserver.observe(this.player, {
-        ...observeConfig,
+        ...OBSERVER_CONFIG,
         attributes: true,
       });
 
       videoInfoObserver.observe(infobarContainer, {
-        ...observeConfig,
+        ...OBSERVER_CONFIG,
         attributes: true,
       });
     });
 
     infobarObserver.observe(this.player, {
-      ...observeConfig,
+      ...OBSERVER_CONFIG,
       attributes: true,
     });
 
@@ -4641,7 +4641,7 @@ class ElementController {
     });
 
     closeBtnObserver.observe(this.player, {
-      ...observeConfig,
+      ...OBSERVER_CONFIG,
       attributes: true,
     });
 
@@ -4871,9 +4871,9 @@ const main = async () => {
         } catch (e) {
           console.log(e);
         }
-      }).observe(player, observeConfig);
+      }).observe(player, OBSERVER_CONFIG);
     });
-  }).observe(document, observeConfig);
+  }).observe(document, OBSERVER_CONFIG);
 };
 
 main();
