@@ -19,6 +19,7 @@ const getDefaultOptions = () => {
     addOutlinesForTextsAndIcons: false,
     addShadowsToSeekBar: false,
     moveCenterButtonsToBottom: false,
+    hideXRay: false,
     hideTitle: false,
     hideEpisodeTitle: false,
     hideVariousButtonsInTopRight: false,
@@ -487,6 +488,10 @@ const createOptionMessages = () => {
     addShadowsToSeekBar: "シークバーに影をつける",
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
+    hideXRay: "実験的: X-Rayを非表示にする（提供地域のみ）",
+    hideXRay_Tooltip: `X-Rayは一部の地域で提供されている機能です。
+      日本のプライムビデオでは通常表示されないため、日本ではこの設定の影響はありません。
+      この拡張機能は日本のプライムビデオでのみテストされているため、この機能は実験的です。`,
     hideVariousTextAndButtons: "各種テキストやボタンを非表示にする",
     hideVariousTextAndButtons_Tooltip: `Ctrl/Shiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
       右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
@@ -596,6 +601,10 @@ const createOptionMessages = () => {
     addShadowsToSeekBar: "Add shadows to the seek bar",
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
+    hideXRay: "Experimental: Hide X-Ray (available in supported regions)",
+    hideXRay_Tooltip: `X-Ray is only available in some regions.
+      It is not normally displayed on Prime Video Japan, so this setting has no effect in Japan.
+      This extension has only been tested on Prime Video Japan, so this feature is experimental.`,
     hideVariousTextAndButtons: "Hide various text and buttons",
     hideVariousTextAndButtons_Tooltip: `While holding down the Ctrl or Shift key and using the mouse, hidden elements will be displayed.
       The various buttons in the top right remain clickable even when hidden.`,
@@ -868,6 +877,19 @@ const createOptionDialog = async (scriptVersion) => {
                   </label>
               </div>
 
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label>
+                      <input type="checkbox" id="hide-xray" name="hide-xray" ${
+                        options.hideXRay ? "checked" : ""
+                      } />
+                      <p>${messages.hideXRay}</p>
+                  </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.hideXRay_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="hideXRay"></p>
+              </div>
+              
               <ul>
                   <li>
                       <div class="nextup-ext-opt-dialog-item-container">
@@ -1484,6 +1506,9 @@ const createOptionDialog = async (scriptVersion) => {
           break;
         case "move-center-buttons-to-bottom":
           await saveOptions({ moveCenterButtonsToBottom: e.target.checked });
+          break;
+        case "hide-xray":
+          await saveOptions({ hideXRay: e.target.checked });
           break;
         case "hide-title":
           await saveOptions({ hideTitle: e.target.checked });
@@ -3941,6 +3966,20 @@ class ElementController {
     });
   }
 
+  hideXRay(options = getDefaultOptions()) {
+    if (!options.hideXRay) {
+      return;
+    }
+    if (!document.querySelector("#ext-hideXRay")) {
+      const css = `
+        .xrayQuickView {
+          display: none !important;
+        }
+      `;
+      addStyle(css, "ext-hideXRay");
+    }
+  }
+
   hideVariousTextAndButtons(options = getDefaultOptions()) {
     const relatedOptions = [
       options.hideTitle,
@@ -4811,6 +4850,12 @@ const main = async () => {
 
         try {
           controller.moveCenterButtonsToBottom(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.hideXRay(options);
         } catch (e) {
           console.log(e);
         }
