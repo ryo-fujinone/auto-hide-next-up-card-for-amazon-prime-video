@@ -2,6 +2,7 @@ const OBSERVER_CONFIG = Object.freeze({ childList: true, subtree: true });
 
 const getDefaultOptions = () => {
   return {
+    _v: null,
     skipAds: true,
     hideSkipIntroBtn: true,
     showSkipIntroBtnOnOverlay: false,
@@ -200,7 +201,7 @@ const saveOptions = (_newOptions = {}, shouldReplace = false) => {
   return new Promise(async (resolve) => {
     let newOptions;
     if (shouldReplace) {
-      // This pattern is required for the updateOptionVersion function
+      // This pattern is required for the OptionsSchemaManager.ensureOptionsUpToDate()
       newOptions = _newOptions;
     } else {
       // Normal pattern
@@ -220,33 +221,100 @@ const saveOptions = (_newOptions = {}, shouldReplace = false) => {
   });
 };
 
-const updateOptionVersion = async (scriptInfo) => {
-  const options = await getOptions();
-  if (options.scriptVersion === scriptInfo.scriptVersion) {
-    // Developers can force updates to option values.
-    const key = "nextup-ext-force-update-option-version";
-    if (localStorage.getItem(key) !== "true") {
-      return;
-    }
-    console.log(`%c${key}`, "color:yellow; font-weight:bold;");
+const minGreaterThan = (arr, n) => {
+  let best = null;
+  for (const x of arr) {
+    if (x > n && (best === null || x < best)) best = x;
+  }
+  return best;
+};
+
+const deepMergeDefaults = (defaults = {}, target = {}) => {
+  if (!target) {
+    return structuredClone(defaults);
   }
 
-  const defaultOptions = getDefaultOptions();
-  const mergedOptions = {
-    ...defaultOptions,
-    ...options,
-    scriptVersion: scriptInfo.scriptVersion,
-  };
-  const mergedOptionsKeys = Object.keys(mergedOptions);
-  const newOptions = mergedOptionsKeys.reduce((obj, key) => {
-    if (Object.hasOwn(defaultOptions, key)) {
-      obj[key] = mergedOptions[key];
-    }
-    return obj;
-  }, {});
+  // If either is not an object, returns target
+  const isObj = (val) => val && typeof val === "object";
+  if (!isObj(defaults) || !isObj(target)) {
+    return target;
+  }
 
-  await saveOptions(newOptions, true);
+  // If either is an array, returns target
+  if (Array.isArray(defaults) || Array.isArray(target)) {
+    return target;
+  }
+
+  const out = structuredClone(defaults);
+
+  // Recursively merge keys in 'defaults'
+  for (const key of Object.keys(defaults)) {
+    if (key in target) {
+      out[key] = deepMergeDefaults(defaults[key], target[key]);
+    }
+  }
+
+  // // Keeps values ​​for additional keys not in 'defaults'.
+  // for (const key of Object.keys(target)) {
+  //   if (!(key in out)) {
+  //     out[key] = target[key];
+  //   }
+  // }
+
+  return out;
 };
+
+class OptionsSchemaManager {
+  static #migrations = [
+    null,
+    // (stored) => {
+    //   const out = structuredClone(stored ?? {});
+    //   return out;
+    // },
+  ];
+
+  static #latestSchemaVersion = this.#migrations.length;
+
+  static get latestSchemaVersion() {
+    return this.#latestSchemaVersion;
+  }
+
+  static #upgradeToLatest(stored) {
+    let s = structuredClone(stored ?? {});
+    let v = Number.isInteger(s._v) ? s._v : 1;
+
+    // Developers can force updates to option values
+    const key = "nextup-ext-force-update-option-schema";
+    if (localStorage.getItem(key) === "true") {
+      v = 1;
+      s._v = v;
+      console.log(`%c${key}`, "color:yellow; font-weight:bold;");
+    }
+
+    for (let cur = v; cur < this.latestSchemaVersion; cur++) {
+      const migrate = this.#migrations[cur];
+      if (typeof migrate !== "function") {
+        throw new Error(`Missing migration v${cur} -> v${cur + 1}`);
+      }
+      s = migrate(s);
+      s._v = cur + 1;
+    }
+    return s;
+  }
+
+  static async ensureOptionsUpToDate() {
+    const options = await getOptions();
+    const upgraded = this.#upgradeToLatest(options);
+    const merged = deepMergeDefaults(getDefaultOptions(), upgraded);
+
+    const hasChanged = JSON.stringify(options) !== JSON.stringify(merged);
+    if (hasChanged) {
+      console.log("orig", options);
+      console.log("new", merged);
+      await saveOptions(merged, true);
+    }
+  }
+}
 
 const migrateStorage = async () => {
   if (!ScriptInfo.isChromeExtension()) {
@@ -4718,7 +4786,11 @@ const main = async () => {
   }
 
   const scriptInfo = ScriptInfo.get();
-  await updateOptionVersion(scriptInfo);
+  try {
+    await OptionsSchemaManager.ensureOptionsUpToDate();
+  } catch (e) {
+    console.log(e);
+  }
 
   const options = await getOptions();
   const url = window.location.href;
