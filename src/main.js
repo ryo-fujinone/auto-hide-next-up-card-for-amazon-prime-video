@@ -221,14 +221,6 @@ const saveOptions = (_newOptions = {}, shouldReplace = false) => {
   });
 };
 
-const minGreaterThan = (arr, n) => {
-  let best = null;
-  for (const x of arr) {
-    if (x > n && (best === null || x < best)) best = x;
-  }
-  return best;
-};
-
 const deepMergeDefaults = (defaults = {}, target = {}) => {
   if (!target) {
     return structuredClone(defaults);
