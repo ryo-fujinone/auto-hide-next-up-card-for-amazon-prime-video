@@ -271,7 +271,7 @@ class OptionsSchemaManager {
     return this.#latestSchemaVersion;
   }
 
-  static #upgradeToLatest(stored) {
+  static #upgradeOptionsSchema(stored) {
     let s = structuredClone(stored ?? {});
     let v = Number.isInteger(s._v) ? s._v : 1;
 
@@ -296,7 +296,7 @@ class OptionsSchemaManager {
 
   static async ensureOptionsUpToDate() {
     const options = await getOptions();
-    const upgraded = this.#upgradeToLatest(options);
+    const upgraded = this.#upgradeOptionsSchema(options);
     const merged = deepMergeDefaults(getDefaultOptions(), upgraded);
 
     const hasChanged = JSON.stringify(options) !== JSON.stringify(merged);
