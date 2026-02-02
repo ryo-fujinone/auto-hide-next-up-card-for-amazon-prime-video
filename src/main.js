@@ -2,7 +2,8 @@ const OBSERVER_CONFIG = Object.freeze({ childList: true, subtree: true });
 
 const getDefaultOptions = () => {
   return {
-    _v: null,
+    _scriptVersion: "2.15.2",
+    _schemaVersion: null,
     skipAds: true,
     hideSkipIntroBtn: true,
     showSkipIntroBtnOnOverlay: false,
@@ -47,7 +48,6 @@ const getDefaultOptions = () => {
     disableRecommendations_xhook: false,
     disableReactions_xhook: false,
     forcePlayNextEpisode_xhook: false,
-    scriptVersion: "2.15.2",
   };
 };
 
@@ -91,7 +91,7 @@ class ScriptInfo {
     // unknown
     this.#info = {
       scriptType: "unknown",
-      scriptVersion: getDefaultOptions().scriptVersion,
+      scriptVersion: getDefaultOptions()._scriptVersion,
     };
     return this.#info;
   }
@@ -257,6 +257,8 @@ const deepMergeDefaults = (defaults = {}, target = {}) => {
 };
 
 class OptionsSchemaManager {
+  // To migrate values, add items (methods).
+  // migrations.length is _schemaVersion. Do not remove items from the code.
   static #migrations = [
     null,
     // (stored) => {
@@ -265,40 +267,49 @@ class OptionsSchemaManager {
     // },
   ];
 
-  static #latestSchemaVersion = this.#migrations.length;
-
-  static get latestSchemaVersion() {
-    return this.#latestSchemaVersion;
-  }
-
-  static #upgradeOptionsSchema(stored) {
+  static #upgradeOptionsSchema(stored, forceUpgrade = false) {
     let s = structuredClone(stored ?? {});
-    let v = Number.isInteger(s._v) ? s._v : 1;
-
-    // Developers can force updates to option values
-    const key = "nextup-ext-force-update-option-schema";
-    if (localStorage.getItem(key) === "true") {
+    let v = Number.isInteger(s._schemaVersion) ? s._schemaVersion : 1;
+    if (!Number.isInteger(s._schemaVersion) || forceUpgrade) {
+      s._schemaVersion = 1;
+    }
+    if (v > this.#migrations.length) {
       v = 1;
-      s._v = v;
-      console.log(`%c${key}`, "color:yellow; font-weight:bold;");
+      s._schemaVersion = 1;
     }
 
-    for (let cur = v; cur < this.latestSchemaVersion; cur++) {
+    for (let cur = v; cur < this.#migrations.length; cur++) {
       const migrate = this.#migrations[cur];
       if (typeof migrate !== "function") {
         throw new Error(`Missing migration v${cur} -> v${cur + 1}`);
       }
       s = migrate(s);
-      s._v = cur + 1;
+      s._schemaVersion = cur + 1;
     }
+
     return s;
   }
 
   static async ensureOptionsUpToDate() {
     const options = await getOptions();
-    const upgraded = this.#upgradeOptionsSchema(options);
+    const scriptInfo = ScriptInfo.get();
+    let forceUpgrade = false;
+    if (options._scriptVersion === scriptInfo.scriptVersion) {
+      // Developers can force upgrade of options
+      const key = "nextup-ext-force-upgrade-options";
+      if (localStorage.getItem(key) !== "true") {
+        return;
+      }
+      forceUpgrade = true;
+      console.log(`%c${key}`, "color:yellow; font-weight:bold;");
+    }
+
+    // When modifying the schema (structure), use this method to migrate values
+    const upgraded = this.#upgradeOptionsSchema(options, forceUpgrade);
+    // If value migration is not required, this method handles key addition/removal
     const merged = deepMergeDefaults(getDefaultOptions(), upgraded);
 
+    merged._scriptVersion = scriptInfo.scriptVersion;
     const hasChanged = JSON.stringify(options) !== JSON.stringify(merged);
     if (hasChanged) {
       console.log("orig", options);
@@ -740,7 +751,7 @@ const createOptionMessages = () => {
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
 
-const createOptionDialog = async (scriptVersion) => {
+const createOptionDialog = async () => {
   if (getOptionDialog()) {
     return;
   }
@@ -1277,7 +1288,7 @@ const createOptionDialog = async (scriptVersion) => {
           </section>
       </div>
 
-      <div class="nextup-ext-opt-dialog-version"><span>v${scriptVersion}</span></div>
+      <div class="nextup-ext-opt-dialog-version"><span>v${ScriptInfo.get().scriptVersion}</span></div>
   </div></dialog>
   `;
 
@@ -4777,7 +4788,6 @@ const main = async () => {
     console.log(e);
   }
 
-  const scriptInfo = ScriptInfo.get();
   try {
     await OptionsSchemaManager.ensureOptionsUpToDate();
   } catch (e) {
@@ -4829,7 +4839,7 @@ const main = async () => {
         }
 
         try {
-          await createOptionDialog(scriptInfo.scriptVersion);
+          await createOptionDialog();
         } catch (e) {
           console.log(e);
         }
