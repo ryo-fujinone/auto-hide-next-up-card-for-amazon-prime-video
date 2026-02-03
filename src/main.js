@@ -108,7 +108,7 @@ class ScriptInfo {
   }
 }
 
-// array of alphabets used to set shortcut keys.
+// Array of alphanumeric characters used for shortcut keys
 class CharStore {
   static #chars = [];
   static #codeStrs = [];
@@ -122,6 +122,9 @@ class CharStore {
       const char = String.fromCharCode(this.#startCode + i);
       this.#chars.push(char);
     });
+    [...Array(10)].forEach((_, i) => {
+      this.#chars.push(i);
+    });
     return this.#chars;
   }
 
@@ -129,8 +132,12 @@ class CharStore {
     if (this.#codeStrs.length) {
       return this.#codeStrs;
     }
-    this.getChars().forEach((c) => {
-      this.#codeStrs.push("Key" + c);
+    [...Array(26)].forEach((_, i) => {
+      const char = String.fromCharCode(this.#startCode + i);
+      this.#codeStrs.push("Key" + char);
+    });
+    [...Array(10)].forEach((_, i) => {
+      this.#codeStrs.push("Digit" + i);
     });
     return this.#codeStrs;
   }
@@ -438,7 +445,7 @@ class Dialog {
     const codeStrs = CharStore.getCodeStrs();
     const chars = CharStore.getChars();
     const char = chars[codeStrs.indexOf(options.shortcutKey.charCode)];
-    if (char) {
+    if (char !== null && char !== undefined) {
       shortcutKeyStrs.push(char);
     } else {
       shortcutKeyStrs = ["Alt", "P"];
