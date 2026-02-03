@@ -39,6 +39,28 @@ const getDefaultOptions = () => {
       charCode: "KeyP",
     },
     shortcutKeyIsEnabled: true,
+    shortcuts: {
+      openOptionsDialog: {
+        enabled: true,
+        binding: {
+          ctrlKey: false,
+          altKey: true,
+          shiftKey: false,
+          metaKey: false,
+          code: "KeyP",
+        },
+      },
+      temporarilyShowHidden: {
+        userDefinedBindings: {
+          enabled: false,
+          ctrlKey: true,
+          altKey: false,
+          shiftKey: false,
+          metaKey: false,
+          code: null,
+        },
+      },
+    },
     forceHighestResolution_xhook: false,
     forceHighestResolutionLenient_xhook: false,
     showVideoResolution_xhook: false,
@@ -229,7 +251,7 @@ const saveOptions = (_newOptions = {}, shouldReplace = false) => {
 };
 
 const deepMergeDefaults = (defaults = {}, target = {}) => {
-  if (!target) {
+  if (target === undefined || target === null) {
     return structuredClone(defaults);
   }
 
@@ -268,16 +290,56 @@ class OptionsSchemaManager {
   // migrations.length is _schemaVersion. Do not remove items from the code.
   static #migrations = [
     null,
-    // (stored) => {
-    //   const out = structuredClone(stored ?? {});
-    //   return out;
-    // },
+    (stored) => {
+      const out = structuredClone(stored ?? {});
+      const defaultOptions = getDefaultOptions();
+      out.shortcuts ??= defaultOptions.shortcuts;
+
+      const bool1 = "shortcutKeyIsEnabled" in out && out.shortcutKeyIsEnabled;
+      const bool2 = Object.hasOwn(
+        out.shortcuts?.openOptionsDialog ?? {},
+        "enabled"
+      );
+      if (!bool1 || !bool2) {
+        return out;
+      }
+
+      const openOptionsDialog = out.shortcuts.openOptionsDialog;
+      if (out.shortcutKeyIsEnabled) {
+        openOptionsDialog.enabled = true;
+      }
+
+      const bool3 = "shortcutKey" in out;
+      const bool4 = Object.hasOwn(openOptionsDialog, "binding");
+      if (!bool3 || !bool4) {
+        return out;
+      }
+
+      const bool5 = ["ctrl", "alt", "shift", "charCode"].every(
+        (label) => label in out.shortcutKey
+      );
+      if (!bool5) {
+        return out;
+      }
+
+      const binding = openOptionsDialog.binding;
+      binding.ctrlKey = out.shortcutKey.ctrl;
+      binding.altKey = out.shortcutKey.alt;
+      binding.shiftKey = out.shortcutKey.shift;
+      binding.code = out.shortcutKey.charCode;
+
+      delete out.shortcutKey;
+      delete out.shortcutKeyIsEnabled;
+
+      return out;
+    },
   ];
 
   static #upgradeOptionsSchema(stored, forceUpgrade = false) {
     let s = structuredClone(stored ?? {});
     let v = Number.isInteger(s._schemaVersion) ? s._schemaVersion : 1;
     if (!Number.isInteger(s._schemaVersion) || forceUpgrade) {
+      v = 1;
       s._schemaVersion = 1;
     }
     if (v > this.#migrations.length) {
