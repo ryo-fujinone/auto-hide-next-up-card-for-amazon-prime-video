@@ -335,10 +335,10 @@ class OptionsSchemaManager {
     },
   ];
 
-  static #upgradeOptionsSchema(stored, forceUpgrade = false) {
+  static #upgradeOptionsSchema(stored, forceUpgradeSchema = false) {
     let s = structuredClone(stored ?? {});
     let v = Number.isInteger(s._schemaVersion) ? s._schemaVersion : 1;
-    if (!Number.isInteger(s._schemaVersion) || forceUpgrade) {
+    if (!Number.isInteger(s._schemaVersion) || forceUpgradeSchema) {
       v = 1;
       s._schemaVersion = 1;
     }
@@ -359,31 +359,56 @@ class OptionsSchemaManager {
     return s;
   }
 
+  static async #saveIfChanged(origOptions, newOptions) {
+    const hasChanged =
+      JSON.stringify(origOptions) !== JSON.stringify(newOptions);
+    if (hasChanged) {
+      console.log("orig", origOptions);
+      console.log("new", newOptions);
+      await saveOptions(newOptions, true);
+    }
+  }
+
   static async ensureOptionsUpToDate() {
     const options = await getOptions();
     const scriptInfo = ScriptInfo.get();
-    let forceUpgrade = false;
-    if (options._scriptVersion === scriptInfo.scriptVersion) {
-      // Developers can force upgrade of options
-      const key = "nextup-ext-force-upgrade-options";
-      if (localStorage.getItem(key) !== "true") {
+    if (options._scriptVersion !== scriptInfo.scriptVersion) {
+      // When modifying the schema (structure), use this method to migrate values
+      const upgraded = this.#upgradeOptionsSchema(options);
+      // If value migration is not required, this method handles key addition/removal
+      const merged = deepMergeDefaults(getDefaultOptions(), upgraded);
+
+      merged._scriptVersion = scriptInfo.scriptVersion;
+      await this.#saveIfChanged(options, merged);
+    } else {
+      // Developers can force a schema upgrade and deepMerge
+      let forceUpgradeSchema = false;
+      let forceDeepMerge = false;
+      const key1 = "nextup-ext-force-upgrade-options-schema";
+      const key1IsEnabled = localStorage.getItem(key1) === "true";
+      const key2 = "nextup-ext-force-deep-merge-options";
+      const key2IsEnabled = localStorage.getItem(key2) === "true";
+
+      if (!key1IsEnabled && !key2IsEnabled) {
         return;
       }
-      forceUpgrade = true;
-      console.log(`%c${key}`, "color:yellow; font-weight:bold;");
-    }
+      if (key1IsEnabled) {
+        forceUpgradeSchema = true;
+        console.log(`%c${key1}`, "color:yellow; font-weight:bold;");
+      }
+      if (key2IsEnabled) {
+        forceDeepMerge = true;
+        console.log(`%c${key2}`, "color:yellow; font-weight:bold;");
+      }
 
-    // When modifying the schema (structure), use this method to migrate values
-    const upgraded = this.#upgradeOptionsSchema(options, forceUpgrade);
-    // If value migration is not required, this method handles key addition/removal
-    const merged = deepMergeDefaults(getDefaultOptions(), upgraded);
+      const upgraded = this.#upgradeOptionsSchema(options, forceUpgradeSchema);
+      let merged = structuredClone(upgraded);
+      if (forceDeepMerge) {
+        merged = deepMergeDefaults(getDefaultOptions(), upgraded);
+      }
 
-    merged._scriptVersion = scriptInfo.scriptVersion;
-    const hasChanged = JSON.stringify(options) !== JSON.stringify(merged);
-    if (hasChanged) {
-      console.log("orig", options);
-      console.log("new", merged);
-      await saveOptions(merged, true);
+      merged._scriptVersion = scriptInfo.scriptVersion;
+      await this.#saveIfChanged(options, merged);
     }
   }
 }
