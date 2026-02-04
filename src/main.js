@@ -235,10 +235,7 @@ const saveOptions = (_newOptions = {}, shouldReplace = false) => {
     } else {
       // Normal pattern
       const options = await getOptions();
-      newOptions = {
-        ...options,
-        ..._newOptions,
-      };
+      newOptions = deepMergeDefaults(options, _newOptions);
     }
 
     if (ScriptInfo.isChromeExtension()) {
