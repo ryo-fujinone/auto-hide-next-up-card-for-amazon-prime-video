@@ -32,13 +32,6 @@ const getDefaultOptions = () => {
     tweakHideSkipIntroButton: false,
     tweakShowVideoResolutionInfo: false,
     useOnLiveTv: false,
-    shortcutKey: {
-      ctrl: false,
-      alt: true,
-      shift: false,
-      charCode: "KeyP",
-    },
-    shortcutKeyIsEnabled: true,
     shortcuts: {
       openOptionsDialog: {
         enabled: true,
