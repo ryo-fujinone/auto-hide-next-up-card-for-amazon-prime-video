@@ -51,13 +51,13 @@ const getDefaultOptions = () => {
         },
       },
       temporarilyShowHidden: {
-        userDefinedBindings: {
-          enabled: false,
-          ctrlKey: true,
-          altKey: false,
+        userDefinedBindingEnabled: false,
+        binding: {
+          ctrlKey: false,
+          altKey: true,
           shiftKey: false,
           metaKey: false,
-          code: null,
+          code: "KeyS",
         },
       },
     },
@@ -130,40 +130,26 @@ class ScriptInfo {
   }
 }
 
-// Array of alphanumeric characters used for shortcut keys
-class CharStore {
-  static #chars = [];
-  static #codeStrs = [];
-  static #startCode = "A".charCodeAt(0);
-
-  static getChars() {
-    if (this.#chars.length) {
-      return this.#chars;
+const isApplePlatform = () => {
+  const key = "nextup-ext-on-apple-platform";
+  const isApplePlatformStr = localStorage.getItem(key);
+  if (isApplePlatformStr) {
+    if (isApplePlatformStr === "true") {
+      // console.log(`%c${key}`, "color:yellow; font-weight:bold;");
+      return true;
+    } else if (isApplePlatformStr === "false") {
+      return false;
     }
-    [...Array(26)].forEach((_, i) => {
-      const char = String.fromCharCode(this.#startCode + i);
-      this.#chars.push(char);
-    });
-    [...Array(10)].forEach((_, i) => {
-      this.#chars.push(i);
-    });
-    return this.#chars;
   }
 
-  static getCodeStrs() {
-    if (this.#codeStrs.length) {
-      return this.#codeStrs;
-    }
-    [...Array(26)].forEach((_, i) => {
-      const char = String.fromCharCode(this.#startCode + i);
-      this.#codeStrs.push("Key" + char);
-    });
-    [...Array(10)].forEach((_, i) => {
-      this.#codeStrs.push("Digit" + i);
-    });
-    return this.#codeStrs;
-  }
-}
+  const uad = navigator.userAgentData;
+  if (uad?.platform) return /mac|ios/i.test(uad.platform);
+
+  const p = navigator.platform || "";
+  if (/Mac|iPhone|iPad|iPod/i.test(p)) return true;
+
+  return /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(navigator.userAgent);
+};
 
 const addStyle = (css, id) => {
   const style = document.createElement("style");
@@ -429,12 +415,47 @@ const migrateStorage = async () => {
   // localStorage.removeItem("nextup-ext");
 };
 
+const getByObjectPath = (obj, path) => {
+  const keys = path
+    .replace(/\[(\d+)\]/g, ".$1")
+    .split(".")
+    .filter(Boolean);
+
+  return keys.reduce(
+    (acc, cur) => (acc === undefined ? undefined : acc[cur]),
+    obj
+  );
+};
+
+const setByObjectPath = (obj, path, value) => {
+  const keys = path
+    .replace(/\[(\d+)\]/g, ".$1")
+    .split(".")
+    .filter(Boolean);
+
+  const clone = structuredClone(obj);
+  let cur = clone;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const k = keys[i];
+    const nextIsIndex = /^\d+$/.test(keys[i + 1]);
+    if (cur[k] == null || typeof cur[k] !== "object")
+      cur[k] = nextIsIndex ? [] : {};
+    cur = cur[k];
+  }
+  cur[keys[keys.length - 1]] = value;
+  return clone;
+};
+
 const getOptionDialog = () => {
   return document.querySelector(".nextup-ext-opt-dialog");
 };
 
-const getShortcutKeyInput = () => {
-  return document.querySelector("#shortcutkey-for-dialog");
+const getShortcutKeyInputOpenOptionsDialog = () => {
+  return document.querySelector("#shortcutkey-open-options-dialog");
+};
+
+const getShortcutKeyInputTemporarilyShowHidden = () => {
+  return document.querySelector("#shortcutkey-temporarily-show-hidden");
 };
 
 const getVisibleVideo = () => {
@@ -506,6 +527,129 @@ const pauseVideo = () => {
   }
 };
 
+class ShortcutKeyManager {
+  static #isListenerAdded = false;
+
+  static #generateDisplayString(binding) {
+    const isBinding = [
+      "ctrlKey",
+      "altKey",
+      "shiftKey",
+      "metaKey",
+      "code",
+    ].every((key) => key in binding);
+    if (!isBinding) {
+      return "";
+    }
+
+    const parts = [];
+    if (isApplePlatform()) {
+      if (binding.metaKey) parts.push("Command");
+      if (binding.altKey) parts.push("Option");
+      if (binding.shiftKey) parts.push("Shift");
+    } else {
+      if (binding.ctrlKey) parts.push("Ctrl");
+      if (binding.altKey) parts.push("Alt");
+      if (binding.shiftKey) parts.push("Shift");
+    }
+
+    const char = binding.code.replace("Key", "").replace("Digit", "");
+    parts.push(char);
+
+    return parts.join(" + ");
+  }
+
+  static async #setShortcutKeyVal(key, shortcutKeyData) {
+    const { input, bindingPath } = shortcutKeyData[key];
+    const options = await getOptions();
+    let binding = getByObjectPath(options, bindingPath);
+    const displayStr = this.#generateDisplayString(binding);
+    if (displayStr) {
+      input.value = this.#generateDisplayString(binding);
+    } else {
+      binding = getByObjectPath(getDefaultOptions(), bindingPath);
+      let newOptions = setByObjectPath(options, bindingPath, binding);
+      await saveOptions(newOptions);
+    }
+  }
+
+  static async #changeShortcutKeyVal(key, shortcutKeyData) {
+    const { input, bindingPath } = shortcutKeyData[key];
+    input.addEventListener("keydown", async (e) => {
+      e.preventDefault();
+      if (e.repeat) {
+        return;
+      }
+
+      const code = e.code;
+      const isAlpha = /^Key[A-Z]$/.test(code);
+      const isDigit = /^Digit[0-9]$/.test(code);
+      if (!isAlpha && !isDigit) {
+        return;
+      }
+
+      const ctrlKey = isApplePlatform() ? false : e.ctrlKey;
+      const altKey = e.altKey;
+      const shiftKey = e.shiftKey;
+      const metaKey = isApplePlatform() ? e.metaKey : false;
+      if (!ctrlKey && !metaKey && !altKey && !shiftKey) {
+        return;
+      }
+
+      const options = await getOptions();
+      const oldBinding = getByObjectPath(options, bindingPath);
+      const newBinding = {
+        ctrlKey,
+        altKey,
+        shiftKey,
+        metaKey,
+        code,
+      };
+      const oldDisplayStr = this.#generateDisplayString(oldBinding);
+      const newDisplayStr = this.#generateDisplayString(newBinding);
+      if (oldDisplayStr === newDisplayStr) {
+        return;
+      }
+
+      for (const [_key, data] of Object.entries(shortcutKeyData)) {
+        if (key === _key) continue;
+        const _binding = getByObjectPath(options, data.bindingPath);
+        const _displayStr = this.#generateDisplayString(_binding);
+        if (newDisplayStr === _displayStr) {
+          return;
+        }
+      }
+
+      input.value = newDisplayStr;
+      let newOptions = setByObjectPath(options, bindingPath, newBinding);
+      await saveOptions(newOptions);
+    });
+  }
+
+  static async init() {
+    if (this.#isListenerAdded) {
+      return;
+    }
+    const shortcutKeyData = {
+      openOptionsDialog: {
+        input: getShortcutKeyInputOpenOptionsDialog(),
+        bindingPath: "shortcuts.openOptionsDialog.binding",
+      },
+      temporarilyShowHidden: {
+        input: getShortcutKeyInputTemporarilyShowHidden(),
+        bindingPath: "shortcuts.temporarilyShowHidden.binding",
+      },
+    };
+
+    for (const key of Object.keys(shortcutKeyData)) {
+      shortcutKeyData[key].input.readOnly = true;
+      await this.#setShortcutKeyVal(key, shortcutKeyData);
+      await this.#changeShortcutKeyVal(key, shortcutKeyData);
+    }
+    this.#isListenerAdded = true;
+  }
+}
+
 class Dialog {
   static #clickedOutSide = null;
   static #_clickedOutSide(e) {
@@ -514,98 +658,18 @@ class Dialog {
     }
   }
 
-  static async #setShortcutKeyVal() {
-    const options = await getOptions();
-    let shortcutKeyStrs = [];
-    if (options.shortcutKey.ctrl) {
-      shortcutKeyStrs.push("Ctrl");
-    }
-    if (options.shortcutKey.alt) {
-      shortcutKeyStrs.push("Alt");
-    }
-    if (options.shortcutKey.shift) {
-      shortcutKeyStrs.push("Shift");
-    }
-    const codeStrs = CharStore.getCodeStrs();
-    const chars = CharStore.getChars();
-    const char = chars[codeStrs.indexOf(options.shortcutKey.charCode)];
-    if (char !== null && char !== undefined) {
-      shortcutKeyStrs.push(char);
-    } else {
-      shortcutKeyStrs = ["Alt", "P"];
-      await saveOptions({ shortcutKey: getDefaultOptions().shortcutKey });
-    }
-
-    if (!this.#changeShortcutKeyVal) {
-      this.#changeShortcutKeyVal = this.#_changeShortcutKeyVal.bind(this);
-    }
-
-    const shortcutKeyStr = shortcutKeyStrs.join(" + ");
-    const shortcutKeyInput = getShortcutKeyInput();
-    if (shortcutKeyInput) {
-      shortcutKeyInput.value = shortcutKeyStr;
-      shortcutKeyInput.addEventListener("keydown", this.#changeShortcutKeyVal);
-    }
-  }
-
-  static #changeShortcutKeyVal = null;
-  static async #_changeShortcutKeyVal(e) {
-    if (e.code === "Tab" || e.code === "Escape" || e.code === "F5") {
-      return;
-    }
-    const codeStrs = CharStore.getCodeStrs();
-    if (codeStrs.indexOf(e.code) === -1 || (!e.ctrlKey && !e.altKey)) {
-      e.preventDefault();
-      return;
-    }
-
-    const newShortcutKeyOptions = getDefaultOptions().shortcutKey;
-    let shortcutKeyStrs = [];
-    if (e.ctrlKey) {
-      shortcutKeyStrs.push("Ctrl");
-    }
-    newShortcutKeyOptions.ctrl = e.ctrlKey;
-    if (e.altKey) {
-      shortcutKeyStrs.push("Alt");
-    }
-    newShortcutKeyOptions.alt = e.altKey;
-    if (e.shiftKey) {
-      shortcutKeyStrs.push("Shift");
-    }
-    newShortcutKeyOptions.shift = e.shiftKey;
-    const chars = CharStore.getChars();
-    const char = chars[codeStrs.indexOf(e.code)];
-    shortcutKeyStrs.push(char);
-    newShortcutKeyOptions.charCode = e.code;
-
-    const shortcutKeyStr = shortcutKeyStrs.join(" + ");
-    const shortcutKeyInput = getShortcutKeyInput();
-    shortcutKeyInput.value = shortcutKeyStr;
-
-    await saveOptions({ shortcutKey: newShortcutKeyOptions });
-  }
-
   static async whenOpening() {
     pauseVideo();
-
     const optDialog = getOptionDialog();
     optDialog.focus();
-
-    await this.#setShortcutKeyVal();
     if (!this.#clickedOutSide) {
       this.#clickedOutSide = this.#_clickedOutSide.bind(this);
     }
     document.addEventListener("click", this.#clickedOutSide);
+    await ShortcutKeyManager.init();
   }
 
   static whenClosed() {
-    const shortcutKeyInput = getShortcutKeyInput();
-    if (shortcutKeyInput) {
-      shortcutKeyInput.removeEventListener(
-        "keydown",
-        this.#changeShortcutKeyVal
-      );
-    }
     document.removeEventListener("click", this.#clickedOutSide);
     playVideo();
   }
@@ -655,8 +719,9 @@ const createOptionMessages = () => {
       日本のプライムビデオでは通常表示されないため、日本ではこの設定の影響はありません。
       この拡張機能は日本のプライムビデオでのみテストされているため、この機能は実験的です。`,
     hideVariousTextAndButtons: "各種テキストやボタンを非表示にする",
-    hideVariousTextAndButtons_Tooltip: `Ctrl/Shiftキーを押しながらマウスを操作している間は、非表示にしている要素が表示状態になります。
-      右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
+    hideVariousTextAndButtons_Tooltip: `表示用のキーを押しながらマウスを操作している間は、非表示にしている要素が一時的に表示状態になります。
+      （デフォルト：WindowsではCtrl/Shiftキー、MacではCommand/Shiftキー）
+      表示に使用するキーは変更可能です。右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
     hideTitle: "タイトルを非表示にする",
     hideEpisodeTitle: "エピソード名を非表示にする",
     hideVariousButtonsInTopRight: "右上の各種ボタンを非表示にする",
@@ -666,10 +731,18 @@ const createOptionMessages = () => {
     hideNextEpisodeButton: "次のエピソードボタンを非表示にする",
     tweakHideSkipIntroButton: "イントロスキップボタンの非表示機能を調整する",
     tweakHideSkipIntroButton_Tooltip: `「イントロスキップボタンを非表示にする」が有効になっている場合の挙動を調整します。
-      Ctrl/Shiftキーを押しながらマウスを操作している間のみ、イントロスキップボタンが表示状態になります。`,
+      表示用のキーを押しながらマウスを操作している間は、イントロスキップボタンが一時的に表示状態になります。`,
     tweakShowVideoResolutionInfo: "動画の解像度を表示する機能を調整する",
     tweakShowVideoResolutionInfo_Tooltip: `「左下に動画の解像度を表示する」が有効になっている場合の挙動を調整します。
-      Ctrl/Shiftキーを押しながらマウスを操作している間のみ、解像度が表示状態になります。`,
+      表示用のキーを押しながらマウスを操作している間は、解像度が一時的に表示状態になります。`,
+    changeKeyThatTemporarilyShowHidden: "要素を一時的に表示するキーを変更する",
+    changeKeyThatTemporarilyShowHidden_Tooltip: `表示用のキーを押しながらマウスを操作している間は、非表示にしている要素が一時的に表示状態になります。
+      この設定が無効の場合は、要素の表示のためにデフォルトのキーが参照されます。
+      （デフォルト：WindowsではCtrl/Shiftキー、MacではCommand/Shiftキー）
+      キーを変更したい場合はこの設定を有効にしてください。\n
+      [修飾キー1つ + 英数字] は必須。
+      Windows：Ctrl/Shift/Alt/英数字をサポート
+      Mac：Command/Shift/Option/英数字をサポート`,
     useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
     useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
       なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
@@ -680,7 +753,9 @@ const createOptionMessages = () => {
     enableShortcutKey:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
-    shortcutKeyForDialog_Tooltip: "Ctrl/Altとアルファベットは必須。",
+    shortcutKeyForDialog_Tooltip: `[修飾キー1つ + 英数字] は必須。
+      Windows：Ctrl/Shift/Alt/英数字をサポート
+      Mac：Command/Shift/Option/英数字をサポート`,
     monitorNetworkActivity: "通信の監視・改変",
     monitorNetworkActivity_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
       広告ブロック系の拡張機能との併用は避けることを推奨します。`,
@@ -768,8 +843,9 @@ const createOptionMessages = () => {
       It is not normally displayed on Prime Video Japan, so this setting has no effect in Japan.
       This extension has only been tested on Prime Video Japan, so this feature is experimental.`,
     hideVariousTextAndButtons: "Hide various text and buttons",
-    hideVariousTextAndButtons_Tooltip: `While holding down the Ctrl or Shift key and using the mouse, hidden elements will be displayed.
-      The various buttons in the top right remain clickable even when hidden.`,
+    hideVariousTextAndButtons_Tooltip: `While holding down the show key and moving the mouse, hidden elements will temporarily become visible.
+      (Default: Ctrl/Shift on Windows, Command/Shift on Mac)
+      You can change the show key. The various buttons in the top right corner are still clickable even when hidden.`,
     hideTitle: "Hide title",
     hideEpisodeTitle: "Hide episode title",
     hideVariousButtonsInTopRight: "Hide various buttons in the top right",
@@ -779,10 +855,19 @@ const createOptionMessages = () => {
     hideNextEpisodeButton: "Hide next episode button",
     tweakHideSkipIntroButton: "Tweak the feature to hide skip intro button",
     tweakHideSkipIntroButton_Tooltip: `Tweaks the behavior when [Hide skip intro button] is enabled.
-      The intro skip button will only be shown while you are operating the mouse with the Ctrl/Shift keys pressed.`,
+      While holding down the show key and moving the mouse, the skip intro button will temporarily become visible.`,
     tweakShowVideoResolutionInfo: "Tweak the feature to show video resolution",
     tweakShowVideoResolutionInfo_Tooltip: `Tweaks the behavior when [Show video resolution in bottom left] is enabled.
-      The video resolution will only be shown while you are operating the mouse with the Ctrl/Shift keys pressed.`,
+      While holding down the show key and moving the mouse, the video resolution will temporarily become visible.`,
+    changeKeyThatTemporarilyShowHidden:
+      "Change the key that temporarily show hidden elements",
+    changeKeyThatTemporarilyShowHidden_Tooltip: `While holding down the show key and moving the mouse, hidden elements will temporarily become visible.
+      If this setting is disabled, the default key will be referenced to show the element.
+      (Default: Ctrl/Shift on Windows, Command/Shift on Mac)
+      Enable this setting if you want to change the key.\n
+      [One modifier key + alphanumeric] is required.
+      Windows: Supports Ctrl/Shift/Alt/alphanumeric
+      Mac: Supports Command/Shift/Option/alphanumeric`,
     useOnLiveTv: "Experimental: Use this extension on LiveTV",
     useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
       Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
@@ -793,7 +878,9 @@ const createOptionMessages = () => {
     enableShortcutKey:
       "Enable shortcut key to open the options dialog during video playback",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
-    shortcutKeyForDialog_Tooltip: "Ctrl/Alt and alphabets are required",
+    shortcutKeyForDialog_Tooltip: `[One modifier key + alphanumeric] is required.
+      Windows: Supports Ctrl/Shift/Alt/alphanumeric
+      Mac: Supports Command/Shift/Option/alphanumeric`,
     monitorNetworkActivity: "Monitor and modify network activity",
     monitorNetworkActivity_Tooltip: `Controls Prime Video behavior by monitoring and modifying network activity.
       It is not recommended to use in conjunction with ad-blocking extensions.`,
@@ -1185,6 +1272,27 @@ const createOptionDialog = async () => {
                               )}" data-msg-id="tweakShowVideoResolutionInfo"></p>
                           </div>
                         </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="change-key-that-temporarily-show-hidden" name="change-key-that-temporarily-show-hidden" ${
+                                    options.shortcuts.temporarilyShowHidden
+                                      .userDefinedBindingEnabled
+                                      ? "checked"
+                                      : ""
+                                  } />
+                                  <p style="margin-right: 4px;">${
+                                    messages.changeKeyThatTemporarilyShowHidden
+                                  }</p>
+                              </label>
+                              <input type="text" id="shortcutkey-temporarily-show-hidden" name="shortcutkey-temporarily-show-hidden" />
+                              <p class="nextup-ext-opt-dialog-tooltip" title="${messages.changeKeyThatTemporarilyShowHidden_Tooltip.replaceAll(
+                                regexForMultiineTooltips,
+                                ""
+                              )}" data-msg-id="changeKeyThatTemporarilyShowHidden"></p>
+                          </div>
+                        </li>
                       </ul>
                   </li>
               </ul>
@@ -1204,8 +1312,10 @@ const createOptionDialog = async () => {
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
-                      <input type="checkbox" id="enable-shortcutkey" name="enable-shortcutkey" ${
-                        options.shortcutKeyIsEnabled ? "checked" : ""
+                      <input type="checkbox" id="enable-open-options-dialog" name="enable-open-options-dialog" ${
+                        options.shortcuts.openOptionsDialog.enabled
+                          ? "checked"
+                          : ""
                       } />
                       <p>${messages.enableShortcutKey}</p>
                   </label>
@@ -1218,11 +1328,12 @@ const createOptionDialog = async () => {
                               <p style="margin-right: 4px;">${
                                 messages.shortcutKeyForDialog
                               }</p>
-                              <input type="text" id="shortcutkey-for-dialog" name="shortcutkey-for-dialog" />
+                              <input type="text" id="shortcutkey-open-options-dialog" name="shortcutkey-open-options-dialog" />
                           </label>
-                          <p class="nextup-ext-opt-dialog-tooltip" title="${
-                            messages.shortcutKeyForDialog_Tooltip
-                          }" data-msg-id="shortcutKeyForDialog"></p>
+                          <p class="nextup-ext-opt-dialog-tooltip" title="${messages.shortcutKeyForDialog_Tooltip.replaceAll(
+                            regexForMultiineTooltips,
+                            ""
+                          )}" data-msg-id="shortcutKeyForDialog"></p>
                       </div>
                   </li>
               </ul>
@@ -1483,10 +1594,10 @@ const createOptionDialog = async () => {
     .nextup-ext-opt-dialog ul li.list-style-none {
         list-style: none;
     }
-    .nextup-ext-opt-dialog ul li label:has(#shortcutkey-for-dialog){
+    .nextup-ext-opt-dialog ul li label:has(#shortcutkey-open-options-dialog){
         display: flex;
     }
-    .nextup-ext-opt-dialog label input[type='text'] {
+    .nextup-ext-opt-dialog .nextup-ext-opt-dialog-item-container input[type='text'] {
         height: 20px;
     }
     .nextup-ext-opt-dialog-network-activity-monitoring {
@@ -1699,11 +1810,26 @@ const createOptionDialog = async () => {
         case "tweak-show-video-resolution-info":
           await saveOptions({ tweakShowVideoResolutionInfo: e.target.checked });
           break;
+        case "change-key-that-temporarily-show-hidden":
+          await saveOptions({
+            shortcuts: {
+              temporarilyShowHidden: {
+                userDefinedBindingEnabled: e.target.checked,
+              },
+            },
+          });
+          break;
         case "use-on-live-tv":
           await saveOptions({ useOnLiveTv: e.target.checked });
           break;
-        case "enable-shortcutkey":
-          await saveOptions({ shortcutKeyIsEnabled: e.target.checked });
+        case "enable-open-options-dialog":
+          await saveOptions({
+            shortcuts: {
+              openOptionsDialog: {
+                enabled: e.target.checked,
+              },
+            },
+          });
           break;
         case "force-highest-resolution":
           await saveOptions({ forceHighestResolution_xhook: e.target.checked });
@@ -1742,8 +1868,10 @@ const createOptionDialog = async () => {
   );
 };
 
-const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
-  if (!options.shortcutKeyIsEnabled) {
+const addEventListenerForOpenOptionsDialog = (
+  options = getDefaultOptions()
+) => {
+  if (!options.shortcuts.openOptionsDialog.enabled) {
     return;
   }
 
@@ -1753,17 +1881,22 @@ const addEventListenerForShortcutKey = (options = getDefaultOptions()) => {
       return;
     }
 
-    const shortcutKeyInput = getShortcutKeyInput();
+    const shortcutKeyInput = getShortcutKeyInputOpenOptionsDialog();
     if (shortcutKeyInput === document.activeElement) {
+      return;
+    }
+    if (e.repeat) {
       return;
     }
 
     const options = await getOptions();
+    const binding = options.shortcuts.openOptionsDialog.binding;
     if (
-      e.code === options.shortcutKey.charCode &&
-      e.ctrlKey === options.shortcutKey.ctrl &&
-      e.altKey === options.shortcutKey.alt &&
-      e.shiftKey === options.shortcutKey.shift
+      e.code === binding.code &&
+      e.ctrlKey === binding.ctrlKey &&
+      e.altKey === binding.altKey &&
+      e.shiftKey === binding.shiftKey &&
+      e.metaKey === binding.metaKey
     ) {
       const optDialog = getOptionDialog();
       if (optDialog.hasAttribute("open")) {
@@ -4159,34 +4292,111 @@ class ElementController {
       return;
     }
 
-    const targetkeys = ["Control", "Shift"];
     this.player.classList.add("hide-various-text-and-buttons");
 
     const isEditable = (elem) => {
-      return (
-        elem &&
-        (elem.isContentEditable ||
-          /^(input|textarea|select)$/i.test(elem.tagName))
-      );
+      if (!elem || !(elem instanceof Element)) {
+        return false;
+      }
+      if (elem.isContentEditable) {
+        return true;
+      }
+      return /^(input|textarea|select)$/i.test(elem.tagName);
     };
 
-    this.player.addEventListener("keydown", (e) => {
+    const pressed = {
+      ctrlKey: false,
+      altKey: false,
+      shiftKey: false,
+      metaKey: false,
+      code: false,
+    };
+    let shortcutkeyOptions = options.shortcuts.temporarilyShowHidden;
+
+    const updatePressedState = async (e, isDown) => {
+      pressed.ctrlKey = e.ctrlKey;
+      pressed.altKey = e.altKey;
+      pressed.shiftKey = e.shiftKey;
+      pressed.metaKey = e.metaKey;
+
+      shortcutkeyOptions = (await getOptions()).shortcuts.temporarilyShowHidden;
+      if (shortcutkeyOptions.userDefinedBindingEnabled) {
+        const code = e.code;
+        const isAlpha = /^Key[A-Z]$/.test(code);
+        const isDigit = /^Digit[0-9]$/.test(code);
+        if (!isAlpha && !isDigit) {
+          return;
+        }
+        const binding = shortcutkeyOptions.binding;
+        if (code === binding.code) {
+          pressed.code = isDown;
+        }
+      } else {
+        pressed.code = false;
+      }
+    };
+
+    const isShortcutKeyActive = () => {
+      if (!shortcutkeyOptions.userDefinedBindingEnabled) {
+        if (isApplePlatform()) {
+          return pressed.metaKey || pressed.shiftKey ? true : false;
+        } else {
+          return pressed.ctrlKey || pressed.shiftKey ? true : false;
+        }
+      }
+
+      const binding = shortcutkeyOptions.binding;
+
+      if (
+        pressed.ctrlKey === binding.ctrlKey &&
+        pressed.altKey === binding.altKey &&
+        pressed.shiftKey === binding.shiftKey &&
+        pressed.metaKey === binding.metaKey &&
+        pressed.code
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    };
+
+    this.player.addEventListener("keydown", async (e) => {
       if (e.repeat || isEditable(e.target)) {
         return;
       }
-      if (targetkeys.includes(e.key)) {
+      await updatePressedState(e, true);
+      if (isShortcutKeyActive()) {
+        this.player.classList.remove("hide-various-text-and-buttons");
+      } else {
+        this.player.classList.add("hide-various-text-and-buttons");
+      }
+    });
+
+    this.player.addEventListener("keyup", async (e) => {
+      if (isEditable(e.target)) {
+        return;
+      }
+      await updatePressedState(e, false);
+      if (!isShortcutKeyActive()) {
+        this.player.classList.add("hide-various-text-and-buttons");
+      } else {
         this.player.classList.remove("hide-various-text-and-buttons");
       }
     });
 
-    this.player.addEventListener("keyup", (e) => {
-      if (isEditable(e.target)) {
-        return;
+    const show = (elem) => {
+      if (!elem || !(elem instanceof Element)) {
+        return false;
       }
-      if (targetkeys.includes(e.key)) {
-        this.player.classList.add("hide-various-text-and-buttons");
+      elem.classList.add("nextup-ext-temp-show");
+    };
+
+    const hide = (elem) => {
+      if (!elem || !(elem instanceof Element)) {
+        return false;
       }
-    });
+      elem.classList.remove("nextup-ext-temp-show");
+    };
 
     const hideTitle = () => {
       if (!options.hideTitle) {
@@ -4196,10 +4406,10 @@ class ElementController {
       if (!document.querySelector("#ext-hideTitle")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-title-text {
-            opacity: 0;
+            opacity: 0 !important;
           }
-          .atvwebplayersdk-title-text.show {
-            opacity: 1;
+          .atvwebplayersdk-title-text.nextup-ext-temp-show {
+            opacity: 1 !important;
           }
         `;
         addStyle(css, "ext-hideTitle");
@@ -4211,16 +4421,16 @@ class ElementController {
         if (!title) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          title.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(title);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            title.classList.remove("show");
+            hide(title);
           }, 300);
         } else {
-          title.classList.remove("show");
+          hide(title);
         }
       });
     };
@@ -4233,10 +4443,10 @@ class ElementController {
       if (!document.querySelector("#ext-hideEpisodeTitle")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-subtitle-text {
-            opacity: 0;
+            opacity: 0 !important;
           }
-          .atvwebplayersdk-subtitle-text.show {
-            opacity: 1;
+          .atvwebplayersdk-subtitle-text.nextup-ext-temp-show {
+            opacity: 1 !important;
           }
         `;
         addStyle(css, "ext-hideEpisodeTitle");
@@ -4250,16 +4460,16 @@ class ElementController {
         if (!episodeTitle) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          episodeTitle.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(episodeTitle);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            episodeTitle.classList.remove("show");
+            hide(episodeTitle);
           }, 300);
         } else {
-          episodeTitle.classList.remove("show");
+          hide(episodeTitle);
         }
       });
     };
@@ -4272,16 +4482,16 @@ class ElementController {
       if (!document.querySelector("#ext-hideVariousButtonsInTopRight")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-hideabletopbuttons-container {
-            opacity: 0;
+            opacity: 0 !important;
           }
           .hide-various-text-and-buttons .atvwebplayersdk-closebutton-wrapper {
-            opacity: 0;
+            opacity: 0 !important;
           }
-          .atvwebplayersdk-hideabletopbuttons-container.show {
-            opacity: 1;
+          .atvwebplayersdk-hideabletopbuttons-container.nextup-ext-temp-show {
+            opacity: 1 !important;
           }
-          .atvwebplayersdk-closebutton-wrapper.show {
-            opacity: 1;
+          .atvwebplayersdk-closebutton-wrapper.nextup-ext-temp-show {
+            opacity: 1 !important;
           }
         `;
         addStyle(css, "ext-hideVariousButtonsInTopRight");
@@ -4298,19 +4508,19 @@ class ElementController {
         if (!buttonsContainer || !closeButtonWrapper) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          buttonsContainer.classList.add("show");
-          closeButtonWrapper.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(buttonsContainer);
+          show(closeButtonWrapper);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            buttonsContainer.classList.remove("show");
-            closeButtonWrapper.classList.remove("show");
+            hide(buttonsContainer);
+            hide(closeButtonWrapper);
           }, 300);
         } else {
-          buttonsContainer.classList.remove("show");
-          closeButtonWrapper.classList.remove("show");
+          hide(buttonsContainer);
+          hide(closeButtonWrapper);
         }
       });
     };
@@ -4323,10 +4533,10 @@ class ElementController {
       if (!document.querySelector("#ext-hideSeekBar")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-seekbar-container {
-            visibility: hidden;
+            visibility: hidden !important;
           }
-          .atvwebplayersdk-seekbar-container.show {
-            visibility: visible;
+          .atvwebplayersdk-seekbar-container.nextup-ext-temp-show {
+            visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideSeekBar");
@@ -4340,16 +4550,16 @@ class ElementController {
         if (!seekBar) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          seekBar.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(seekBar);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            seekBar.classList.remove("show");
+            hide(seekBar);
           }, 300);
         } else {
-          seekBar.classList.remove("show");
+          hide(seekBar);
         }
       });
     };
@@ -4362,10 +4572,10 @@ class ElementController {
       if (!document.querySelector("#ext-hidePlaybackTime")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-timeindicator-text {
-            visibility: hidden;
+            visibility: hidden !important;
           }
-          .atvwebplayersdk-timeindicator-text.show {
-            visibility: visible;
+          .atvwebplayersdk-timeindicator-text.nextup-ext-temp-show {
+            visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hidePlaybackTime");
@@ -4379,16 +4589,16 @@ class ElementController {
         if (!timeindicator) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          timeindicator.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(timeindicator);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            timeindicator.classList.remove("show");
+            hide(timeindicator);
           }, 300);
         } else {
-          timeindicator.classList.remove("show");
+          hide(timeindicator);
         }
       });
     };
@@ -4401,22 +4611,22 @@ class ElementController {
       if (!document.querySelector("#ext-hideCenterButtons")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-fastseekback-button {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           .hide-various-text-and-buttons .atvwebplayersdk-playpause-button {
-            visibility: hidden;
+            visibility: hidden !important;
           }
           .hide-various-text-and-buttons .atvwebplayersdk-fastseekforward-button {
-            visibility: hidden;
+            visibility: hidden !important;
           }
-          .atvwebplayersdk-fastseekback-button.show {
-            visibility: visible;
+          .atvwebplayersdk-fastseekback-button.nextup-ext-temp-show {
+            visibility: visible !important;
           }
-          .atvwebplayersdk-playpause-button.show {
-            visibility: visible;
+          .atvwebplayersdk-playpause-button.nextup-ext-temp-show {
+            visibility: visible !important;
           }
-          .atvwebplayersdk-fastseekforward-button.show {
-            visibility: visible;
+          .atvwebplayersdk-fastseekforward-button.nextup-ext-temp-show {
+            visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideCenterButtons");
@@ -4430,10 +4640,10 @@ class ElementController {
         if (!centerButtons.length || centerButtons.length > 3) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
+        if (isShortcutKeyActive()) {
           if (!centerButtons[0].classList.contains("show")) {
             for (const btn of centerButtons) {
-              btn.classList.add("show");
+              show(btn);
             }
           }
           if (hideTimer) {
@@ -4441,13 +4651,13 @@ class ElementController {
           }
           hideTimer = setTimeout(() => {
             for (const btn of centerButtons) {
-              btn.classList.remove("show");
+              hide(btn);
             }
-          }, 300);
+          }, 200);
         } else {
           if (centerButtons[0].classList.contains("show")) {
             for (const btn of centerButtons) {
-              btn.classList.remove("show");
+              hide(btn);
             }
           }
         }
@@ -4462,10 +4672,10 @@ class ElementController {
       if (!document.querySelector("#ext-hideNextEpisodeButton")) {
         const css = `
           .hide-various-text-and-buttons .atvwebplayersdk-nexttitle-button {
-            visibility: hidden;
+            visibility: hidden !important;
           }
-          .atvwebplayersdk-nexttitle-button.show {
-            visibility: visible;
+          .atvwebplayersdk-nexttitle-button.nextup-ext-temp-show {
+            visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideNextEpisodeButton");
@@ -4479,16 +4689,16 @@ class ElementController {
         if (!nextTitleButton) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          nextTitleButton.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(nextTitleButton);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            nextTitleButton.classList.remove("show");
+            hide(nextTitleButton);
           }, 300);
         } else {
-          nextTitleButton.classList.remove("show");
+          hide(nextTitleButton);
         }
       });
     };
@@ -4501,10 +4711,10 @@ class ElementController {
       if (!document.querySelector("#ext-hideSkipIntroButton")) {
         const css = `
           .atvwebplayersdk-skipelement-button {
-            visibility: hidden;
+            visibility: hidden !important;
           }
-          .atvwebplayersdk-skipelement-button.show {
-            visibility: visible;
+          .atvwebplayersdk-skipelement-button.nextup-ext-temp-show {
+            visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideSkipIntroButton");
@@ -4518,16 +4728,16 @@ class ElementController {
         if (!skipIntroBtn) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          skipIntroBtn.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(skipIntroBtn);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            skipIntroBtn.classList.remove("show");
+            hide(skipIntroBtn);
           }, 300);
         } else {
-          skipIntroBtn.classList.remove("show");
+          hide(skipIntroBtn);
         }
       });
     };
@@ -4543,10 +4753,10 @@ class ElementController {
       if (!document.querySelector("#ext-hideVideoResolutionInfo")) {
         const css = `
           .hide-various-text-and-buttons .nextup-ext-resolution-info {
-            visibility: hidden;
+            visibility: hidden !important;
           }
-          .nextup-ext-resolution-info.show {
-            visibility: visible;
+          .nextup-ext-resolution-info.nextup-ext-temp-show {
+            visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideVideoResolutionInfo");
@@ -4560,16 +4770,16 @@ class ElementController {
         if (!resolutionInfo) {
           return;
         }
-        if (e.ctrlKey || e.shiftKey) {
-          resolutionInfo.classList.add("show");
+        if (isShortcutKeyActive()) {
+          show(resolutionInfo);
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            resolutionInfo.classList.remove("show");
+            hide(resolutionInfo);
           }, 300);
         } else {
-          resolutionInfo.classList.remove("show");
+          hide(resolutionInfo);
         }
       });
     };
@@ -4942,7 +5152,7 @@ const main = async () => {
         }
 
         // The shortcut keys for opening the dialog will only work if the video is open.
-        addEventListenerForShortcutKey(options);
+        addEventListenerForOpenOptionsDialog(options);
       }
 
       new MutationObserver((_, observer) => {
