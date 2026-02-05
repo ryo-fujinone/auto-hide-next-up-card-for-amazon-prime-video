@@ -278,7 +278,7 @@ class OptionsSchemaManager {
       const defaultOptions = getDefaultOptions();
       out.shortcuts ??= defaultOptions.shortcuts;
 
-      const bool1 = "shortcutKeyIsEnabled" in out && out.shortcutKeyIsEnabled;
+      const bool1 = "shortcutKeyIsEnabled" in out;
       const bool2 = Object.hasOwn(
         out.shortcuts?.openOptionsDialog ?? {},
         "enabled"
@@ -288,9 +288,7 @@ class OptionsSchemaManager {
       }
 
       const openOptionsDialog = out.shortcuts.openOptionsDialog;
-      if (out.shortcutKeyIsEnabled) {
-        openOptionsDialog.enabled = true;
-      }
+      openOptionsDialog.enabled = out.shortcutKeyIsEnabled;
 
       const bool3 = "shortcutKey" in out;
       const bool4 = Object.hasOwn(openOptionsDialog, "binding");
