@@ -750,7 +750,7 @@ const createOptionMessages = () => {
       - オーバーレイ表示が有効な時に暗くならないようにする
       - 中央のボタン（再生/停止、戻る、進む）を下部に移動する
       - 各種テキストやボタンを非表示にする`,
-    enableShortcutKey:
+    enableOpenOptionsDialog:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
     shortcutKeyForDialog_Tooltip: `[修飾キー1つ + 英数字] は必須。
@@ -875,7 +875,7 @@ const createOptionMessages = () => {
       - Prevents darkening when overlay display is enabled
       - Move the center buttons(Play/Pause, Back and Forward) to the bottom
       - Hide various text and buttons`,
-    enableShortcutKey:
+    enableOpenOptionsDialog:
       "Enable shortcut key to open the options dialog during video playback",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
     shortcutKeyForDialog_Tooltip: `[One modifier key + alphanumeric] is required.
@@ -1317,7 +1317,7 @@ const createOptionDialog = async () => {
                           ? "checked"
                           : ""
                       } />
-                      <p>${messages.enableShortcutKey}</p>
+                      <p>${messages.enableOpenOptionsDialog}</p>
                   </label>
               </div>
 
