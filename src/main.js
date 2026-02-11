@@ -4283,8 +4283,6 @@ class ElementController {
       return;
     }
 
-    this.player.classList.add("hide-various-text-and-buttons");
-
     const isEditable = (elem) => {
       if (!elem || !(elem instanceof Element)) {
         return false;
@@ -4303,6 +4301,14 @@ class ElementController {
       code: false,
     };
     let shortcutkeyOptions = options.shortcuts.temporarilyShowHidden;
+
+    const resetPressedState = () => {
+      pressed.ctrlKey = false;
+      pressed.altKey = false;
+      pressed.shiftKey = false;
+      pressed.metaKey = false;
+      pressed.code = false;
+    };
 
     const updatePressedState = async (e, isDown) => {
       pressed.ctrlKey = e.ctrlKey;
@@ -4351,16 +4357,21 @@ class ElementController {
       }
     };
 
+    window.addEventListener("blur", () => {
+      resetPressedState();
+    });
+
+    document.addEventListener("visibilitychange", (e) => {
+      if (document.visibilityState !== "visible") {
+        resetPressedState();
+      }
+    });
+
     this.player.addEventListener("keydown", async (e) => {
       if (e.repeat || isEditable(e.target)) {
         return;
       }
       await updatePressedState(e, true);
-      if (isShortcutKeyActive()) {
-        this.player.classList.remove("hide-various-text-and-buttons");
-      } else {
-        this.player.classList.add("hide-various-text-and-buttons");
-      }
     });
 
     this.player.addEventListener("keyup", async (e) => {
@@ -4368,11 +4379,6 @@ class ElementController {
         return;
       }
       await updatePressedState(e, false);
-      if (!isShortcutKeyActive()) {
-        this.player.classList.add("hide-various-text-and-buttons");
-      } else {
-        this.player.classList.remove("hide-various-text-and-buttons");
-      }
     });
 
     const show = (elem) => {
@@ -4396,7 +4402,7 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideTitle")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-title-text {
+          .atvwebplayersdk-title-text {
             opacity: 0 !important;
           }
           .atvwebplayersdk-title-text.nextup-ext-temp-show {
@@ -4433,7 +4439,7 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideEpisodeTitle")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-subtitle-text {
+          .atvwebplayersdk-subtitle-text {
             opacity: 0 !important;
           }
           .atvwebplayersdk-subtitle-text.nextup-ext-temp-show {
@@ -4472,10 +4478,10 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideVariousButtonsInTopRight")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-hideabletopbuttons-container {
+          .atvwebplayersdk-hideabletopbuttons-container {
             opacity: 0 !important;
           }
-          .hide-various-text-and-buttons .atvwebplayersdk-closebutton-wrapper {
+          .atvwebplayersdk-closebutton-wrapper {
             opacity: 0 !important;
           }
           .atvwebplayersdk-hideabletopbuttons-container.nextup-ext-temp-show {
@@ -4523,7 +4529,7 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideSeekBar")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-seekbar-container {
+          .atvwebplayersdk-seekbar-container {
             visibility: hidden !important;
           }
           .atvwebplayersdk-seekbar-container.nextup-ext-temp-show {
@@ -4562,7 +4568,7 @@ class ElementController {
 
       if (!document.querySelector("#ext-hidePlaybackTime")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-timeindicator-text {
+          .atvwebplayersdk-timeindicator-text {
             visibility: hidden !important;
           }
           .atvwebplayersdk-timeindicator-text.nextup-ext-temp-show {
@@ -4601,13 +4607,13 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideCenterButtons")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-fastseekback-button {
+          .atvwebplayersdk-fastseekback-button {
             visibility: hidden !important;
           }
-          .hide-various-text-and-buttons .atvwebplayersdk-playpause-button {
+          .atvwebplayersdk-playpause-button {
             visibility: hidden !important;
           }
-          .hide-various-text-and-buttons .atvwebplayersdk-fastseekforward-button {
+          .atvwebplayersdk-fastseekforward-button {
             visibility: hidden !important;
           }
           .atvwebplayersdk-fastseekback-button.nextup-ext-temp-show {
@@ -4662,7 +4668,7 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideNextEpisodeButton")) {
         const css = `
-          .hide-various-text-and-buttons .atvwebplayersdk-nexttitle-button {
+          .atvwebplayersdk-nexttitle-button {
             visibility: hidden !important;
           }
           .atvwebplayersdk-nexttitle-button.nextup-ext-temp-show {
@@ -4743,7 +4749,7 @@ class ElementController {
 
       if (!document.querySelector("#ext-hideVideoResolutionInfo")) {
         const css = `
-          .hide-various-text-and-buttons .nextup-ext-resolution-info {
+          .nextup-ext-resolution-info {
             visibility: hidden !important;
           }
           .nextup-ext-resolution-info.nextup-ext-temp-show {
