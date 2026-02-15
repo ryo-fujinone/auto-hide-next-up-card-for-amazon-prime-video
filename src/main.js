@@ -21,6 +21,7 @@ const getDefaultOptions = () => {
     addOutlinesForTextsAndIcons: false,
     addShadowsToSeekBar: false,
     moveCenterButtonsToBottom: false,
+    addVideoControllerToBottomLeft: false,
     hideXRay: false,
     hideTitle: false,
     hideEpisodeTitle: false,
@@ -705,6 +706,8 @@ const createOptionMessages = () => {
     addShadowsToSeekBar: "シークバーに影をつける",
     moveCenterButtonsToBottom:
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
+    addVideoControllerToBottomLeft:
+      "中央のボタンを非表示にし、左下に同等のボタンを表示する",
     hideXRay: "実験的: X-Rayを非表示にする（提供地域のみ）",
     hideXRay_Tooltip: `X-Rayは一部の地域で提供されている機能です。
       日本のプライムビデオでは通常表示されないため、日本ではこの設定の影響はありません。
@@ -829,6 +832,8 @@ const createOptionMessages = () => {
     addShadowsToSeekBar: "Add shadows to the seek bar",
     moveCenterButtonsToBottom:
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
+    addVideoControllerToBottomLeft:
+      "Hide the center buttons and show the equivalent buttons in the bottom left",
     hideXRay: "Experimental: Hide X-Ray (available in supported regions)",
     hideXRay_Tooltip: `X-Ray is only available in some regions.
       It is not normally displayed on Prime Video Japan, so this setting has no effect in Japan.
@@ -1116,6 +1121,16 @@ const createOptionDialog = async () => {
                       <p>${messages.moveCenterButtonsToBottom}</p>
                   </label>
               </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="add-video-controller-to-bottom-left" name="add-video-controller-to-bottom-left" ${
+                        options.addVideoControllerToBottomLeft ? "checked" : ""
+                      } />
+                      <p>${messages.addVideoControllerToBottomLeft}</p>
+                  </label>
+              </div>
+
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
@@ -1770,6 +1785,11 @@ const createOptionDialog = async () => {
           break;
         case "move-center-buttons-to-bottom":
           await saveOptions({ moveCenterButtonsToBottom: e.target.checked });
+          break;
+        case "add-video-controller-to-bottom-left":
+          await saveOptions({
+            addVideoControllerToBottomLeft: e.target.checked,
+          });
           break;
         case "hide-xray":
           await saveOptions({ hideXRay: e.target.checked });
@@ -4162,6 +4182,12 @@ class ElementController {
           .atvwebplayersdk-nexttitle-button img {
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
+          .nextup-ext-fastseekback-button img,
+          .nextup-ext-playpause-button img,
+          .nextup-ext-fastseekforward-button img {
+            opacity: 0.8 !important;;
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+          }
         `;
         addStyle(cssForImg, "ext-addOutlinesForIcons");
       }
@@ -4210,6 +4236,10 @@ class ElementController {
     if (!options.moveCenterButtonsToBottom) {
       return;
     }
+    if (options.addVideoControllerToBottomLeft) {
+      this.addVideoControllerToBottomLeft(options);
+      return;
+    }
 
     const playPauseButton = this.player.querySelector(
       ".atvwebplayersdk-playpause-button"
@@ -4248,6 +4278,272 @@ class ElementController {
         button.style.width = "";
         button.style.height = "";
         adjustElementSize(button);
+      }
+    });
+  }
+
+  addVideoControllerToBottomLeft(options = getDefaultOptions()) {
+    if (!options.addVideoControllerToBottomLeft) {
+      return;
+    }
+
+    const imgDataUrlStrObj = {
+      fastSeekBack: [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NyIgaGVpZ2",
+        "h0PSI2NyIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDY3IDY3Ij48cGF0aCBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZG",
+        "QiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTMzLjUgMEM1MiAwIDY3IDE1IDY3IDMzLjVTNTIgNjcgMzMuNSA2NyAwIDUyIDAgMz",
+        "MuNWMuMDMtMS40IDEuMTctMi41MyAyLjU4LTIuNTMgMS40IDAgMi41NSAxLjEzIDIuNTcgMi41MyAwIDE1LjY1IDEyLjcgMjguMz",
+        "UgMjguMzUgMjguMzUgMTUuNjYgMCAyOC4zNS0xMi43IDI4LjM1LTI4LjM1IDAtMTUuNjYtMTIuNjktMjguMzUtMjguMzUtMjguMz",
+        "VoLS4wNGMtNyAwLTEzLjc2IDIuNjEtMTguOTQgNy4zLS40Ni40Mi0uOTEuODUtMS4zNCAxLjI5aDYuNThjMS40MiAwIDIuNTcgMS",
+        "4xNiAyLjU3IDIuNTggMCAxLjQyLTEuMTUgMi41OC0yLjU3IDIuNThINi4wMWMtMS40MiAwLTIuNTctMS4xNi0yLjU3LTIuNThWMi",
+        "41OEMzLjQ0IDEuMTUgNC41OSAwIDYuMDEgMGMxLjQzIDAgMi41OCAxLjE1IDIuNTggMi41OHY4LjUyYy43OC0uODYgMS42MS0xLj",
+        "cgMi40Ny0yLjQ3QTMzLjQwNyAzMy40MDcgMCAwIDEgMzMuNDYgMGguMDR6bS40OCA0MS4zNGMtMS42LTIuMjEtMi01LjItMi03Lj",
+        "g1IDAtMi42NS40LTUuNjMgMi03LjgzIDEuNDQtMS45NyAzLjQ3LTIuODQgNS44OC0yLjg0IDIuNDEgMCA0LjQyLjg3IDUuODYgMi",
+        "44NCAxLjYxIDIuMjEgMi4wMyA1LjE2IDIuMDMgNy44MyAwIDIuNjYtLjQgNS42NC0yIDcuODUtMS40MyAxLjk3LTMuNDcgMi44NC",
+        "01Ljg5IDIuODQtMi40MSAwLTQuNDUtLjg2LTUuODgtMi44NHptLTkuNzMtMTIuNzdsLTUgMS41OHYtNC4yMWw1Ljg3LTIuNjVoNC",
+        "4yOHYyMC40N2gtNS4xNVYyOC41N3ptMTcuNjEgOS45NmMuNjEtMS4zMy42OC0zLjYuNjgtNS4wNHMtLjA3LTMuNy0uNjgtNS4wMm",
+        "MtLjQtLjg2LTEuMDQtMS4yOS0yLTEuMjktLjk1IDAtMS41OS40Mi0xLjk5IDEuMjktLjYxIDEuMzItLjY4IDMuNTgtLjY4IDUuMD",
+        "IgMCAxLjQ0LjA3IDMuNzEuNjggNS4wNC40Ljg3IDEuMDQgMS4yOSAxLjk5IDEuMjkuOTYgMCAxLjYtLjQyIDItMS4yOXoiLz48L3",
+        "N2Zz4=",
+      ].join(""),
+      play: [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NyIgaGVpZ2",
+        "h0PSI2NyIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDY3IDY3Ij48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMjAuMjggOS42NWMtMi",
+        "4yMDUtMS4yNjgtNC4wMjYtLjIyOC00LjAyNiAyLjMwN3Y0My44MDVjMCAyLjUzNSAxLjgyIDMuNTc0IDQuMDI3IDIuMzA3bDM4Lj",
+        "Q3MS0yMS45MDNhMi41NTYgMi41NTYgMCAwIDAgMS4wOTQtLjkzNSAyLjUxNCAyLjUxNCAwIDAgMCAwLTIuNzQzIDIuNTU2IDIuNT",
+        "U2IDAgMCAwLTEuMDkzLS45MzZMMjAuMjggOS42NXoiLz48L3N2Zz4=",
+      ].join(""),
+      pause: [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NyIgaGVpZ2",
+        "h0PSI2NyIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDY3IDY3Ij48cGF0aCBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZG",
+        "QiIGQ9Ik00Ni4zMzIgNS43NzNhNC4xMjUgNC4xMjUgMCAwIDAtNC4xMjUgNC4xMjV2NDYuNzVhNC4xMjcgNC4xMjcgMCAwIDAgNC",
+        "4xMjUgNC4xMjUgNC4xMjcgNC4xMjcgMCAwIDAgNC4xMjUtNC4xMjVWOS44OThhNC4xMjUgNC4xMjUgMCAwIDAtNC4xMjUtNC4xMj",
+        "V6TTI1LjcwNyA5Ljg5OHY0Ni43NWE0LjEyNSA0LjEyNSAwIDEgMS04LjI1IDBWOS44OThhNC4xMjMgNC4xMjMgMCAwIDEgNC4xMj",
+        "UtNC4xMjUgNC4xMjMgNC4xMjMgMCAwIDEgNC4xMjUgNC4xMjV6IiBjbGlwLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=",
+      ].join(""),
+      fastSeekForward: [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NyIgaGVpZ2",
+        "h0PSI2NyIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDY3IDY3Ij48cGF0aCBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZG",
+        "QiIGQ9Ik0zMy41IDBDMTUgMCAwIDE1IDAgMzMuNVMxNSA2NyAzMy41IDY3IDY3IDUyIDY3IDMzLjVhMi41ODMgMi41ODMgMCAwID",
+        "AtMi41OC0yLjUzYy0xLjQgMC0yLjU1IDEuMTMtMi41NyAyLjUzIDAgMTUuNjYtMTIuNjkgMjguMzUtMjguMzUgMjguMzUtMTUuNj",
+        "UgMC0yOC4zNS0xMi43LTI4LjM1LTI4LjM1IDAtMTUuNjYgMTIuNy0yOC4zNSAyOC4zNS0yOC4zNSA3LjMgMCAxMy45NiAyLjc2ID",
+        "E4Ljk5IDcuMy40Ni40Mi45Ljg1IDEuMzQgMS4yOWgtNi41OWEyLjU4IDIuNTggMCAwIDAgMCA1LjE2aDEzLjc1YzEuNDIgMCAyLj",
+        "U3LTEuMTYgMi41Ny0yLjU4VjIuNThjMC0xLjQzLTEuMTUtMi41OC0yLjU3LTIuNTgtMS40MyAwLTIuNTggMS4xNS0yLjU4IDIuNT",
+        "h2OC41MmMtLjc4LS44Ny0xLjYxLTEuNy0yLjQ3LTIuNDhBMzMuNDQ2IDMzLjQ0NiAwIDAgMCAzMy41NCAwaC0uMDR6bS40OCA0MS",
+        "4zNGMtMS42LTIuMjEtMi01LjItMi03Ljg1IDAtMi42NS40LTUuNjMgMi03LjgzIDEuNDQtMS45NyAzLjQ3LTIuODQgNS44OC0yLj",
+        "g0IDIuNDEgMCA0LjQyLjg3IDUuODYgMi44NCAxLjYxIDIuMjEgMi4wMyA1LjE2IDIuMDMgNy44MyAwIDIuNjYtLjQgNS42NC0yID",
+        "cuODUtMS40MyAxLjk3LTMuNDcgMi44NC01Ljg5IDIuODQtMi40MSAwLTQuNDUtLjg3LTUuODgtMi44NHptLTkuNzMtMTIuNzdsLT",
+        "UgMS41OHYtNC4yMWw1Ljg3LTIuNjVoNC4yOHYyMC40N2gtNS4xNVYyOC41N3ptMTcuNjEgOS45NmMuNjEtMS4zMy42OC0zLjYuNj",
+        "gtNS4wNHMtLjA3LTMuNy0uNjgtNS4wMmMtLjQtLjg3LTEuMDQtMS4yOS0yLTEuMjktLjk1IDAtMS41OS40Mi0xLjk5IDEuMjktLj",
+        "YxIDEuMzItLjY4IDMuNTgtLjY4IDUuMDIgMCAxLjQ0LjA3IDMuNzEuNjggNS4wNC40Ljg2IDEuMDQgMS4yOCAxLjk5IDEuMjguOT",
+        "YgMCAxLjYtLjQyIDItMS4yOHoiLz48L3N2Zz4=",
+      ].join(""),
+    };
+
+    const buttonObj = {
+      fastSeekBack: null,
+      playPause: null,
+      fastSeekForward: null,
+    };
+
+    const addEventListenerForController = () => {
+      (() => {
+        const fastSeekBackButton = buttonObj.fastSeekBack;
+        if (!fastSeekBackButton) {
+          return;
+        }
+        if (fastSeekBackButton.classList.contains("event-listener-added")) {
+          return;
+        }
+        fastSeekBackButton.classList.add("event-listener-added");
+
+        fastSeekBackButton.addEventListener("click", () => {
+          const video = getVisibleVideo();
+          if (video) {
+            video.currentTime = video.currentTime - 10;
+          }
+        });
+      })();
+
+      (() => {
+        const playPauseButton = buttonObj.playPause;
+        if (!playPauseButton) {
+          return;
+        }
+        if (playPauseButton.classList.contains("event-listener-added")) {
+          return;
+        }
+        playPauseButton.classList.add("event-listener-added");
+
+        playPauseButton.addEventListener("click", () => {
+          const video = getVisibleVideo();
+          if (!video) {
+            return;
+          }
+          const img = playPauseButton.querySelector("img");
+          if (video.paused) {
+            video.play();
+            img.src = imgDataUrlStrObj.play;
+          } else {
+            video.pause();
+            img.src = imgDataUrlStrObj.pause;
+          }
+        });
+
+        const video = getVisibleVideo();
+        if (video) {
+          const img = playPauseButton.querySelector("img");
+          video.addEventListener("pause", () => {
+            img.src = imgDataUrlStrObj.play;
+          });
+          video.addEventListener("play", () => {
+            img.src = imgDataUrlStrObj.pause;
+          });
+        }
+      })();
+
+      (() => {
+        const fastSeekForwardButton = buttonObj.fastSeekForward;
+        if (!fastSeekForwardButton) {
+          return;
+        }
+        if (fastSeekForwardButton.classList.contains("event-listener-added")) {
+          return;
+        }
+        fastSeekForwardButton.classList.add("event-listener-added");
+
+        fastSeekForwardButton.addEventListener("click", () => {
+          const video = getVisibleVideo();
+          if (video) {
+            video.currentTime = video.currentTime + 10;
+          }
+        });
+      })();
+    };
+
+    const adjustElementSize = (element) => {
+      if (!element) {
+        return;
+      }
+
+      const timeindicator = this.player.querySelector(
+        ".atvwebplayersdk-timeindicator-text"
+      );
+      if (timeindicator) {
+        const size = getComputedStyle(timeindicator).fontSize;
+        if (parseInt(size) > 5) {
+          element.style.setProperty("width", size, "important");
+          element.style.setProperty("height", size, "important");
+          return;
+        }
+      }
+
+      const elementComputedStyle = window.getComputedStyle(element);
+      const width = parseFloat(elementComputedStyle.width);
+      const height = parseFloat(elementComputedStyle.height);
+      const newWidth = width * 0.3;
+      const newHeight = height * 0.3;
+      element.style.setProperty("width", newWidth + "px", "important");
+      element.style.setProperty("height", newHeight + "px", "important");
+    };
+
+    const addButton = (className, controllerContainer) => {
+      if (this.player.getElementsByClassName(className).length) {
+        return;
+      }
+
+      const newButton = document.createElement("button");
+      newButton.classList.add(className);
+      const img = document.createElement("img");
+      newButton.append(img);
+      controllerContainer.append(newButton);
+
+      if (className.includes("fastseekback")) {
+        buttonObj.fastSeekBack = newButton;
+        img.src = imgDataUrlStrObj.fastSeekBack;
+      } else if (className.includes("playpause")) {
+        buttonObj.playPause = newButton;
+        img.src = imgDataUrlStrObj.pause;
+        setTimeout(() => {
+          const video = getVisibleVideo();
+          if (video.paused) {
+            img.src = imgDataUrlStrObj.play;
+          } else {
+            img.src = imgDataUrlStrObj.pause;
+          }
+        }, 3000);
+      } else if (className.includes("fastseekforward")) {
+        buttonObj.fastSeekForward = newButton;
+        img.src = imgDataUrlStrObj.fastSeekForward;
+      }
+
+      addEventListenerForController();
+      const fn = () => {
+        newButton.style.width = "";
+        newButton.style.height = "";
+        adjustElementSize(newButton);
+      };
+      fn();
+      setTimeout(fn, 3000);
+    };
+
+    const observer = (_, _observer) => {
+      const infoContainer = this.player.querySelector(
+        "div:has(> .atvwebplayersdk-timeindicator-text)"
+      );
+      if (!infoContainer) {
+        return;
+      }
+      if (_observer) {
+        _observer.disconnect();
+      }
+
+      const controllerContainer = document.createElement("div");
+      controllerContainer.classList.add(
+        "nextup-ext-video-controller-container"
+      );
+      controllerContainer.style.display = "flex";
+      controllerContainer.style.opacity = 0.8;
+      infoContainer.prepend(controllerContainer);
+
+      addButton("nextup-ext-fastseekback-button", controllerContainer);
+      addButton("nextup-ext-playpause-button", controllerContainer);
+      addButton("nextup-ext-fastseekforward-button", controllerContainer);
+
+      if (!document.querySelector("#ext-hideCenterButtons-2")) {
+        const css = `
+          .atvwebplayersdk-fastseekback-button {
+            visibility: hidden !important;
+          }
+          .atvwebplayersdk-playpause-button {
+            visibility: hidden !important;
+          }
+          .atvwebplayersdk-fastseekforward-button {
+            visibility: hidden !important;
+          }
+        `;
+        addStyle(css, "ext-hideCenterButtons-2");
+      }
+
+      new MutationObserver((_, _observer2) => {
+        if (
+          !this.player.querySelector(".nextup-ext-video-controller-container")
+        ) {
+          _observer2.disconnect();
+          observer();
+        }
+      }).observe(this.player, OBSERVER_CONFIG);
+    };
+
+    new MutationObserver(observer).observe(this.player, OBSERVER_CONFIG);
+
+    window.addEventListener("resize", () => {
+      for (const [_, button] of Object.entries(buttonObj)) {
+        if (button) {
+          button.style.width = "";
+          button.style.height = "";
+          adjustElementSize(button);
+        }
       }
     });
   }
