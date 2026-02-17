@@ -4912,6 +4912,9 @@ class ElementController {
           .atvwebplayersdk-fastseekforward-button {
             visibility: hidden !important;
           }
+          .nextup-ext-video-controller-container {
+            visibility: hidden !important;
+          }
           .atvwebplayersdk-fastseekback-button.nextup-ext-temp-show {
             visibility: visible !important;
           }
@@ -4921,36 +4924,42 @@ class ElementController {
           .atvwebplayersdk-fastseekforward-button.nextup-ext-temp-show {
             visibility: visible !important;
           }
+          .nextup-ext-video-controller-container.nextup-ext-temp-show {
+            visibility: visible !important;
+          }
         `;
         addStyle(css, "ext-hideCenterButtons");
       }
 
       let hideTimer = null;
+      let targetSelector =
+        ".atvwebplayersdk-fastseekback-button, .atvwebplayersdk-playpause-button, .atvwebplayersdk-fastseekforward-button";
+      if (options.addVideoControllerToBottomLeft) {
+        targetSelector = ".nextup-ext-video-controller-container";
+      }
       this.player.addEventListener("mousemove", (e) => {
-        const centerButtons = this.player.querySelectorAll(
-          ".atvwebplayersdk-fastseekback-button, .atvwebplayersdk-playpause-button, .atvwebplayersdk-fastseekforward-button"
-        );
-        if (!centerButtons.length || centerButtons.length > 3) {
+        const targets = this.player.querySelectorAll(targetSelector);
+        if (!targets.length) {
           return;
         }
         if (isShortcutKeyActive()) {
-          if (!centerButtons[0].classList.contains("show")) {
-            for (const btn of centerButtons) {
-              show(btn);
+          if (!targets[0].classList.contains("nextup-ext-temp-show")) {
+            for (const t of targets) {
+              show(t);
             }
           }
           if (hideTimer) {
             clearTimeout(hideTimer);
           }
           hideTimer = setTimeout(() => {
-            for (const btn of centerButtons) {
-              hide(btn);
+            for (const t of targets) {
+              hide(t);
             }
           }, 200);
         } else {
-          if (centerButtons[0].classList.contains("show")) {
-            for (const btn of centerButtons) {
-              hide(btn);
+          if (targets[0].classList.contains("nextup-ext-temp-show")) {
+            for (const t of targets) {
+              hide(t);
             }
           }
         }
