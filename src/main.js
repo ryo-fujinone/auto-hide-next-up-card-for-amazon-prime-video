@@ -4607,10 +4607,10 @@ class ElementController {
     };
 
     const updatePressedState = async (e, isDown) => {
-      pressed.ctrlKey = e.ctrlKey;
-      pressed.altKey = e.altKey;
-      pressed.shiftKey = e.shiftKey;
-      pressed.metaKey = e.metaKey;
+      pressed.ctrlKey = !!e.ctrlKey;
+      pressed.altKey = !!e.altKey;
+      pressed.shiftKey = !!e.shiftKey;
+      pressed.metaKey = !!e.metaKey;
 
       shortcutkeyOptions = (await getOptions()).shortcuts.temporarilyShowHidden;
       if (shortcutkeyOptions.userDefinedBindingEnabled) {
@@ -4653,6 +4653,11 @@ class ElementController {
       }
     };
 
+    const isPlayerOpen = () => {
+      const video = getVisibleVideo();
+      return video && video?.checkVisibility() ? true : false;
+    };
+
     window.addEventListener("blur", () => {
       resetPressedState();
     });
@@ -4663,14 +4668,20 @@ class ElementController {
       }
     });
 
-    this.player.addEventListener("keydown", async (e) => {
+    document.body.addEventListener("keydown", async (e) => {
+      if (!isPlayerOpen()) {
+        return;
+      }
       if (e.repeat || isEditable(e.target)) {
         return;
       }
       await updatePressedState(e, true);
     });
 
-    this.player.addEventListener("keyup", async (e) => {
+    document.body.addEventListener("keyup", async (e) => {
+      if (!isPlayerOpen()) {
+        return;
+      }
       if (isEditable(e.target)) {
         return;
       }
@@ -4955,7 +4966,7 @@ class ElementController {
             for (const t of targets) {
               hide(t);
             }
-          }, 200);
+          }, 300);
         } else {
           if (targets[0].classList.contains("nextup-ext-temp-show")) {
             for (const t of targets) {
