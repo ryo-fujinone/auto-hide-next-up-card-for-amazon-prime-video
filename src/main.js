@@ -519,6 +519,36 @@ const pauseVideo = () => {
   }
 };
 
+const detectPlayerVariant = (player) => {
+  const optionsWrapper = player.querySelector(
+    ".atvwebplayersdk-options-wrapper"
+  );
+  const playpauseButton = player.querySelector(
+    ".atvwebplayersdk-playpause-button"
+  );
+  if (optionsWrapper || playpauseButton) {
+    return "legacy";
+  }
+
+  // New UI relies heavily on grid layout.
+  // Unlike aria-label based markers, this is language-independent.
+  // Unlike many overlay controls, these grid-area nodes exist even when overlay is hidden.
+  const gridAreas = player.querySelectorAll(
+    "div[style*='grid-template-columns'] > div[style*='grid-area']"
+  );
+  if (gridAreas.length >= 2) {
+    return "new";
+  }
+
+  const xrayFreshStart = player.querySelector(".xrayQuickView.freshStart");
+  const toastWrapper = player.querySelector(".atvwebplayersdk-toast-wrapper");
+  if (xrayFreshStart && toastWrapper) {
+    return "new";
+  }
+
+  return "unknown";
+};
+
 class ShortcutKeyManager {
   static #isListenerAdded = false;
 
@@ -3422,6 +3452,34 @@ class ElementController {
   constructor(player) {
     this.player = player;
     this.centerOverlaysWrapperIsMarked = false;
+    this.playerVariant = "unknown";
+  }
+
+  hasResolvedVariant() {
+    return this.playerVariant !== "unknown";
+  }
+
+  isVariantUnknown() {
+    return this.playerVariant === "unknown";
+  }
+
+  startVariantDetection() {
+    new MutationObserver((_, observer) => {
+      if (this.hasResolvedVariant()) {
+        observer.disconnect();
+        return;
+      }
+      const result = detectPlayerVariant(this.player);
+      if (result === "unknown") {
+        return;
+      }
+      console.log("PlayerVariant:", result);
+      this.playerVariant = result;
+      observer.disconnect();
+    }).observe(document, {
+      ...OBSERVER_CONFIG,
+      attributes: true,
+    });
   }
 
   createOptionBtn() {
@@ -5431,6 +5489,7 @@ const main = async () => {
       }
 
       const controller = new ElementController(player);
+      controller.startVariantDetection();
 
       try {
         controller.changeOrderOfVideoElements(options);
