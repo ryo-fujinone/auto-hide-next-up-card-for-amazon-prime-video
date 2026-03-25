@@ -1661,6 +1661,19 @@ const createOptionDialog = async () => {
 
   addStyle(css);
 
+  setTimeout(() => {
+    const optionsWrapper = document.querySelector(
+      ".atvwebplayersdk-options-wrapper"
+    );
+    const playpauseButton = document.querySelector(
+      ".atvwebplayersdk-playpause-button"
+    );
+    if (optionsWrapper || playpauseButton) {
+      const notice = document.querySelector(".nextup-ext-opt-dialog-notice");
+      if (notice) notice.style.display = "none";
+    }
+  }, 3000);
+
   const tooltipElements = document.querySelectorAll(
     ".nextup-ext-opt-dialog-tooltip"
   );
