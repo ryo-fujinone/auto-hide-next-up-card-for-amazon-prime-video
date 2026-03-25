@@ -1,4 +1,24 @@
 const OBSERVER_CONFIG = Object.freeze({ childList: true, subtree: true });
+const OPTION_BTN_IMG_DATA_URL = [
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2",
+  "h0PSIyNSIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI1IDI1Ij48cGF0aCBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZG",
+  "QiIGQ9Ik04LjYgNC45OTRjLS4zMzcuMTY2LS42Ni4zNTMtLjk3LjU2bC0xLjk0Ny0uODEyYTEuNSAxLjUgMCAwIDAtMS44NzcuNj",
+  "M0TDEuODIyIDguODEyYTEuNSAxLjUgMCAwIDAgLjM5IDEuOTQzbDEuNjc4IDEuMjhhOC41OTYgOC41OTYgMCAwIDAgMCAxLjExOG",
+  "wtMS42NzggMS4yOGExLjUgMS41IDAgMCAwLS4zOSAxLjk0M2wxLjk4NCAzLjQzNmExLjUgMS41IDAgMCAwIDEuODc3LjYzNGwxLj",
+  "k0Ny0uODEzYy4zMS4yMDcuNjMzLjM5NS45Ny41NmwuMjY5IDIuMDkyYTEuNSAxLjUgMCAwIDAgMS40ODggMS4zMDloMy45NjdhMS",
+  "41IDEuNSAwIDAgMCAxLjQ4OC0xLjMwOWwuMjY5LTIuMDkxYy4zMzYtLjE2Ni42Ni0uMzU0Ljk3LS41NjFsMS45NDcuODEzYTEuNS",
+  "AxLjUgMCAwIDAgMS44NzctLjYzNGwxLjk4My0zLjQzNmExLjUgMS41IDAgMCAwLS4zODktMS45NDNsLTEuNjc4LTEuMjhhOC42My",
+  "A4LjYzIDAgMCAwIDAtMS4xMThsMS42NzgtMS4yOGExLjUgMS41IDAgMCAwIC4zOS0xLjk0M2wtMS45ODQtMy40MzZhMS41IDEuNS",
+  "AwIDAgMC0xLjg3Ny0uNjM0bC0xLjk0OC44MTNhOC40NTQgOC40NTQgMCAwIDAtLjk2OS0uNTYxbC0uMjctMi4wOTJhMS41IDEuNS",
+  "AwIDAgMC0xLjQ4Ny0xLjMwOGgtMy45NjdhMS41IDEuNSAwIDAgMC0xLjQ4OCAxLjMwOGwtLjI3IDIuMDkyem0xLjgzNCAxLjQxNk",
+  "E2LjQ4IDYuNDggMCAwIDAgNy45NCA3Ljg1Mkw1LjMxOCA2Ljc1NyAzLjc3NCA5LjQzbDIuMjU4IDEuNzIyYTYuNDkgNi40OSAwID",
+  "AgMCAwIDIuODgxbC0yLjI1OCAxLjcyMyAxLjU0NCAyLjY3NCAyLjYyMi0xLjA5NWE2LjQ2MiA2LjQ2MiAwIDAgMCAyLjQ5NCAxLj",
+  "Q0MWwuMzYyIDIuODE3aDMuMDg4bC4zNjMtMi44MTdjLjk0LS4yOSAxLjc5LS43ODggMi40OTMtMS40NDFsMi42MjMgMS4wOTUgMS",
+  "41NDQtMi42NzQtMi4yNTktMS43MjNhNi40ODkgNi40ODkgMCAwIDAgMC0yLjg4bDIuMjU5LTEuNzIzLTEuNTQ0LTIuNjc0LTIuNj",
+  "IzIDEuMDk1YTYuNDYxIDYuNDYxIDAgMCAwLTIuNDkzLTEuNDQxbC0uMzYzLTIuODE3aC0zLjA4OGwtLjM2MiAyLjgxNnptMS45MD",
+  "YgMTAuMTg0YTQgNCAwIDEgMCAwLTggNCA0IDAgMCAwIDAgOHptMC0yYTIgMiAwIDEgMCAwLTQgMiAyIDAgMCAwIDAgNHoiIGNsaX",
+  "AtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==",
+].join("");
 
 const getDefaultOptions = () => {
   return {
@@ -517,6 +537,50 @@ const pauseVideo = () => {
       console.log(e);
     }
   }
+};
+
+const getPlayerUIGridRoot = (player) => {
+  const gridAreas = player.querySelectorAll(
+    "div[style*='grid-template-columns'] > div[style*='grid-area']"
+  );
+  if (gridAreas.length < 2) {
+    return;
+  }
+  return gridAreas[0].parentNode;
+};
+
+const getSvgImageButtons = (root) => {
+  return [
+    ...root.querySelectorAll("button img[src^='data:image/svg+xml']"),
+  ].map((img) => ({ img, button: img.closest("button") }));
+};
+
+const decodeSvgDataUrl = (dataUrl) => {
+  const prefix = "data:image/svg+xml;base64,";
+  if (!dataUrl.startsWith(prefix)) {
+    return;
+  }
+  const base64 = dataUrl.slice(prefix.length);
+  return atob(base64);
+};
+
+const getSvgSignature = (img) => {
+  const svg = decodeSvgDataUrl(img.src);
+  if (!svg) {
+    return;
+  }
+
+  const viewBox = svg.match(/viewBox="([^"]+)"/)?.[1] ?? "";
+  const pathCount = (svg.match(/<path\b/g) ?? []).length;
+  const hasEvenOdd = /fill-rule="evenodd"/.test(svg);
+  const d = svg.match(/\sd="([^"]+)"/)?.[1] ?? "";
+
+  return {
+    viewBox,
+    pathCount,
+    hasEvenOdd,
+    d,
+  };
 };
 
 const detectPlayerVariant = (player) => {
@@ -2090,28 +2154,8 @@ const createOptionBtnOnNavbar = () => {
       const cloneImgContainer = imgContainer.cloneNode();
       optBtnElement.appendChild(cloneImgContainer);
 
-      const imgDataUrl = [
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNSIgaGVpZ2",
-        "h0PSIyNSIgZmlsbD0ibm9uZSIgdmlld0JveD0iMCAwIDI1IDI1Ij48cGF0aCBmaWxsPSIjZmZmIiBmaWxsLXJ1bGU9ImV2ZW5vZG",
-        "QiIGQ9Ik04LjYgNC45OTRjLS4zMzcuMTY2LS42Ni4zNTMtLjk3LjU2bC0xLjk0Ny0uODEyYTEuNSAxLjUgMCAwIDAtMS44NzcuNj",
-        "M0TDEuODIyIDguODEyYTEuNSAxLjUgMCAwIDAgLjM5IDEuOTQzbDEuNjc4IDEuMjhhOC41OTYgOC41OTYgMCAwIDAgMCAxLjExOG",
-        "wtMS42NzggMS4yOGExLjUgMS41IDAgMCAwLS4zOSAxLjk0M2wxLjk4NCAzLjQzNmExLjUgMS41IDAgMCAwIDEuODc3LjYzNGwxLj",
-        "k0Ny0uODEzYy4zMS4yMDcuNjMzLjM5NS45Ny41NmwuMjY5IDIuMDkyYTEuNSAxLjUgMCAwIDAgMS40ODggMS4zMDloMy45NjdhMS",
-        "41IDEuNSAwIDAgMCAxLjQ4OC0xLjMwOWwuMjY5LTIuMDkxYy4zMzYtLjE2Ni42Ni0uMzU0Ljk3LS41NjFsMS45NDcuODEzYTEuNS",
-        "AxLjUgMCAwIDAgMS44NzctLjYzNGwxLjk4My0zLjQzNmExLjUgMS41IDAgMCAwLS4zODktMS45NDNsLTEuNjc4LTEuMjhhOC42My",
-        "A4LjYzIDAgMCAwIDAtMS4xMThsMS42NzgtMS4yOGExLjUgMS41IDAgMCAwIC4zOS0xLjk0M2wtMS45ODQtMy40MzZhMS41IDEuNS",
-        "AwIDAgMC0xLjg3Ny0uNjM0bC0xLjk0OC44MTNhOC40NTQgOC40NTQgMCAwIDAtLjk2OS0uNTYxbC0uMjctMi4wOTJhMS41IDEuNS",
-        "AwIDAgMC0xLjQ4Ny0xLjMwOGgtMy45NjdhMS41IDEuNSAwIDAgMC0xLjQ4OCAxLjMwOGwtLjI3IDIuMDkyem0xLjgzNCAxLjQxNk",
-        "E2LjQ4IDYuNDggMCAwIDAgNy45NCA3Ljg1Mkw1LjMxOCA2Ljc1NyAzLjc3NCA5LjQzbDIuMjU4IDEuNzIyYTYuNDkgNi40OSAwID",
-        "AgMCAwIDIuODgxbC0yLjI1OCAxLjcyMyAxLjU0NCAyLjY3NCAyLjYyMi0xLjA5NWE2LjQ2MiA2LjQ2MiAwIDAgMCAyLjQ5NCAxLj",
-        "Q0MWwuMzYyIDIuODE3aDMuMDg4bC4zNjMtMi44MTdjLjk0LS4yOSAxLjc5LS43ODggMi40OTMtMS40NDFsMi42MjMgMS4wOTUgMS",
-        "41NDQtMi42NzQtMi4yNTktMS43MjNhNi40ODkgNi40ODkgMCAwIDAgMC0yLjg4bDIuMjU5LTEuNzIzLTEuNTQ0LTIuNjc0LTIuNj",
-        "IzIDEuMDk1YTYuNDYxIDYuNDYxIDAgMCAwLTIuNDkzLTEuNDQxbC0uMzYzLTIuODE3aC0zLjA4OGwtLjM2MiAyLjgxNnptMS45MD",
-        "YgMTAuMTg0YTQgNCAwIDEgMCAwLTggNCA0IDAgMCAwIDAgOHptMC0yYTIgMiAwIDEgMCAwLTQgMiAyIDAgMCAwIDAgNHoiIGNsaX",
-        "AtcnVsZT0iZXZlbm9kZCIvPjwvc3ZnPg==",
-      ].join("");
       const optBtnImgElement = document.createElement("img");
-      optBtnImgElement.setAttribute("src", imgDataUrl);
+      optBtnImgElement.setAttribute("src", OPTION_BTN_IMG_DATA_URL);
       optBtnImgElement.style.filter =
         "sepia(100%) saturate(2000%) hue-rotate(120deg)";
       cloneImgContainer.appendChild(optBtnImgElement);
@@ -3480,6 +3524,7 @@ class ElementController {
     this.player = player;
     this.centerOverlaysWrapperIsMarked = false;
     this.playerVariant = "unknown";
+    this.pendingTasks = new Map();
   }
 
   hasResolvedVariant() {
@@ -3490,10 +3535,25 @@ class ElementController {
     return this.playerVariant === "unknown";
   }
 
+  isVariantLegacy() {
+    return this.playerVariant === "legacy";
+  }
+
+  isVariantNew() {
+    return this.playerVariant === "new";
+  }
+
   startVariantDetection() {
+    let canRunPendingTasks = true;
+    const afterResolved = () => {
+      canRunPendingTasks = false;
+      this.runPendingTasks();
+    };
+
     new MutationObserver((_, observer) => {
       if (this.hasResolvedVariant()) {
         observer.disconnect();
+        afterResolved();
         return;
       }
       const result = detectPlayerVariant(this.player);
@@ -3503,13 +3563,56 @@ class ElementController {
       console.log("PlayerVariant:", result);
       this.playerVariant = result;
       observer.disconnect();
+      afterResolved();
     }).observe(document, {
       ...OBSERVER_CONFIG,
       attributes: true,
     });
   }
 
+  runFeatureWhenVariantResolved(key, task) {
+    const runTask = () => {
+      try {
+        task();
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+    if (this.hasResolvedVariant()) {
+      runTask();
+      return;
+    }
+
+    this.pendingTasks.set(key, runTask);
+  }
+
+  runPendingTasks() {
+    const tasks = [...this.pendingTasks.values()];
+    this.pendingTasks.clear();
+
+    for (const task of tasks) {
+      task();
+    }
+  }
+
+  tempAddElemToPlayer() {
+    const div = document.createElement("div");
+    this.player.append(div);
+    div.remove();
+  }
+
   createOptionBtn() {
+    this.runFeatureWhenVariantResolved("createOptionBtn", () => {
+      if (this.isVariantLegacy()) {
+        this.createLegacyOptionBtn();
+      } else if (this.isVariantNew()) {
+        this.createNewUiOptionBtn();
+      }
+    });
+  }
+
+  createLegacyOptionBtn() {
     new MutationObserver((_, observer) => {
       if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
         observer.disconnect();
@@ -3560,6 +3663,68 @@ class ElementController {
         this.createOptionBtn();
       }).observe(btnsContainer, { ...OBSERVER_CONFIG, attributes: true });
     }).observe(this.player, { ...OBSERVER_CONFIG, attributes: true });
+    this.tempAddElemToPlayer();
+  }
+
+  createNewUiOptionBtn() {
+    new MutationObserver((_) => {
+      if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
+        return;
+      }
+      const gridRoot = getPlayerUIGridRoot(this.player);
+      if (!gridRoot) return;
+      const svgImageButtons = getSvgImageButtons(gridRoot);
+      if (svgImageButtons.length === 0) return;
+
+      const isKebabMenuIcon = (img) => {
+        const sig = getSvgSignature(img);
+        return (
+          sig.viewBox === "0 0 6 25" &&
+          sig.pathCount === 1 &&
+          sig.hasEvenOdd &&
+          sig.d.includes("M5.5 2.75a2.75") &&
+          sig.d.includes("2.75 2.75")
+        );
+      };
+
+      let kebabMenuIcon;
+      for (const item of svgImageButtons) {
+        if (isKebabMenuIcon(item.img)) {
+          kebabMenuIcon = item;
+          item.img.dataset.isKebabMenuIcon = true;
+          break;
+        }
+      }
+
+      // console.log(kebabMenuIcon);
+      const kebabMenuIconContainer = kebabMenuIcon.button.parentNode.parentNode;
+      if (kebabMenuIconContainer.querySelectorAll("button").length !== 1)
+        return;
+
+      const cloneContainer = kebabMenuIconContainer.cloneNode(true);
+      cloneContainer.classList.add("nextup-ext-opt-btn-container");
+      const cloneButton = cloneContainer.querySelector("button");
+      cloneButton.setAttribute("aria-label", "Option - Auto hide next up card");
+      for (const cloneImg of cloneButton.querySelectorAll("img")) {
+        if (!cloneImg.dataset.isKebabMenuIcon) {
+          cloneImg.remove();
+        } else {
+          cloneImg.setAttribute("src", OPTION_BTN_IMG_DATA_URL);
+          cloneImg.style.filter =
+            "sepia(100%) saturate(2000%) hue-rotate(120deg)";
+        }
+      }
+      const tooltip = cloneContainer.querySelector(".tooltip div");
+      if (tooltip) {
+        tooltip.textContent = "Option - Auto hide next up card";
+      }
+      kebabMenuIconContainer.before(cloneContainer);
+
+      cloneButton.addEventListener("click", (_) => {
+        const optDialog = getOptionDialog();
+        optDialog.showModal();
+      });
+    }).observe(this.player, OBSERVER_CONFIG);
   }
 
   // for LiveTV
