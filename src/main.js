@@ -2,7 +2,7 @@ const OBSERVER_CONFIG = Object.freeze({ childList: true, subtree: true });
 
 const getDefaultOptions = () => {
   return {
-    _scriptVersion: "2.16.1",
+    _scriptVersion: "2.16.2",
     _schemaVersion: null,
     skipAds: true,
     hideSkipIntroBtn: true,
