@@ -3581,6 +3581,19 @@ class PrimeVideoTextRepository {
   static #initPromise = null;
   static #snapshot = {
     skipIntroAriaLabels: ["Skip Intro", "Skip Recap"],
+    closePlayerLabels: ["Close player"],
+    subtitlesToggleAriaLabels: [
+      "Turn off subtitles",
+      "Turn on subtitles",
+      "Subtitles unavailable",
+    ],
+    muteToggleAriaLabels: ["Mute", "Unmute"],
+    pictureInPictureToggleAriaLabels: [
+      "Enter Picture-in-Picture",
+      "Exit Picture-in-Picture",
+    ],
+    fullscreenToggleAriaLabels: ["Fullscreen", "Exit Fullscreen"],
+    settingsAriaLabels: ["Settings"],
   };
   static #knownAtvWebPlayerUiKeys = [];
   static #listeners = new Set();
@@ -3625,20 +3638,69 @@ class PrimeVideoTextRepository {
     };
   }
 
-  static #extractSkipIntroLabelsFromCache(cache = {}) {
+  static #parseCacheData(cache = {}) {
     if (!cache?.data || typeof cache.data !== "string") {
-      return [];
+      return null;
     }
-    let data;
+
     try {
-      data = JSON.parse(cache.data);
+      return JSON.parse(cache.data);
     } catch (e) {
       console.log(e);
-      return [];
+      return null;
     }
-    return [data?.skip?.intro, data?.skip?.recap].filter((text) => {
+  }
+
+  static #filterNonEmptyStrings(texts = []) {
+    return texts.filter((text) => {
       return typeof text === "string" && text.trim() !== "";
     });
+  }
+
+  static #extractSkipIntroLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.skip?.intro, data?.skip?.recap]);
+  }
+
+  static #extractClosePlayerLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.closePlayer]);
+  }
+
+  static #extractPictureInPictureToggleLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([
+      data?.pictureInPicture,
+      data?.exitPictureInPicture,
+    ]);
+  }
+
+  static #extractFullscreenToggleLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([
+      data?.fullscreen,
+      data?.exitFullscreen,
+    ]);
+  }
+
+  static #extractSettingsLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.settings]);
   }
 
   static async #updateSnapshotFromCachedPlayerUiTexts(keys) {
@@ -3649,21 +3711,43 @@ class PrimeVideoTextRepository {
     for (const result of results) {
       if (result.status !== "fulfilled") continue;
 
-      const skipIntroLabels = this.#extractSkipIntroLabelsFromCache(
-        result.value
-      );
+      const snapshot = this.#snapshot;
+      const value = result.value;
+      const skipIntroLabels = this.#extractSkipIntroLabelsFromCache(value);
+      const closePlayerLabels = this.#extractClosePlayerLabelsFromCache(value);
+      const pictureInPictureToggleLabels =
+        this.#extractPictureInPictureToggleLabelsFromCache(value);
+      const fullscreenToggleLabels =
+        this.#extractFullscreenToggleLabelsFromCache(value);
+      const settingsLabels = this.#extractSettingsLabelsFromCache(value);
 
       this.#snapshot = {
-        ...this.#snapshot,
+        ...snapshot,
         skipIntroAriaLabels: [
+          ...new Set([...snapshot.skipIntroAriaLabels, ...skipIntroLabels]),
+        ],
+        closePlayerLabels: [
+          ...new Set([...snapshot.closePlayerLabels, ...closePlayerLabels]),
+        ],
+        pictureInPictureToggleAriaLabels: [
           ...new Set([
-            ...this.#snapshot.skipIntroAriaLabels,
-            ...skipIntroLabels,
+            ...snapshot.pictureInPictureToggleAriaLabels,
+            ...pictureInPictureToggleLabels,
           ]),
+        ],
+        fullscreenToggleAriaLabels: [
+          ...new Set([
+            ...snapshot.fullscreenToggleAriaLabels,
+            ...fullscreenToggleLabels,
+          ]),
+        ],
+        settingsAriaLabels: [
+          ...new Set([...snapshot.settingsAriaLabels, ...settingsLabels]),
         ],
       };
     }
 
+    console.log("PrimeVideo Text Snapshot:", this.#snapshot);
     this.#emit();
   }
 
@@ -3677,6 +3761,111 @@ class PrimeVideoTextRepository {
         return !overlayVisible
           ? `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`
           : `#${player.id}[data-nextup-ext-overlay-visible='true'] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateCloseButtonSelectors(player) {
+    return this.#snapshot.closePlayerLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateCloseButtonTooltipSelectors(player) {
+    return this.#snapshot.closePlayerLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateSubtitlesButtonSelectors(player) {
+    return this.#snapshot.subtitlesToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateSubtitlesButtonTooltipSelectors(player) {
+    return this.#snapshot.subtitlesToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateMuteToggleButtonSelectors(player) {
+    return this.#snapshot.muteToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateMuteToggleButtonTooltipSelectors(player) {
+    return this.#snapshot.muteToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generatePictureInPictureToggleButtonSelectors(player) {
+    return this.#snapshot.pictureInPictureToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generatePictureInPictureToggleButtonTooltipSelectors(player) {
+    return this.#snapshot.pictureInPictureToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateFullscreenToggleButtonSelectors(player) {
+    return this.#snapshot.fullscreenToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateFullscreenToggleButtonTooltipSelectors(player) {
+    return this.#snapshot.fullscreenToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateExtOptionButtonSelectors(player) {
+    const label = "Option - Auto hide next up card";
+    return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+  }
+
+  static generateExtOptionButtonTooltipSelectors(player) {
+    const label = "Option - Auto hide next up card";
+    return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+  }
+
+  static generateSettingsButtonSelectors(player) {
+    return this.#snapshot.settingsAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+  static generateSettingsButtonTooltipSelectors(player) {
+    return this.#snapshot.settingsAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]  + .tooltip`;
       })
       .join(",\n");
   }
@@ -4609,7 +4798,16 @@ class ElementController {
     if (!options.preventsDarkening) {
       return;
     }
+    this.runFeatureWhenVariantResolved("preventsDarkening", () => {
+      if (this.isVariantLegacy()) {
+        this.preventsLegacyDarkening(options);
+      } else if (this.isVariantNew()) {
+        this.preventsNewUiDarkening(options);
+      }
+    });
+  }
 
+  preventsLegacyDarkening(options = getDefaultOptions()) {
     if (!document.querySelector("#ext-preventsDarkening")) {
       /**
        * at amazon.co.jp
@@ -4759,6 +4957,65 @@ class ElementController {
           }
         `;
         addStyle(cssForShadows, "ext-addShadowsToSeekBar");
+      }
+    }
+  }
+
+  preventsNewUiDarkening(options = getDefaultOptions()) {
+    if (!document.querySelector("#ext-preventsDarkening")) {
+      const css = `
+        .atvwebplayersdk-player-container .feqqns3,
+        .atvwebplayersdk-player-container .f10znfo1 {
+          display: none !important;
+        }
+      `;
+      addStyle(css, "ext-preventsDarkening");
+    }
+
+    if (options.addOutlinesForTextsAndIcons) {
+      if (!document.querySelector("#ext-addOutlinesForTexts")) {
+        const cssForText = `
+          .atvwebplayersdk-title-text,
+          .atvwebplayersdk-episode-info {
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.05em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 3px black;
+          }
+          ${PrimeVideoTextRepository.generateCloseButtonTooltipSelectors(
+            this.player
+          )},
+          ${PrimeVideoTextRepository.generateSubtitlesButtonTooltipSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateMuteToggleButtonTooltipSelectors(this.player)},
+          ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonTooltipSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateFullscreenToggleButtonTooltipSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateExtOptionButtonTooltipSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateSettingsButtonTooltipSelectors(this.player)}
+          {
+            paint-order: stroke fill;
+            -webkit-text-stroke: 0.07em black;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
+          }
+        `;
+        addStyle(cssForText, "ext-addOutlinesForTexts");
+      }
+
+      if (!document.querySelector("#ext-addOutlinesForIcons")) {
+        const cssForImg = `
+          ${PrimeVideoTextRepository.generateCloseButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateSubtitlesButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateMuteToggleButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateFullscreenToggleButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player)} {
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+          }
+          ${PrimeVideoTextRepository.generateExtOptionButtonSelectors(this.player)} {
+            filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black) !important;
+          }
+        `;
+        addStyle(cssForImg, "ext-addOutlinesForIcons");
       }
     }
   }
