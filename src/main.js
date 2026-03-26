@@ -165,13 +165,31 @@ const isApplePlatform = () => {
   return /Macintosh|Mac OS X|iPhone|iPad|iPod/i.test(navigator.userAgent);
 };
 
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 const addStyle = (css, id) => {
   const style = document.createElement("style");
   if (id) {
-    style.setAttribute("id", id);
+    style.id = id;
   }
   style.textContent = css;
   document.head.appendChild(style);
+  return style;
+};
+
+const upsertStyle = (css, id) => {
+  let style = document.getElementById(id);
+  if (!style) {
+    style = document.createElement("style");
+    style.id = id;
+    document.head.appendChild(style);
+  }
+  if (style.textContent !== css) {
+    style.textContent = css;
+  }
+  return style;
 };
 
 const saveOptionsToChromeStorage = async (newOptions) => {
@@ -456,6 +474,43 @@ const setByObjectPath = (obj, path, value) => {
   }
   cur[keys[keys.length - 1]] = value;
   return clone;
+};
+
+const openIDB = (dbName) => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+};
+
+const listStoreKeys = async (dbName, storeName) => {
+  const db = await openIDB(dbName);
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, "readonly");
+    const store = transaction.objectStore(storeName);
+    const request = store.getAllKeys();
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+};
+
+const getIDBValue = async (dbName, storeName, key) => {
+  const db = await openIDB(dbName);
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(storeName, "readonly");
+    const store = transaction.objectStore(storeName);
+    const request = store.get(key);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
 };
 
 const getOptionDialog = () => {
@@ -3519,6 +3574,155 @@ const injectXhook = (options = getDefaultOptions()) => {
   }
 };
 
+class PrimeVideoTextRepository {
+  static #dbName = "ScriptStore";
+  static #storeName = "ScriptStore";
+
+  static #initPromise = null;
+  static #snapshot = {
+    skipIntroAriaLabels: ["Skip Intro", "Skip Recap"],
+  };
+  static #knownAtvWebPlayerUiKeys = [];
+  static #listeners = new Set();
+
+  static subscribe = (listener) => {
+    this.#listeners.add(listener);
+
+    return () => {
+      this.#listeners.delete(listener);
+    };
+  };
+
+  static #emit() {
+    for (const listener of this.#listeners) {
+      try {
+        listener(this.#snapshot);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  }
+
+  static #findAtvWebPlayerUiKeys(keys) {
+    return keys.filter((key) => {
+      return typeof key === "string" && key.startsWith("ATVWebPlayerUI-");
+    });
+  }
+
+  static #diffAddedKeys(keys1, keys2) {
+    const prevSet = new Set(keys1);
+    return keys2.filter((key) => !prevSet.has(key));
+  }
+
+  static async #checkForNewAtvWebPlayerUiKeys(knownKeys) {
+    const allKeys = await listStoreKeys(this.#dbName, this.#storeName);
+    const currentKeys = this.#findAtvWebPlayerUiKeys(allKeys);
+    const addedKeys = this.#diffAddedKeys(knownKeys, currentKeys);
+
+    return {
+      currentKeys,
+      addedKeys,
+    };
+  }
+
+  static #extractSkipIntroLabelsFromCache(cache = {}) {
+    if (!cache?.data || typeof cache.data !== "string") {
+      return [];
+    }
+    let data;
+    try {
+      data = JSON.parse(cache.data);
+    } catch (e) {
+      console.log(e);
+      return [];
+    }
+    return [data?.skip?.intro, data?.skip?.recap].filter((text) => {
+      return typeof text === "string" && text.trim() !== "";
+    });
+  }
+
+  static async #updateSnapshotFromCachedPlayerUiTexts(keys) {
+    const results = await Promise.allSettled(
+      keys.map((key) => getIDBValue(this.#dbName, this.#storeName, key))
+    );
+
+    for (const result of results) {
+      if (result.status !== "fulfilled") continue;
+
+      const skipIntroLabels = this.#extractSkipIntroLabelsFromCache(
+        result.value
+      );
+
+      this.#snapshot = {
+        ...this.#snapshot,
+        skipIntroAriaLabels: [
+          ...new Set([
+            ...this.#snapshot.skipIntroAriaLabels,
+            ...skipIntroLabels,
+          ]),
+        ],
+      };
+    }
+
+    this.#emit();
+  }
+
+  static escapeCssAttrValue = (value) => {
+    return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+  };
+
+  static generateSkipIntroButtonSelectors(player) {
+    return this.#snapshot.skipIntroAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static init() {
+    if (this.#initPromise) {
+      return this.#initPromise;
+    }
+
+    this.#initPromise = (async () => {
+      const firstCheck = await this.#checkForNewAtvWebPlayerUiKeys([]);
+      this.#knownAtvWebPlayerUiKeys = firstCheck.currentKeys;
+
+      if (this.#knownAtvWebPlayerUiKeys.length > 0) {
+        console.log("ATVWebPlayerUI key found:", firstCheck.currentKeys);
+        this.#updateSnapshotFromCachedPlayerUiTexts(
+          this.#knownAtvWebPlayerUiKeys
+        );
+      }
+
+      for (let i = 0; i < 15; i++) {
+        await sleep(200);
+
+        const { currentKeys, addedKeys } =
+          await this.#checkForNewAtvWebPlayerUiKeys(
+            this.#knownAtvWebPlayerUiKeys
+          );
+        if (addedKeys.length > 0) {
+          this.#knownAtvWebPlayerUiKeys = currentKeys;
+          console.log("ATVWebPlayerUI key increased:", currentKeys);
+          this.#updateSnapshotFromCachedPlayerUiTexts(
+            this.#knownAtvWebPlayerUiKeys
+          );
+          break;
+        }
+      }
+
+      return this.getSnapshot();
+    })();
+
+    return this.#initPromise;
+  }
+
+  static getSnapshot = () => {
+    return structuredClone(this.#snapshot);
+  };
+}
+
 class ElementController {
   constructor(player) {
     this.player = player;
@@ -3906,7 +4110,16 @@ class ElementController {
     if (!options.hideSkipIntroBtn || options.tweakHideSkipIntroButton) {
       return;
     }
+    this.runFeatureWhenVariantResolved("hideSkipIntroBtn", () => {
+      if (this.isVariantLegacy()) {
+        this.hideLegacySkipIntroBtn(options);
+      } else if (this.isVariantNew()) {
+        this.hideNewUiSkipIntroBtn(options);
+      }
+    });
+  }
 
+  hideLegacySkipIntroBtn(options = getDefaultOptions()) {
     if (!document.querySelector("#ext-hideSkipIntroBtn")) {
       const css = `
         .atvwebplayersdk-skipelement-button {
@@ -3957,6 +4170,26 @@ class ElementController {
       }
     }).observe(centerOverlaysWrapper, {
       attributes: true,
+    });
+  }
+
+  hideNewUiSkipIntroBtn(options = getDefaultOptions()) {
+    const applyHideSkipIntroStyle = () => {
+      const skipIntroButtonSelectors =
+        PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player);
+      const css = `
+        ${skipIntroButtonSelectors} {
+          display: none !important;
+        }
+      `;
+      upsertStyle(css, "ext-hideNewUiSkipIntroBtn");
+    };
+
+    applyHideSkipIntroStyle(PrimeVideoTextRepository.getSnapshot());
+
+    const unsubscribe = PrimeVideoTextRepository.subscribe((snapshot) => {
+      applyHideSkipIntroStyle();
+      unsubscribe();
     });
   }
 
@@ -5698,6 +5931,13 @@ const main = async () => {
 
       if (isFirstPlayer) {
         isFirstPlayer = false;
+
+        try {
+          PrimeVideoTextRepository.init();
+        } catch (e) {
+          console.log(e);
+        }
+
         try {
           createOptionBtnOnNavbar();
         } catch (e) {
