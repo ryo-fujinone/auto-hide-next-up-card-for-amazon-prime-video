@@ -4592,7 +4592,12 @@ class ElementController {
     }
     if (!document.querySelector("#ext-hideRatingText")) {
       const css = `
+        /* Legacy UI*/
         .atvwebplayersdk-regulatory-overlay {
+          display: none !important;
+        }
+        /* New UI*/
+        .atvwebplayersdk-maturity-ratings {
           display: none !important;
         }
       `;
