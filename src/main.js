@@ -3671,10 +3671,12 @@ class PrimeVideoTextRepository {
     return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
   };
 
-  static generateSkipIntroButtonSelectors(player) {
+  static generateSkipIntroButtonSelectors(player, overlayVisible = false) {
     return this.#snapshot.skipIntroAriaLabels
       .map((label) => {
-        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+        return !overlayVisible
+          ? `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`
+          : `#${player.id}[data-nextup-ext-overlay-visible='true'] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
       })
       .join(",\n");
   }
@@ -3747,9 +3749,13 @@ class ElementController {
     return this.playerVariant === "new";
   }
 
-  startVariantDetection() {
+  startVariantDetection(options = getDefaultOptions()) {
     let canRunPendingTasks = true;
     const afterResolved = () => {
+      if (this.isVariantNew()) {
+        PrimeVideoTextRepository.init();
+        this.observeOverlayState(options);
+      }
       if (canRunPendingTasks) {
         canRunPendingTasks = false;
         this.runPendingTasks();
@@ -4013,6 +4019,27 @@ class ElementController {
     }
   }
 
+  observeOverlayState(options = getDefaultOptions()) {
+    const showSkipIntroBtnOnOverlay =
+      options.hideSkipIntroBtn && options.showSkipIntroBtnOnOverlay;
+    const showOverlayOptions = [showSkipIntroBtnOnOverlay];
+    const shoudObserveOverlayState = showOverlayOptions.some(Boolean);
+    if (!shoudObserveOverlayState) {
+      return;
+    }
+
+    new MutationObserver(() => {
+      const progressBarHandle = this.player.querySelector(
+        ".atvwebplayersdk-progress-bar-handle"
+      );
+      if (progressBarHandle) {
+        this.player.dataset.nextupExtOverlayVisible = "true";
+      } else {
+        delete this.player.dataset.nextupExtOverlayVisible;
+      }
+    }).observe(this.player, OBSERVER_CONFIG);
+  }
+
   markingToIdentifyNonDarkeningOverlays() {
     const overlays = this.player.querySelectorAll(
       "div:has(>.atvwebplayersdk-regulatory-overlay) > div"
@@ -4174,21 +4201,30 @@ class ElementController {
   }
 
   hideNewUiSkipIntroBtn(options = getDefaultOptions()) {
-    const applyHideSkipIntroStyle = () => {
-      const skipIntroButtonSelectors =
+    const renderStyle = () => {
+      const hiddenSelectors =
         PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player);
-      const css = `
-        ${skipIntroButtonSelectors} {
+      const css = !options.showSkipIntroBtnOnOverlay
+        ? `
+        ${hiddenSelectors} {
           display: none !important;
+        }
+      `
+        : `
+        ${hiddenSelectors} {
+          visibility: hidden !important;
+        }
+        ${PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player, true)} {
+          visibility: visible !important;
         }
       `;
       upsertStyle(css, `ext-hideNewUiSkipIntroBtn-${this.player.id}`);
     };
 
-    applyHideSkipIntroStyle(PrimeVideoTextRepository.getSnapshot());
+    renderStyle(PrimeVideoTextRepository.getSnapshot());
 
     const unsubscribe = PrimeVideoTextRepository.subscribe((snapshot) => {
-      applyHideSkipIntroStyle();
+      renderStyle();
       unsubscribe();
     });
   }
@@ -5915,7 +5951,11 @@ const main = async () => {
       }
 
       const controller = new ElementController(player);
-      controller.startVariantDetection();
+      try {
+        controller.startVariantDetection(options);
+      } catch (e) {
+        console.log(e);
+      }
 
       try {
         controller.changeOrderOfVideoElements(options);
@@ -5931,12 +5971,6 @@ const main = async () => {
 
       if (isFirstPlayer) {
         isFirstPlayer = false;
-
-        try {
-          PrimeVideoTextRepository.init();
-        } catch (e) {
-          console.log(e);
-        }
 
         try {
           createOptionBtnOnNavbar();
