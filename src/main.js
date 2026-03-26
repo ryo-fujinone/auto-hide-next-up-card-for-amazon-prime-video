@@ -3315,7 +3315,7 @@ const runXhook = () => {
 
     new MutationObserver((_) => {
       const players = document.querySelectorAll(
-        `[id*='dv-web-player']:not([data-detected-from-nextup-ext${random}='true'])`
+        `[id^='dv-web-player']:not([data-detected-from-nextup-ext${random}='true'])`
       );
       players.forEach((player) => {
         player.dataset[`detectedFromNextupExt${random}`] = "true";
@@ -3484,7 +3484,7 @@ const runXhook = () => {
 
     new MutationObserver((_) => {
       const players = document.querySelectorAll(
-        `[id*='dv-web-player']:not([data-detected-from-nextup-ext${random}='true'])`
+        `[id^='dv-web-player']:not([data-detected-from-nextup-ext${random}='true'])`
       );
       players.forEach((player) => {
         player.dataset[`detectedFromNextupExt${random}`] = "true";
@@ -4182,7 +4182,7 @@ class ElementController {
           display: none !important;
         }
       `;
-      upsertStyle(css, "ext-hideNewUiSkipIntroBtn");
+      upsertStyle(css, `ext-hideNewUiSkipIntroBtn-${this.player.id}`);
     };
 
     applyHideSkipIntroStyle(PrimeVideoTextRepository.getSnapshot());
