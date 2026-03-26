@@ -3546,8 +3546,10 @@ class ElementController {
   startVariantDetection() {
     let canRunPendingTasks = true;
     const afterResolved = () => {
-      canRunPendingTasks = false;
-      this.runPendingTasks();
+      if (canRunPendingTasks) {
+        canRunPendingTasks = false;
+        this.runPendingTasks();
+      }
     };
 
     new MutationObserver((_, observer) => {
@@ -3696,7 +3698,6 @@ class ElementController {
         }
       }
 
-      // console.log(kebabMenuIcon);
       const kebabMenuIconContainer = kebabMenuIcon.button.parentNode.parentNode;
       if (kebabMenuIconContainer.querySelectorAll("button").length !== 1)
         return;
