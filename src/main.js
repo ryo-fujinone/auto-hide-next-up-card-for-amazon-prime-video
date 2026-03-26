@@ -4022,22 +4022,29 @@ class ElementController {
   observeOverlayState(options = getDefaultOptions()) {
     const showSkipIntroBtnOnOverlay =
       options.hideSkipIntroBtn && options.showSkipIntroBtnOnOverlay;
-    const showOverlayOptions = [showSkipIntroBtnOnOverlay];
-    const shoudObserveOverlayState = showOverlayOptions.some(Boolean);
-    if (!shoudObserveOverlayState) {
+    const overlayDependentOptions = [showSkipIntroBtnOnOverlay];
+    const shouldObserveOverlayState = overlayDependentOptions.some(Boolean);
+    if (!shouldObserveOverlayState) {
       return;
     }
 
-    new MutationObserver(() => {
-      const progressBarHandle = this.player.querySelector(
-        ".atvwebplayersdk-progress-bar-handle"
-      );
-      if (progressBarHandle) {
+    const updateOverlayState = () => {
+      const xrayQuickView = this.player.querySelector(".xrayQuickView");
+      if (xrayQuickView && xrayQuickView.classList.contains("show")) {
         this.player.dataset.nextupExtOverlayVisible = "true";
       } else {
         delete this.player.dataset.nextupExtOverlayVisible;
       }
-    }).observe(this.player, OBSERVER_CONFIG);
+    };
+
+    const observeTarget = getPlayerUIGridRoot(this.player) ?? this.player;
+    new MutationObserver(updateOverlayState).observe(observeTarget, {
+      ...OBSERVER_CONFIG,
+      attributes: true,
+      attributeFilter: ["class", "style", "aria-hidden"],
+    });
+
+    updateOverlayState();
   }
 
   markingToIdentifyNonDarkeningOverlays() {
