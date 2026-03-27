@@ -849,7 +849,7 @@ const createOptionMessages = () => {
       ライブ配信のカルーセルについては、この機能では非表示の対象にはしていません。`,
     showRecommendationsOnOverlay:
       "オーバーレイ表示が有効な時はおすすめの商品を表示する",
-    hideRating: "レーティングを非表示にする",
+    hideRating: "レーティング情報を非表示にする",
     preventsDarkening: "オーバーレイ表示が有効な時に暗くならないようにする",
     addOutlinesForTextsAndIcons: "文字とアイコンを黒で縁取りする",
     addShadowsToSeekBar: "シークバーに影をつける",
@@ -975,7 +975,7 @@ const createOptionMessages = () => {
       LiveTV carousels are not targeted for hiding in this feature.`,
     showRecommendationsOnOverlay:
       "Show featured items when overlay display is enabled",
-    hideRating: "Hide rating",
+    hideRating: "Hide rating info",
     preventsDarkening: "Prevents darkening when overlay display is enabled",
     addOutlinesForTextsAndIcons: "Add outlines for texts and icons",
     addShadowsToSeekBar: "Add shadows to the seek bar",
@@ -4775,11 +4775,11 @@ class ElementController {
     }).observe(targetContainer, OBSERVER_CONFIG);
   }
 
-  hideRatingText(options = getDefaultOptions()) {
+  hidePlaybackStartNotices(options = getDefaultOptions()) {
     if (!options.hideRating) {
       return;
     }
-    if (!document.querySelector("#ext-hideRatingText")) {
+    if (!document.querySelector("#ext-hidePlaybackStartNotices")) {
       const css = `
         /* Legacy UI*/
         .atvwebplayersdk-regulatory-overlay {
@@ -4789,8 +4789,11 @@ class ElementController {
         .atvwebplayersdk-maturity-ratings {
           display: none !important;
         }
+        .atvwebplayersdk-photo-sensitivity {
+          display: none !important;
+        }
       `;
-      addStyle(css, "ext-hideRatingText");
+      addStyle(css, "ext-hidePlaybackStartNotices");
     }
   }
 
@@ -6320,7 +6323,7 @@ const main = async () => {
         }
 
         try {
-          controller.hideRatingText(options);
+          controller.hidePlaybackStartNotices(options);
         } catch (e) {
           console.log(e);
         }
