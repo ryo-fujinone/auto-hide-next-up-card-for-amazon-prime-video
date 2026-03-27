@@ -3581,6 +3581,7 @@ class PrimeVideoTextRepository {
   static #initPromise = null;
   static #snapshot = {
     skipIntroAriaLabels: ["Skip Intro", "Skip Recap"],
+    nextEpisodeAriaLabels: ["Next Episode"],
     closePlayerLabels: ["Close player"],
     subtitlesToggleAriaLabels: [
       "Turn off subtitles",
@@ -3594,6 +3595,12 @@ class PrimeVideoTextRepository {
     ],
     fullscreenToggleAriaLabels: ["Fullscreen", "Exit Fullscreen"],
     settingsAriaLabels: ["Settings"],
+    seekbarAriaLabels: ["Seek"],
+    playbackToggleAriaLabels: ["Play", "Pause"],
+    backwardAriaLabels: ["Skip back 10 seconds"],
+    forwardAriaLabels: ["Skip forward 10 seconds"],
+    likeAriaLabels: ["Like"],
+    dislikeAriaLabels: ["Not for me"],
   };
   static #knownAtvWebPlayerUiKeys = [];
   static #listeners = new Set();
@@ -3665,6 +3672,14 @@ class PrimeVideoTextRepository {
     return this.#filterNonEmptyStrings([data?.skip?.intro, data?.skip?.recap]);
   }
 
+  static #extractNextEpisodeLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.nextTitle]);
+  }
+
   static #extractClosePlayerLabelsFromCache(cache = {}) {
     const data = this.#parseCacheData(cache);
     if (!data) {
@@ -3703,6 +3718,40 @@ class PrimeVideoTextRepository {
     return this.#filterNonEmptyStrings([data?.settings]);
   }
 
+  static #extractBackwardLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.accessibility?.skip?.backward]);
+  }
+
+  static #extractForwardLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.accessibility?.skip?.forward]);
+  }
+
+  static #extractLikeLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.titleReactions?.likeButtonTitle]);
+  }
+
+  static #extractDislikeLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([
+      data?.titleReactions?.dislikeButtonTitle,
+    ]);
+  }
+
   static async #updateSnapshotFromCachedPlayerUiTexts(keys) {
     const results = await Promise.allSettled(
       keys.map((key) => getIDBValue(this.#dbName, this.#storeName, key))
@@ -3714,17 +3763,25 @@ class PrimeVideoTextRepository {
       const snapshot = this.#snapshot;
       const value = result.value;
       const skipIntroLabels = this.#extractSkipIntroLabelsFromCache(value);
+      const nextEpisodeLabels = this.#extractNextEpisodeLabelsFromCache(value);
       const closePlayerLabels = this.#extractClosePlayerLabelsFromCache(value);
       const pictureInPictureToggleLabels =
         this.#extractPictureInPictureToggleLabelsFromCache(value);
       const fullscreenToggleLabels =
         this.#extractFullscreenToggleLabelsFromCache(value);
       const settingsLabels = this.#extractSettingsLabelsFromCache(value);
+      const backwardLabels = this.#extractBackwardLabelsFromCache(value);
+      const forwardLabels = this.#extractForwardLabelsFromCache(value);
+      const likeLabels = this.#extractLikeLabelsFromCache(value);
+      const dislikeLabels = this.#extractDislikeLabelsFromCache(value);
 
       this.#snapshot = {
         ...snapshot,
         skipIntroAriaLabels: [
           ...new Set([...snapshot.skipIntroAriaLabels, ...skipIntroLabels]),
+        ],
+        nextEpisodeAriaLabels: [
+          ...new Set([...snapshot.nextEpisodeAriaLabels, ...nextEpisodeLabels]),
         ],
         closePlayerLabels: [
           ...new Set([...snapshot.closePlayerLabels, ...closePlayerLabels]),
@@ -3744,6 +3801,18 @@ class PrimeVideoTextRepository {
         settingsAriaLabels: [
           ...new Set([...snapshot.settingsAriaLabels, ...settingsLabels]),
         ],
+        backwardAriaLabels: [
+          ...new Set([...snapshot.backwardAriaLabels, ...backwardLabels]),
+        ],
+        forwardAriaLabels: [
+          ...new Set([...snapshot.forwardAriaLabels, ...forwardLabels]),
+        ],
+        likeAriaLabels: [
+          ...new Set([...snapshot.likeAriaLabels, ...likeLabels]),
+        ],
+        dislikeAriaLabels: [
+          ...new Set([...snapshot.dislikeAriaLabels, ...dislikeLabels]),
+        ],
       };
     }
 
@@ -3755,12 +3824,45 @@ class PrimeVideoTextRepository {
     return String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
   };
 
+  static generateReactionsAriaLabels() {
+    return [
+      ...new Set([
+        ...this.#snapshot.likeAriaLabels,
+        ...this.#snapshot.dislikeAriaLabels,
+      ]),
+    ];
+  }
+
   static generateSkipIntroButtonSelectors(player, overlayVisible = false) {
     return this.#snapshot.skipIntroAriaLabels
       .map((label) => {
         return !overlayVisible
           ? `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`
           : `#${player.id}[data-nextup-ext-overlay-visible='true'] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateHoveredSkipIntroButtonSelectors(player) {
+    return this.#snapshot.skipIntroAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover`;
+      })
+      .join(",\n");
+  }
+
+  static generateNextEpisodeButtonSelectors(player) {
+    return this.#snapshot.nextEpisodeAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateHoveredNextEpisodeButtonSelectors(player) {
+    return this.#snapshot.nextEpisodeAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover`;
       })
       .join(",\n");
   }
@@ -3866,6 +3968,108 @@ class PrimeVideoTextRepository {
     return this.#snapshot.settingsAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]  + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateTimeIndicatorTextSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id} .f1yxmn6p > div:has(input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"]) > div:not(:has(input[type="range"]))`;
+      })
+      .join(",\n");
+  }
+
+  static generateSeekBarSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id} input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateSeekBarPlayedRangeSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id} input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"] + span`;
+      })
+      .join(",\n");
+  }
+
+  static generatePlaybackToggleButtonSelectors(player) {
+    return this.#snapshot.playbackToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateHoveredPlaybackToggleButtonIconSelectors(player) {
+    return this.#snapshot.playbackToggleAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]:hover img`;
+      })
+      .join(",\n");
+  }
+
+  static generateBackwardButtonSelectors(player) {
+    return this.#snapshot.backwardAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateForwardButtonSelectors(player) {
+    return this.#snapshot.forwardAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateReactionsSelectors(player) {
+    return this.generateReactionsAriaLabels()
+      .map((label) => {
+        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateReactionsDescendantSelectors(player) {
+    const reactionsAriaLabelPairs = [];
+    this.#snapshot.likeAriaLabels.forEach((like) => {
+      this.#snapshot.dislikeAriaLabels.forEach((dislike) => {
+        reactionsAriaLabelPairs.push([like, dislike]);
+      });
+    });
+    return reactionsAriaLabelPairs
+      .map((pair) => {
+        return `div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"]) div`;
+      })
+      .join(",\n");
+  }
+
+  static generateHoveredReactionsSelectors(player) {
+    return this.generateReactionsAriaLabels()
+      .map((label) => {
+        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover`;
+      })
+      .join(",\n");
+  }
+
+  static generateReactionsIconSelectors(player) {
+    return this.generateReactionsAriaLabels()
+      .map((label) => {
+        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"] img`;
+      })
+      .join(",\n");
+  }
+
+  static generateHoveredReactionsIconSelectors(player) {
+    return this.generateReactionsAriaLabels()
+      .map((label) => {
+        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover img`;
       })
       .join(",\n");
   }
@@ -4417,9 +4621,9 @@ class ElementController {
       upsertStyle(css, `ext-hideNewUiSkipIntroBtn-${this.player.id}`);
     };
 
-    renderStyle(PrimeVideoTextRepository.getSnapshot());
+    renderStyle();
 
-    const unsubscribe = PrimeVideoTextRepository.subscribe((snapshot) => {
+    const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
       renderStyle();
       unsubscribe();
     });
@@ -4975,9 +5179,12 @@ class ElementController {
       addStyle(css, "ext-preventsDarkening");
     }
 
-    if (options.addOutlinesForTextsAndIcons) {
-      if (!document.querySelector("#ext-addOutlinesForTexts")) {
-        const cssForText = `
+    const addOutlinesForTextsAndIcons = () => {
+      if (!options.addOutlinesForTextsAndIcons) {
+        return;
+      }
+
+      const cssForText = `
           .atvwebplayersdk-title-text,
           .atvwebplayersdk-episode-info {
             paint-order: stroke fill;
@@ -4993,34 +5200,91 @@ class ElementController {
           ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonTooltipSelectors(this.player)},
           ${PrimeVideoTextRepository.generateFullscreenToggleButtonTooltipSelectors(this.player)},
           ${PrimeVideoTextRepository.generateExtOptionButtonTooltipSelectors(this.player)},
-          ${PrimeVideoTextRepository.generateSettingsButtonTooltipSelectors(this.player)}
+          ${PrimeVideoTextRepository.generateSettingsButtonTooltipSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateTimeIndicatorTextSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateNextEpisodeButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateReactionsDescendantSelectors(this.player)}
           {
             paint-order: stroke fill;
             -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
             text-shadow: 1px 1px 2px black;
           }
+          ${PrimeVideoTextRepository.generateNextEpisodeButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateReactionsSelectors(this.player)} {
+            background: transparent !important;
+          }
+          ${PrimeVideoTextRepository.generateHoveredNextEpisodeButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateHoveredSkipIntroButtonSelectors(this.player)} {
+            color: unset;
+            background: transparent !important;
+          }
+          ${PrimeVideoTextRepository.generateHoveredReactionsSelectors(this.player)} {
+            color: unset;
+            background: rgba(255, 255, 255, 0.3) !important;
+          }
         `;
-        addStyle(cssForText, "ext-addOutlinesForTexts");
-      }
+      upsertStyle(cssForText, `ext-addOutlinesForTexts-${this.player.id}`);
 
-      if (!document.querySelector("#ext-addOutlinesForIcons")) {
-        const cssForImg = `
+      const cssForImg = `
           ${PrimeVideoTextRepository.generateCloseButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateSubtitlesButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateMuteToggleButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateFullscreenToggleButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player)} {
+            background: transparent !important;
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
           ${PrimeVideoTextRepository.generateExtOptionButtonSelectors(this.player)} {
+            background: transparent !important;
             filter: sepia(100%) saturate(2000%) hue-rotate(120deg) drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black) !important;
           }
+          ${PrimeVideoTextRepository.generatePlaybackToggleButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateBackwardButtonSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateForwardButtonSelectors(this.player)} {
+            background: transparent !important;
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+          }
+          ${PrimeVideoTextRepository.generateHoveredPlaybackToggleButtonIconSelectors(this.player)} {
+            filter: unset !important;
+          }
+          ${PrimeVideoTextRepository.generateReactionsIconSelectors(this.player)},
+          ${PrimeVideoTextRepository.generateHoveredReactionsIconSelectors(this.player)} {
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+          }
         `;
-        addStyle(cssForImg, "ext-addOutlinesForIcons");
+      upsertStyle(cssForImg, `ext-addOutlinesForIcons-${this.player.id}`);
+    };
+
+    const addShadowsToSeekBar = () => {
+      if (!options.addShadowsToSeekBar) {
+        return;
       }
-    }
+      const cssForShadows = `
+        ${PrimeVideoTextRepository.generateSeekBarSelectors(this.player)} {
+          box-shadow: 2px 2px 6px #888;
+        }
+        ${PrimeVideoTextRepository.generateSeekBarPlayedRangeSelectors(this.player)} {
+          border-right: 5px solid rgb(85, 85, 85);
+        }
+        .atvwebplayersdk-progress-bar-handle {
+          box-shadow: 0px 0px 5px #222;
+        }
+      `;
+      upsertStyle(cssForShadows, `ext-addShadowsToSeekBar-${this.player.id}`);
+    };
+
+    addOutlinesForTextsAndIcons();
+    addShadowsToSeekBar();
+
+    const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+      addOutlinesForTextsAndIcons();
+      addShadowsToSeekBar();
+      unsubscribe();
+    });
   }
 
   // Move the center buttons(Play/Pause, Back and Forward) to the bottom.
