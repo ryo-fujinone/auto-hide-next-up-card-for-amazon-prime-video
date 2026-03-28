@@ -4147,7 +4147,7 @@ class ElementController {
     const afterResolved = () => {
       if (this.isVariantNew()) {
         PrimeVideoTextRepository.init();
-        this.observeOverlayState(options);
+        this.observeNewUiOverlayState(options);
       }
       if (canRunPendingTasks) {
         canRunPendingTasks = false;
@@ -4383,7 +4383,7 @@ class ElementController {
   }
 
   // Preparation for detecting the display state of the overlay.
-  markingCenterOverlaysWrapper() {
+  markCenterOverlaysWrapper() {
     if (this.centerOverlaysWrapperIsMarked) {
       return true;
     }
@@ -4412,12 +4412,13 @@ class ElementController {
     }
   }
 
-  observeOverlayState(options = getDefaultOptions()) {
+  observeNewUiOverlayState(options = getDefaultOptions()) {
     const showSkipIntroBtnOnOverlay =
       options.hideSkipIntroBtn && options.showSkipIntroBtnOnOverlay;
     const overlayDependentOptions = [showSkipIntroBtnOnOverlay];
-    const shouldObserveOverlayState = overlayDependentOptions.some(Boolean);
-    if (!shouldObserveOverlayState) {
+    const shouldobserveNewUiOverlayState =
+      overlayDependentOptions.some(Boolean);
+    if (!shouldobserveNewUiOverlayState) {
       return;
     }
 
@@ -4440,7 +4441,7 @@ class ElementController {
     updateOverlayState();
   }
 
-  markingToIdentifyNonDarkeningOverlays() {
+  markToIdentifyNonDarkeningOverlays() {
     const overlays = this.player.querySelectorAll(
       "div:has(>.atvwebplayersdk-regulatory-overlay) > div"
     );
@@ -4560,7 +4561,7 @@ class ElementController {
       return;
     }
 
-    if (!this.markingCenterOverlaysWrapper()) {
+    if (!this.markCenterOverlaysWrapper()) {
       return;
     }
 
@@ -4757,7 +4758,7 @@ class ElementController {
       this.preventsDarkeningInConjunctionWithNextup(options);
 
       if (options.showNextupOnOverlay) {
-        if (!this.markingCenterOverlaysWrapper()) {
+        if (!this.markCenterOverlaysWrapper()) {
           return;
         }
 
@@ -4821,7 +4822,7 @@ class ElementController {
         return;
       }
 
-      if (!this.markingCenterOverlaysWrapper()) {
+      if (!this.markCenterOverlaysWrapper()) {
         return;
       }
 
@@ -6531,7 +6532,7 @@ const main = async () => {
       }
 
       new MutationObserver((_, observer) => {
-        controller.markingCenterOverlaysWrapper();
+        controller.markCenterOverlaysWrapper();
 
         const video = player.querySelector("video");
         if (!video?.checkVisibility()) {
@@ -6541,7 +6542,7 @@ const main = async () => {
         observer.disconnect();
 
         try {
-          controller.markingToIdentifyNonDarkeningOverlays();
+          controller.markToIdentifyNonDarkeningOverlays();
         } catch (e) {
           console.log(e);
         }
