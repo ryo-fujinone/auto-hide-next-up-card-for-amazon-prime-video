@@ -4207,7 +4207,7 @@ class NewUiElementLocator {
       "div:has(>img) + div:has(div + div)"
     );
     let textLines = [];
-    if (textLineWrapper.childElementCount === 2) {
+    if (textLineWrapper?.childElementCount === 2) {
       textLines = [...textLineWrapper.querySelectorAll("div")];
     }
 
