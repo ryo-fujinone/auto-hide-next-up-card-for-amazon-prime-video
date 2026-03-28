@@ -4538,10 +4538,15 @@ class ElementController {
         }
 
         observer = new MutationObserver(() => {
-          const nextupCard = this.player.querySelector(
-            "[data-nextup-ext-role='nextup-card']"
-          );
-          if (nextupCard) return;
+          if (
+            this.player.querySelector("[data-nextup-ext-role='nextup-card']") &&
+            this.player.querySelector(
+              "[data-nextup-ext-role='accept-nextup-button']"
+            )
+          ) {
+            return;
+          }
+
           const nextUpElements = NewUiElementLocator.getNextUpElements(
             this.player
           );
