@@ -3601,6 +3601,9 @@ class PrimeVideoTextRepository {
     forwardAriaLabels: ["Skip forward 10 seconds"],
     likeAriaLabels: ["Like"],
     dislikeAriaLabels: ["Not for me"],
+    nextupTexts: ["Next up"],
+    acceptNextupTexts: [`"Next up in {{seconds}}`],
+    dismissNextupTexts: ["Watch credits"],
   };
   static #knownAtvWebPlayerUiKeys = [];
   static #listeners = new Set();
@@ -3752,6 +3755,30 @@ class PrimeVideoTextRepository {
     ]);
   }
 
+  static #extractNextupTextsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.nextUp]);
+  }
+
+  static #extractAcceptNextupTextsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.nextUpIn]);
+  }
+
+  static #extractDismissNextupTextsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.watchCredits]);
+  }
+
   static async #updateSnapshotFromCachedPlayerUiTexts(keys) {
     const results = await Promise.allSettled(
       keys.map((key) => getIDBValue(this.#dbName, this.#storeName, key))
@@ -3774,6 +3801,10 @@ class PrimeVideoTextRepository {
       const forwardLabels = this.#extractForwardLabelsFromCache(value);
       const likeLabels = this.#extractLikeLabelsFromCache(value);
       const dislikeLabels = this.#extractDislikeLabelsFromCache(value);
+      const nextupTexts = this.#extractNextupTextsFromCache(value);
+      const acceptNextupTexts = this.#extractAcceptNextupTextsFromCache(value);
+      const dismissNextupTexts =
+        this.#extractDismissNextupTextsFromCache(value);
 
       this.#snapshot = {
         ...snapshot,
@@ -3812,6 +3843,13 @@ class PrimeVideoTextRepository {
         ],
         dislikeAriaLabels: [
           ...new Set([...snapshot.dislikeAriaLabels, ...dislikeLabels]),
+        ],
+        nextupTexts: [...new Set([...snapshot.nextupTexts, ...nextupTexts])],
+        acceptNextupTexts: [
+          ...new Set([...snapshot.acceptNextupTexts, ...acceptNextupTexts]),
+        ],
+        dismissNextupTexts: [
+          ...new Set([...snapshot.dismissNextupTexts, ...dismissNextupTexts]),
         ],
       };
     }
@@ -4118,6 +4156,77 @@ class PrimeVideoTextRepository {
   };
 }
 
+class NewUiElementLocator {
+  static getGridAreaCells(gridRoot) {
+    if (!gridRoot) {
+      return [];
+    }
+    return [...gridRoot.querySelectorAll(":scope > div[style*='grid-area']")];
+  }
+
+  static findNextUpCardGridArea(gridAreas) {
+    for (const gridArea of gridAreas) {
+      if (!gridArea.childElementCount) continue;
+      if (
+        !gridArea.querySelector(
+          "button:not([aria-label]) + button:not([aria-label])"
+        )
+      ) {
+        continue;
+      }
+      if (!gridArea.querySelector("img[src^='http']")) continue;
+      const primeVideoTextSnapshot = PrimeVideoTextRepository.getSnapshot();
+      const nextupTexts = primeVideoTextSnapshot.nextupTexts;
+      const acceptNextupTexts = primeVideoTextSnapshot.acceptNextupTexts
+        .map((text) => text.replace("{{seconds}}", ""))
+        .concat(nextupTexts);
+      const dismissNextupTexts = primeVideoTextSnapshot.dismissNextupTexts;
+      const gridAreaOuterHTML = gridArea.outerHTML;
+      const isIncluded1 = acceptNextupTexts.some((text) =>
+        gridAreaOuterHTML.includes(text)
+      );
+      const isIncluded2 = dismissNextupTexts.some((text) =>
+        gridAreaOuterHTML.includes(text)
+      );
+      if (isIncluded1 && isIncluded2) {
+        return gridArea;
+      }
+    }
+    return;
+  }
+
+  static getNextUpElements(player) {
+    const gridRoot = getPlayerUIGridRoot(player);
+    const gridAreas = this.getGridAreaCells(gridRoot);
+    const nextUpCardGridArea = this.findNextUpCardGridArea(gridAreas);
+    if (!nextUpCardGridArea) {
+      return;
+    }
+
+    const textLineWrapper = nextUpCardGridArea.querySelector(
+      "div:has(>img) + div:has(div + div)"
+    );
+    let textLines = [];
+    if (textLineWrapper.childElementCount === 2) {
+      textLines = [...textLineWrapper.querySelectorAll("div")];
+    }
+
+    const thumbnail = nextUpCardGridArea.querySelector("img");
+    const buttons = nextUpCardGridArea.querySelectorAll(
+      "button:not([aria-label])"
+    );
+
+    return {
+      card: nextUpCardGridArea,
+      seriesTitle: textLines[0] ?? null,
+      episodeTitle: textLines[1] ?? null,
+      thumbnail: thumbnail ?? null,
+      acceptNextupButton: buttons[0] ?? null,
+      dismissNextupButton: buttons[1] ?? null,
+    };
+  }
+}
+
 class ElementController {
   constructor(player) {
     this.player = player;
@@ -4300,6 +4409,9 @@ class ElementController {
           break;
         }
       }
+      if (!kebabMenuIcon) {
+        return;
+      }
 
       const kebabMenuIconContainer = kebabMenuIcon.button.parentNode.parentNode;
       if (kebabMenuIconContainer.querySelectorAll("button").length !== 1)
@@ -4410,6 +4522,75 @@ class ElementController {
       console.log(e);
       return false;
     }
+  }
+
+  markNewUiNextUpElements() {
+    this.runFeatureWhenVariantResolved("markNewUiNextUpElements", () => {
+      if (!this.isVariantNew()) {
+        return;
+      }
+
+      let observer;
+
+      const NextUpElements = () => {
+        if (observer) {
+          observer.disconnect();
+        }
+
+        observer = new MutationObserver(() => {
+          const nextupCard = this.player.querySelector(
+            "[data-nextup-ext-role='nextup-card']"
+          );
+          if (nextupCard) return;
+          const nextUpElements = NewUiElementLocator.getNextUpElements(
+            this.player
+          );
+          if (!nextUpElements) return;
+
+          const {
+            card,
+            seriesTitle,
+            episodeTitle,
+            thumbnail,
+            acceptNextupButton,
+            dismissNextupButton,
+          } = nextUpElements;
+
+          if (card) {
+            card.dataset.nextupExtRole = "nextup-card";
+          }
+          if (seriesTitle) {
+            seriesTitle.dataset.nextupExtRole = "nextup-series-title";
+          }
+          if (episodeTitle) {
+            episodeTitle.dataset.nextupExtRole = "nextup-episode-title";
+          }
+          if (thumbnail) {
+            thumbnail.dataset.nextupExtRole = "nextup-thumbnail";
+          }
+          if (acceptNextupButton) {
+            acceptNextupButton.dataset.nextupExtRole = "accept-nextup-button";
+          }
+          if (dismissNextupButton) {
+            dismissNextupButton.dataset.nextupExtRole = "dismiss-nextup-button";
+          }
+        });
+
+        observer.observe(this.player, {
+          ...OBSERVER_CONFIG,
+          attributes: true,
+          attributeFilter: ["class", "style"],
+        });
+        this.tempAddElemToPlayer();
+      };
+
+      NextUpElements();
+
+      const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+        NextUpElements();
+        unsubscribe();
+      });
+    });
   }
 
   observeNewUiOverlayState(options = getDefaultOptions()) {
@@ -6540,6 +6721,12 @@ const main = async () => {
         }
 
         observer.disconnect();
+
+        try {
+          controller.markNewUiNextUpElements();
+        } catch (e) {
+          console.log(e);
+        }
 
         try {
           controller.markToIdentifyNonDarkeningOverlays();
