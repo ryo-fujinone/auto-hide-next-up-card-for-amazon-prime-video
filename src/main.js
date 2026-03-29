@@ -5566,9 +5566,13 @@ class ElementController {
 
   preventsNewUiDarkening(options = getDefaultOptions()) {
     if (!document.querySelector("#ext-preventsDarkening")) {
+      // .feqqns3 - Darkening overlay for the top area
+      // .f10znfo1 - Darkening overlay for the bottom area
+      // .fe9293t - Darkening overlay for the bottom area when the Recommendations carousel is expanded
       const css = `
         .atvwebplayersdk-player-container .feqqns3,
-        .atvwebplayersdk-player-container .f10znfo1 {
+        .atvwebplayersdk-player-container .f10znfo1,
+        .atvwebplayersdk-player-container .fe9293t {
           display: none !important;
         }
       `;
@@ -5600,7 +5604,14 @@ class ElementController {
           ${PrimeVideoTextRepository.generateTimeIndicatorTextSelectors(this.player)},
           ${PrimeVideoTextRepository.generateNextEpisodeButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player)},
-          ${PrimeVideoTextRepository.generateReactionsDescendantSelectors(this.player)}
+          ${PrimeVideoTextRepository.generateReactionsDescendantSelectors(this.player)},
+          [data-nextup-ext-role="nextup-series-title"],
+          [data-nextup-ext-role="nextup-episode-title"],
+          [data-nextup-ext-role="accept-nextup-button"],
+          [data-nextup-ext-role="dismiss-nextup-button"],
+          [data-nextup-ext-role="expand-recommendations-button"],
+          [data-nextup-ext-role="hide-recommendations-button"],
+          button:has(> .atvweb-inplayback-carousel-card):not(:hover) .atvweb-inplayback-carousel-card-title
           {
             paint-order: stroke fill;
             -webkit-text-stroke: 0.07em black;
@@ -5620,6 +5631,14 @@ class ElementController {
           ${PrimeVideoTextRepository.generateHoveredReactionsSelectors(this.player)} {
             color: unset;
             background: rgba(255, 255, 255, 0.3) !important;
+          }
+          [data-nextup-ext-role="accept-nextup-button"],
+          [data-nextup-ext-role="dismiss-nextup-button"],
+          [data-nextup-ext-role="expand-recommendations-button"],
+          [data-nextup-ext-role="expand-recommendations-button"]:not(:disabled):hover,
+          [data-nextup-ext-role="hide-recommendations-button"],
+          [data-nextup-ext-role="hide-recommendations-button"]:not(:disabled):hover {
+            color: white !important;
           }
         `;
       upsertStyle(cssForText, `ext-addOutlinesForTexts-${this.player.id}`);
