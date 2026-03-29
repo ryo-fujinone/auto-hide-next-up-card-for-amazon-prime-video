@@ -3604,6 +3604,7 @@ class PrimeVideoTextRepository {
     nextupTexts: ["Next up"],
     acceptNextupTexts: [`"Next up in {{seconds}}`],
     dismissNextupTexts: ["Watch credits"],
+    hideAriaLabels: ["Hide"],
   };
   static #knownAtvWebPlayerUiKeys = [];
   static #listeners = new Set();
@@ -3779,6 +3780,14 @@ class PrimeVideoTextRepository {
     return this.#filterNonEmptyStrings([data?.watchCredits]);
   }
 
+  static #extractHideLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([data?.hide]);
+  }
+
   static async #updateSnapshotFromCachedPlayerUiTexts(keys) {
     const results = await Promise.allSettled(
       keys.map((key) => getIDBValue(this.#dbName, this.#storeName, key))
@@ -3805,6 +3814,7 @@ class PrimeVideoTextRepository {
       const acceptNextupTexts = this.#extractAcceptNextupTextsFromCache(value);
       const dismissNextupTexts =
         this.#extractDismissNextupTextsFromCache(value);
+      const hideLabels = this.#extractHideLabelsFromCache(value);
 
       this.#snapshot = {
         ...snapshot,
@@ -3850,6 +3860,9 @@ class PrimeVideoTextRepository {
         ],
         dismissNextupTexts: [
           ...new Set([...snapshot.dismissNextupTexts, ...dismissNextupTexts]),
+        ],
+        hideAriaLabels: [
+          ...new Set([...snapshot.hideAriaLabels, ...hideLabels]),
         ],
       };
     }
@@ -4112,6 +4125,14 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateHideButtonSelectors(player) {
+    return this.#snapshot.hideAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static init() {
     if (this.#initPromise) {
       return this.#initPromise;
@@ -4224,6 +4245,121 @@ class NewUiElementLocator {
       acceptNextupButton: buttons[0] ?? null,
       dismissNextupButton: buttons[1] ?? null,
     };
+  }
+
+  static isHideRecommendationsButton(img) {
+    const sig = getSvgSignature(img);
+    return (
+      sig.viewBox === "0 0 24 24" &&
+      sig.pathCount === 1 &&
+      !sig.hasEvenOdd &&
+      sig.d.includes("M7.41 8.59L12")
+    );
+  }
+
+  static findExpandedRecommendationsElements(player) {
+    const hideButtons = player.querySelectorAll(
+      PrimeVideoTextRepository.generateHideButtonSelectors(player)
+    );
+    if (hideButtons.length === 0 || hideButtons.length >= 2) {
+      return {};
+    }
+    const hideButton = hideButtons[0];
+    const img = hideButton.querySelector("img[src^='data:image/svg+xml']");
+    if (!img) return {};
+    if (!this.isHideRecommendationsButton(img)) return {};
+
+    const container = hideButton.parentNode;
+    if (!container) return {};
+    const candidateContainer = container.previousElementSibling;
+    if (!candidateContainer) return {};
+    const candidateButton =
+      candidateContainer.querySelector("button[aria-label]");
+    if (!candidateButton) return {};
+    if (!candidateButton.textContent?.trim()) return {};
+
+    const ariaLabel = candidateButton.getAttribute("aria-label").trim();
+    const primeVideoTextSnapshot = PrimeVideoTextRepository.getSnapshot();
+    const excludeLabels = Object.keys(primeVideoTextSnapshot)
+      .map((key) => {
+        return primeVideoTextSnapshot[key];
+      })
+      .flat();
+    const isNotRecommendationsButton = excludeLabels.some(
+      (label) => ariaLabel === label
+    );
+    if (isNotRecommendationsButton) return {};
+
+    const isGridAreaItem = !!candidateButton.closest("div[style*='grid-area']");
+    if (isGridAreaItem) return {};
+
+    return {
+      recommendationsButton: candidateButton,
+      hideRecommendationsButton: hideButton,
+    };
+  }
+
+  static findCollapsedRecommendationsButton(player) {
+    const backwardButton = player.querySelector(
+      PrimeVideoTextRepository.generateBackwardButtonSelectors(player)
+    );
+    if (!backwardButton) return null;
+    const centerButtonsContainer = backwardButton.parentNode.parentNode;
+    if (!centerButtonsContainer) return null;
+    const playbackToggleButton = centerButtonsContainer.querySelector(
+      PrimeVideoTextRepository.generatePlaybackToggleButtonSelectors(player)
+    );
+    const forwardButton = centerButtonsContainer.querySelector(
+      PrimeVideoTextRepository.generateForwardButtonSelectors(player)
+    );
+    if (!playbackToggleButton || !forwardButton) return null;
+
+    const candidateContainer = centerButtonsContainer.previousElementSibling;
+    if (!candidateContainer) return null;
+    const candidateButton =
+      candidateContainer.querySelector("button[aria-label]");
+    if (!candidateButton) return null;
+    if (!candidateButton.textContent?.trim()) return null;
+
+    const ariaLabel = candidateButton.getAttribute("aria-label").trim();
+    const primeVideoTextSnapshot = PrimeVideoTextRepository.getSnapshot();
+    const excludeLabels = Object.keys(primeVideoTextSnapshot)
+      .map((key) => {
+        return primeVideoTextSnapshot[key];
+      })
+      .flat();
+    const isNotRecommendationsButton = excludeLabels.some(
+      (label) => ariaLabel === label
+    );
+    if (isNotRecommendationsButton) return null;
+
+    const isGridAreaItem = !!candidateButton.closest("div[style*='grid-area']");
+    if (isGridAreaItem) return null;
+
+    return candidateButton;
+  }
+
+  static getRecommendationsElements(player) {
+    const recommendationsElements =
+      this.findExpandedRecommendationsElements(player);
+    if (Object.keys(recommendationsElements).length > 0) {
+      return {
+        state: "expanded",
+        recommendationsButton: recommendationsElements.recommendationsButton,
+        hideRecommendationsButton:
+          recommendationsElements.hideRecommendationsButton,
+      };
+    }
+
+    const recommendationsButton =
+      this.findCollapsedRecommendationsButton(player);
+    if (recommendationsButton) {
+      return {
+        state: "collapsed",
+        recommendationsButton,
+        hideRecommendationsButton: null,
+      };
+    }
   }
 }
 
@@ -4532,7 +4668,7 @@ class ElementController {
 
       let observer;
 
-      const NextUpElements = () => {
+      const getNextUpElements = () => {
         if (observer) {
           observer.disconnect();
         }
@@ -4589,13 +4725,86 @@ class ElementController {
         this.tempAddElemToPlayer();
       };
 
-      NextUpElements();
+      getNextUpElements();
 
       const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
-        NextUpElements();
+        getNextUpElements();
         unsubscribe();
       });
     });
+  }
+
+  markNewUiRecommendationsElements() {
+    const callback = () => {
+      if (!this.isVariantNew()) {
+        return;
+      }
+
+      let observer;
+
+      const getRecommendationsElements = () => {
+        if (observer) {
+          observer.disconnect();
+        }
+
+        observer = new MutationObserver(() => {
+          if (
+            this.player.querySelector(
+              "[data-nextup-ext-role='recommendations-button']"
+            ) ||
+            this.player.querySelector(
+              "[data-nextup-ext-role='hide-recommendations-button']"
+            ) ||
+            this.player.querySelector(
+              "[data-nextup-ext-role='expand-recommendations-button']"
+            )
+          ) {
+            return;
+          }
+
+          const recommendationsElements =
+            NewUiElementLocator.getRecommendationsElements(this.player);
+          if (!recommendationsElements) return;
+
+          const { state, recommendationsButton, hideRecommendationsButton } =
+            recommendationsElements;
+          if (state === "expanded") {
+            if (recommendationsButton) {
+              recommendationsButton.dataset.nextupExtRole =
+                "recommendations-button";
+            }
+            if (hideRecommendationsButton) {
+              hideRecommendationsButton.dataset.nextupExtRole =
+                "hide-recommendations-button";
+            }
+          } else if (state === "collapsed") {
+            if (recommendationsButton) {
+              recommendationsButton.dataset.nextupExtRole =
+                "expand-recommendations-button";
+            }
+          }
+        });
+
+        observer.observe(this.player, {
+          ...OBSERVER_CONFIG,
+          attributes: true,
+          attributeFilter: ["class", "style"],
+        });
+        this.tempAddElemToPlayer();
+      };
+
+      getRecommendationsElements();
+
+      const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+        getRecommendationsElements();
+        unsubscribe();
+      });
+    };
+
+    this.runFeatureWhenVariantResolved(
+      "markNewUiRecommendationsElements",
+      callback
+    );
   }
 
   observeNewUiOverlayState(options = getDefaultOptions()) {
@@ -6729,6 +6938,12 @@ const main = async () => {
 
         try {
           controller.markNewUiNextUpElements();
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.markNewUiRecommendationsElements();
         } catch (e) {
           console.log(e);
         }
