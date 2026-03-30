@@ -32,6 +32,7 @@ const getDefaultOptions = () => {
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
     clickHideButtonForAllNextup: false,
+    clickNextupBeforeVideoEnds: false,
     hideReactions: true,
     showReactionsOnOverlay: false,
     hideRecommendations: true,
@@ -346,6 +347,29 @@ class OptionsSchemaManager {
 
       return out;
     },
+    (stored) => {
+      const out = structuredClone(stored ?? {});
+      const defaultOptions = getDefaultOptions();
+
+      const bool1 = "clickNextupBeforeVideoEnds" in defaultOptions;
+      if (!bool1) {
+        return out;
+      }
+
+      const bool2 = "enableAutoplay_xhook" in out;
+      const bool3 = "forcePlayNextEpisode_xhook" in out;
+      if (!bool2 || !bool3) {
+        return out;
+      }
+
+      const bool4 = out.enableAutoplay_xhook;
+      const bool5 = out.forcePlayNextEpisode_xhook;
+      if (bool4 && !bool5) {
+        out.clickNextupBeforeVideoEnds = true;
+      }
+
+      return out;
+    },
   ];
 
   static #upgradeOptionsSchema(stored, forceUpgradeSchema = false) {
@@ -594,6 +618,19 @@ const pauseVideo = () => {
   }
 };
 
+const temporarilyDisableOverlay = (player, delay = 5000) => {
+  const playerContainer = player.querySelector(
+    ".atvwebplayersdk-player-container"
+  );
+  if (!playerContainer) {
+    return;
+  }
+  playerContainer.style.display = "none";
+  setTimeout(() => {
+    playerContainer.style.display = "";
+  }, delay);
+};
+
 const getPlayerUIGridRoot = (player) => {
   const gridAreas = player.querySelectorAll(
     "div[style*='grid-template-columns'] > div[style*='grid-area']"
@@ -840,6 +877,10 @@ const createOptionMessages = () => {
       自動再生が有効な場合はどちらにも非表示ボタンが表示されますが、後者の非表示ボタンはクリックすると自動再生が完全にキャンセルされ、動画が終了すると動画プレイヤーが閉じてしまいます。
       そのため非表示ボタンの自動クリックは通常のNext upでのみ行うようにしていますが、このオプションを使用することでその条件を無視して非表示ボタンを自動クリックさせることが可能です。
       このオプションは念の為に用意しているもので、通常は有効にする必要はありません。`,
+    clickNextupBeforeVideoEnds: "動画終了直前にNext upを自動クリックする",
+    clickNextupBeforeVideoEnds_Tooltip: `自動再生が有効な場合のNext upのタイマーの挙動に問題があり、自動再生が期待通りに動作しないことがあります。
+      このオプションを有効にすると、動画終了の数秒前に表示されるNext upを、動画終了の1秒前に自動クリックします。
+      動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する」を試してみてください。`,
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
@@ -966,6 +1007,11 @@ const createOptionMessages = () => {
       A hide button appears on both when autoplay is enabled, but clicking the latter hide button cancels autoplay completely and closes the video player when the video ends.
       Therefore, the auto-click of the hide button is only done with the normal next up card, but this option can be used to ignore that condition and have the hide button auto-click.
       This option is provided just in case and does not normally need to be enabled.`,
+    clickNextupBeforeVideoEnds:
+      "Automatically click next up just before the video ends",
+    clickNextupBeforeVideoEnds_Tooltip: `There is a problem with the Next up card timer behavior when auto-play is enabled, so auto-play may not work as expected.
+      When this option is enabled, the Next up card that appears a few seconds before the video ends will be clicked automatically 1 second before the end of the video.
+      If you want to watch the video all the way to the end, leave this option disabled and try "Experimental: Play the next episode if the video is automatically closed at the end of the video" instead.`,
     hideReactions: "Hide reactions (like/not for me)",
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
@@ -1174,6 +1220,19 @@ const createOptionDialog = async () => {
                   <p class="nextup-ext-opt-dialog-tooltip" title="${
                     messages.showNextupOnOverlay_Tooltip
                   }" data-msg-id="showNextupOnOverlay"></p>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="click-nextup-before-video-ends" name="click-nextup-before-video-ends" ${
+                        options.clickNextupBeforeVideoEnds ? "checked" : ""
+                      } />
+                      <p>${messages.clickNextupBeforeVideoEnds}</p>
+                  </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.clickNextupBeforeVideoEnds_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="clickNextupBeforeVideoEnds"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -1935,6 +1994,9 @@ const createOptionDialog = async () => {
         case "click-hide-button-for-all-nextup":
           await saveOptions({ clickHideButtonForAllNextup: e.target.checked });
           break;
+        case "click-nextup-before-video-ends":
+          await saveOptions({ clickNextupBeforeVideoEnds: e.target.checked });
+          break;
         case "hide-reactions":
           await saveOptions({ hideReactions: e.target.checked });
           break;
@@ -2081,9 +2143,22 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
     const clickHideButtonForAllNextup = getItemFromItemContainer(
       "click-hide-button-for-all-nextup"
     );
+    const temporarilyDisableOverlay = getItemFromItemContainer(
+      "temporarily-disable-overlay"
+    );
+    const hideRecommendations_Tooltip = optDialog.querySelector(
+      "[data-msg-id='hideRecommendations']"
+    );
     hide(preventsDarkeningNextup);
     hide(showNextup);
     hide(clickHideButtonForAllNextup);
+    hide(hideRecommendations_Tooltip);
+    hide(temporarilyDisableOverlay);
+  } else {
+    const clickNextupBeforeVideoEnds = getItemFromItemContainer(
+      "click-nextup-before-video-ends"
+    );
+    hide(clickNextupBeforeVideoEnds);
   }
 };
 
@@ -4395,6 +4470,377 @@ class NewUiElementLocator {
   }
 }
 
+class NextupController {
+  constructor(player, video, options) {
+    this.player = player;
+    this.video = video;
+    this.options = options;
+
+    this.isSeeking = false;
+    this.isPaused = video.paused;
+    this.hasEnded = video.ended;
+
+    this.nextupObserver = null;
+    this.currentNextUp = null;
+
+    this.hasAutoDismissedPhase1 = false;
+    this.hasAutoAcceptedPhase2 = false;
+
+    this.phase1ResetTimer = null;
+    this.nearEndTimer = null;
+
+    this.videoSrc = null;
+    this.videoSrcObserver = null;
+
+    this.lastSeekSafeCurrentTime = 0;
+  }
+
+  safeClick(button) {
+    if (button && button.isConnected) {
+      try {
+        button.click();
+        return true;
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  }
+
+  shouldRunNearEndWatcher() {
+    if (!this.options.clickNextupBeforeVideoEnds) {
+      return false;
+    }
+
+    if (!this.currentNextUp || this.currentNextUp.phase !== 2) {
+      return false;
+    }
+
+    if (this.hasAutoAcceptedPhase2) {
+      return false;
+    }
+
+    if (this.isPaused || this.video.paused) {
+      return false;
+    }
+
+    if (this.isSeeking || this.video.seeking) {
+      return false;
+    }
+
+    if (this.hasEnded || this.video.ended) {
+      return false;
+    }
+
+    if (!Number.isFinite(this.video.duration) || this.video.duration <= 0) {
+      return false;
+    }
+
+    if (!this.currentNextUp.acceptButton?.isConnected) {
+      return false;
+    }
+
+    const remaining = this.getRemainingTime();
+    if (remaining > 4) {
+      return false;
+    }
+
+    return true;
+  }
+
+  updateNearEndWatcher() {
+    if (this.shouldRunNearEndWatcher()) {
+      this.startNearEndWatcher();
+    } else {
+      this.stopNearEndWatcher();
+    }
+  }
+
+  startNearEndWatcher() {
+    if (this.nearEndTimer) {
+      return;
+    }
+
+    this.nearEndTimer = setInterval(() => {
+      this.checkNearEndAutoAccept();
+    }, 100);
+  }
+
+  stopNearEndWatcher() {
+    if (this.nearEndTimer) {
+      clearInterval(this.nearEndTimer);
+      this.nearEndTimer = null;
+    }
+  }
+
+  stopPhase1ResetTimer() {
+    if (this.phase1ResetTimer) {
+      clearTimeout(this.phase1ResetTimer);
+      this.phase1ResetTimer = null;
+    }
+  }
+
+  resetPhase1State() {
+    this.hasAutoDismissedPhase1 = false;
+  }
+
+  resetPhase2State() {
+    this.hasAutoAcceptedPhase2 = false;
+  }
+
+  getRemainingTime() {
+    if (!Number.isFinite(this.video.duration)) {
+      return Infinity;
+    }
+
+    try {
+      return Math.max(0, this.video.duration - this.video.currentTime);
+    } catch (e) {
+      console.log(e);
+      return Infinity;
+    }
+  }
+
+  getNextUpElements() {
+    const root = this.player.querySelector(
+      "[data-nextup-ext-role='nextup-card']"
+    );
+    if (!root) return;
+    const acceptButton = root.querySelector(
+      "[data-nextup-ext-role='accept-nextup-button']"
+    );
+    const dismissButton = root.querySelector(
+      "[data-nextup-ext-role='dismiss-nextup-button']"
+    );
+    if (acceptButton && dismissButton) {
+      return {
+        root,
+        acceptButton,
+        dismissButton,
+      };
+    }
+  }
+
+  handlePhase1() {
+    if (!this.currentNextUp || this.currentNextUp.phase !== 1) {
+      return;
+    }
+    const isSuccess = this.safeClick(this.currentNextUp?.dismissButton);
+    if (isSuccess) {
+      console.log("Next up - Phase 1: dismissButton clicked");
+      this.hasAutoDismissedPhase1 = true;
+      this.stopPhase1ResetTimer();
+      this.phase1ResetTimer = setTimeout(() => {
+        this.resetPhase1State();
+      }, 500);
+    }
+  }
+
+  checkNearEndAutoAccept() {
+    if (!this.currentNextUp || this.currentNextUp.phase !== 2) {
+      this.stopNearEndWatcher();
+      return;
+    }
+
+    if (this.hasAutoAcceptedPhase2) {
+      this.stopNearEndWatcher();
+      return;
+    }
+
+    if (this.video.paused || this.video.ended || this.video.seeking) {
+      return;
+    }
+
+    const remaining = this.getRemainingTime();
+    if (remaining <= 1) {
+      const isSuccess = this.safeClick(this.currentNextUp.acceptButton);
+      if (isSuccess) {
+        console.log("Next up - Phase 2: acceptButton clicked");
+        this.hasAutoAcceptedPhase2 = true;
+        this.stopNearEndWatcher();
+      }
+    }
+  }
+
+  observeNextUp() {
+    this.nextupObserver = new MutationObserver(() => {
+      const elements = this.getNextUpElements();
+      if (!elements || this.hasAutoDismissedPhase1) {
+        this.currentNextUp = null;
+        this.stopNearEndWatcher();
+        return;
+      }
+
+      if (this.video?.currentTime <= 1) {
+        this.currentNextUp = null;
+        this.stopNearEndWatcher();
+        return;
+      }
+
+      const { root, acceptButton, dismissButton } = elements;
+      const remaining = this.getRemainingTime();
+      const phase = remaining >= 4 ? 1 : 2;
+
+      this.currentNextUp = {
+        phase,
+        root,
+        acceptButton,
+        dismissButton,
+      };
+
+      if (phase === 1) {
+        this.handlePhase1();
+        return;
+      }
+
+      this.updateNearEndWatcher();
+    });
+
+    this.nextupObserver.observe(this.player, OBSERVER_CONFIG);
+  }
+
+  observeVideoSrc() {
+    const callback = () => {
+      const src = this.video?.src;
+      if (this.videoSrc !== src) {
+        this.videoSrc = src;
+        this.resetPhase1State();
+        this.resetPhase2State();
+      }
+    };
+    callback();
+
+    this.videoSrcObserver = new MutationObserver(callback);
+
+    this.videoSrcObserver.observe(this.video, {
+      attributes: true,
+      attributeFilter: ["src"],
+    });
+  }
+
+  getAbortControllerKey() {
+    return "__nextupExtPlaybackListenerAbortController";
+  }
+
+  bindPlaybackListeners() {
+    this.unbindPlaybackListeners();
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    this.video.addEventListener("play", this.handlePlay.bind(this), { signal });
+    this.video.addEventListener("pause", this.handlePause.bind(this), {
+      signal,
+    });
+    this.video.addEventListener("seeking", this.handleSeeking.bind(this), {
+      signal,
+    });
+    this.video.addEventListener("seeked", this.handleSeeked.bind(this), {
+      signal,
+    });
+    this.video.addEventListener(
+      "timeupdate",
+      this.handleTimeUpdate.bind(this),
+      { signal }
+    );
+    this.video.addEventListener("ended", this.handleEnded.bind(this), {
+      signal,
+    });
+
+    this.video.addEventListener("emptied", this.handleEmptied.bind(this), {
+      signal,
+    });
+
+    this.video[this.getAbortControllerKey()] = controller;
+  }
+
+  unbindPlaybackListeners() {
+    const controller = this.video[this.getAbortControllerKey()];
+    if (controller) {
+      controller.abort();
+      delete this.video[this.getAbortControllerKey()];
+    }
+  }
+
+  handlePlay() {
+    this.isPaused = false;
+    this.hasEnded = false;
+    this.updateNearEndWatcher();
+  }
+
+  handlePause() {
+    this.isPaused = true;
+    this.stopNearEndWatcher();
+  }
+
+  handleSeeking() {
+    this.isSeeking = true;
+    this.stopNearEndWatcher();
+  }
+
+  handlePotentialBackwardSeek() {
+    const previousTime = this.lastSeekSafeCurrentTime;
+    const currentTime = this.video.currentTime;
+    if (currentTime + 1 < previousTime) {
+      this.resetPhase1State();
+      this.resetPhase2State();
+    }
+    this.lastSeekSafeCurrentTime = currentTime;
+  }
+
+  handleSeeked() {
+    this.isSeeking = false;
+    this.handlePotentialBackwardSeek();
+    this.updateNearEndWatcher();
+  }
+
+  handleTimeUpdate() {
+    this.handlePotentialBackwardSeek();
+    this.updateNearEndWatcher();
+  }
+
+  handleEnded() {
+    this.hasEnded = true;
+    this.stopNearEndWatcher();
+  }
+
+  handleEmptied() {
+    this.resetPhase1State();
+    this.resetPhase2State();
+    this.stopNearEndWatcher();
+  }
+
+  updatePlaybackState() {
+    this.isSeeking = this.video.seeking;
+    this.isPaused = this.video.paused;
+    this.hasEnded = this.video.ended;
+    this.lastSeekSafeCurrentTime = this.video.currentTime;
+  }
+
+  init() {
+    this.destroy();
+    this.resetPhase1State();
+    this.resetPhase2State();
+    this.observeNextUp();
+    this.observeVideoSrc();
+    this.bindPlaybackListeners();
+    this.updatePlaybackState();
+  }
+
+  destroy() {
+    if (this.nextupObserver) {
+      this.nextupObserver.disconnect();
+      this.nextupObserver = null;
+    }
+    if (this.videoSrcObserver) {
+      this.videoSrcObserver.disconnect();
+      this.videoSrcObserver = null;
+    }
+    this.stopNearEndWatcher();
+    this.stopPhase1ResetTimer();
+    this.unbindPlaybackListeners();
+  }
+}
+
 class ElementController {
   constructor(player) {
     this.player = player;
@@ -5118,23 +5564,23 @@ class ElementController {
     if (!options.temporarilyDisableOverlay) {
       return;
     }
-    const playerContainer = this.player.querySelector(
-      ".atvwebplayersdk-player-container"
-    );
-    if (!playerContainer) {
-      return;
-    }
-    playerContainer.style.display = "none";
-    setTimeout(() => {
-      playerContainer.style.display = "";
-    }, delay);
+    temporarilyDisableOverlay(this.player, delay);
   }
 
   hideNextupCard(options = getDefaultOptions()) {
     if (!options.hideNextup) {
       return;
     }
+    this.runFeatureWhenVariantResolved("hideNextupCard", () => {
+      if (this.isVariantLegacy()) {
+        this.hideLegacyNextupCard(options);
+      } else if (this.isVariantNew()) {
+        this.hideNewUiNextupCard(options);
+      }
+    });
+  }
 
+  hideLegacyNextupCard(options = getDefaultOptions()) {
     if (!document.querySelector("#ext-hideNextupCard")) {
       const css = `
         .atvwebplayersdk-nextupcard-wrapper {
@@ -5219,6 +5665,32 @@ class ElementController {
         });
       }
     }).observe(this.player, { ...OBSERVER_CONFIG, attributes: true });
+  }
+
+  hideNewUiNextupCard(options = getDefaultOptions()) {
+    if (!document.querySelector("#ext-hideNextupCard")) {
+      const css = `
+        [data-nextup-ext-role="nextup-card"] {
+          display: none !important;
+        }
+      `;
+      addStyle(css, "ext-hideNextupCard");
+    }
+
+    const video = getVisibleVideo();
+    const controller = new NextupController(this.player, video, options);
+
+    const control = () => {
+      controller.destroy();
+      controller.init();
+    };
+
+    control();
+
+    const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+      control();
+      unsubscribe();
+    });
   }
 
   hideReactions(options = getDefaultOptions()) {
