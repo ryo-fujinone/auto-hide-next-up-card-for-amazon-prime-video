@@ -2170,6 +2170,16 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
       "p[data-msg-id='showReactionsOnOverlay']"
     );
     hide(showReactionsOnOverlay_Tooltips[0]);
+
+    const moveCenterButtonsToBottom = getItemFromItemContainer(
+      "move-center-buttons-to-bottom"
+    );
+    hide(moveCenterButtonsToBottom);
+
+    const addVideoControllerToBottomLeft = getItemFromItemContainer(
+      "add-video-controller-to-bottom-left"
+    );
+    hide(addVideoControllerToBottomLeft);
   } else if (playerVariant === "legacy") {
     const clickNextupBeforeVideoEnds = getItemFromItemContainer(
       "click-nextup-before-video-ends"
