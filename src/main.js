@@ -2055,6 +2055,38 @@ const createOptionDialog = async () => {
   );
 };
 
+const adjustOptionDialogByPlayerVariant = (playerVariant) => {
+  const optDialog = getOptionDialog();
+  if (!optDialog) {
+    return;
+  }
+
+  const getItemFromItemContainer = (id = "") => {
+    return optDialog.querySelector(
+      `.nextup-ext-opt-dialog-item-container:has(#${id})`
+    );
+  };
+
+  const hide = (element) => {
+    if (element) {
+      element.style.setProperty("display", "none", "important");
+    }
+  };
+
+  if (playerVariant === "new") {
+    const preventsDarkeningNextup = getItemFromItemContainer(
+      "prevents-darkening-in-conjunction-with-nextup"
+    );
+    const showNextup = getItemFromItemContainer("show-nextup");
+    const clickHideButtonForAllNextup = getItemFromItemContainer(
+      "click-hide-button-for-all-nextup"
+    );
+    hide(preventsDarkeningNextup);
+    hide(showNextup);
+    hide(clickHideButtonForAllNextup);
+  }
+};
+
 const addEventListenerForOpenOptionsDialog = (
   options = getDefaultOptions()
 ) => {
@@ -4398,6 +4430,7 @@ class ElementController {
         canRunPendingTasks = false;
         this.runPendingTasks();
       }
+      adjustOptionDialogByPlayerVariant(this.playerVariant);
     };
 
     new MutationObserver((_, observer) => {
