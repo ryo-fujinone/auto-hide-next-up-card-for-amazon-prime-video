@@ -885,6 +885,8 @@ const createOptionMessages = () => {
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
       "Next upの非表示が有効の場合、非表示ボタンの自動クリックでNext upとReactionsがDOMから削除されます。",
+    showReactionsOnOverlay_Tooltip2:
+      "Next upの非表示が有効の場合、動画終了の数秒前に表示されるNext upを除き、「クレジットを観る」ボタンの自動クリックでNext upとReactionsがDOMから削除されます。",
     hideRecommendations: "おすすめの商品を非表示にする",
     hideRecommendations_Tooltip: `Hideボタンの自動クリック時に「非表示ボタンの自動クリック時に5秒間オーバーレイ表示を無効にする」の設定が参照されます。
       ライブ配信のカルーセルについては、この機能では非表示の対象にはしていません。`,
@@ -1015,7 +1017,9 @@ const createOptionMessages = () => {
     hideReactions: "Hide reactions (like/not for me)",
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
-      "If hide next up card is enabled, auto-clicking the hide button will remove next up card and reactions from the DOM",
+      "If hide next up card is enabled, auto-clicking the hide button will remove next up card and reactions from the DOM.",
+    showReactionsOnOverlay_Tooltip2:
+      "If hide next up card is enabled, auto-clicking the watch credits button will remove next up card and reactions from the DOM.",
     hideRecommendations: "Hide featured items",
     hideRecommendations_Tooltip: `The setting “Disable overlay for 5 seconds when auto-clicking hide button” is referenced when the Hide button in “Featured items” is automatically clicked.
       LiveTV carousels are not targeted for hiding in this feature.`,
@@ -1266,6 +1270,9 @@ const createOptionDialog = async () => {
                   </label>
                   <p class="nextup-ext-opt-dialog-tooltip" title="${
                     messages.showReactionsOnOverlay_Tooltip
+                  }" data-msg-id="showReactionsOnOverlay"></p>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${
+                    messages.showReactionsOnOverlay_Tooltip2
                   }" data-msg-id="showReactionsOnOverlay"></p>
               </div>
 
@@ -2139,26 +2146,40 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
     const preventsDarkeningNextup = getItemFromItemContainer(
       "prevents-darkening-in-conjunction-with-nextup"
     );
+    hide(preventsDarkeningNextup);
+
     const showNextup = getItemFromItemContainer("show-nextup");
+    hide(showNextup);
+
     const clickHideButtonForAllNextup = getItemFromItemContainer(
       "click-hide-button-for-all-nextup"
     );
+    hide(clickHideButtonForAllNextup);
+
     const temporarilyDisableOverlay = getItemFromItemContainer(
       "temporarily-disable-overlay"
     );
-    const hideRecommendations_Tooltip = optDialog.querySelector(
-      "[data-msg-id='hideRecommendations']"
-    );
-    hide(preventsDarkeningNextup);
-    hide(showNextup);
-    hide(clickHideButtonForAllNextup);
-    hide(hideRecommendations_Tooltip);
     hide(temporarilyDisableOverlay);
-  } else {
+
+    const hideRecommendations_Tooltip = optDialog.querySelector(
+      "p[data-msg-id='hideRecommendations']"
+    );
+    hide(hideRecommendations_Tooltip);
+
+    const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
+      "p[data-msg-id='showReactionsOnOverlay']"
+    );
+    hide(showReactionsOnOverlay_Tooltips[0]);
+  } else if (playerVariant === "legacy") {
     const clickNextupBeforeVideoEnds = getItemFromItemContainer(
       "click-nextup-before-video-ends"
     );
     hide(clickNextupBeforeVideoEnds);
+
+    const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
+      "p[data-msg-id='showReactionsOnOverlay']"
+    );
+    hide(showReactionsOnOverlay_Tooltips[1]);
   }
 };
 
@@ -4203,7 +4224,23 @@ class PrimeVideoTextRepository {
     });
     return reactionsAriaLabelPairs
       .map((pair) => {
-        return `div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"]) div`;
+        return `#${player.id} div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"]) div`;
+      })
+      .join(",\n");
+  }
+
+  static generateReactionsContainerSelectors(player, overlayVisible = false) {
+    const reactionsAriaLabelPairs = [];
+    this.#snapshot.likeAriaLabels.forEach((like) => {
+      this.#snapshot.dislikeAriaLabels.forEach((dislike) => {
+        reactionsAriaLabelPairs.push([like, dislike]);
+      });
+    });
+    return reactionsAriaLabelPairs
+      .map((pair) => {
+        return !overlayVisible
+          ? `#${player.id} div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"])`
+          : `#${player.id}[data-nextup-ext-overlay-visible='true'] div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"])`;
       })
       .join(",\n");
   }
@@ -5697,7 +5734,16 @@ class ElementController {
     if (!options.hideReactions) {
       return;
     }
+    this.runFeatureWhenVariantResolved("hideReactions", () => {
+      if (this.isVariantLegacy()) {
+        this.hideLegacyReactions(options);
+      } else if (this.isVariantNew()) {
+        this.hideNewUiReactions(options);
+      }
+    });
+  }
 
+  hideLegacyReactions(options = getDefaultOptions()) {
     new MutationObserver((_, outerObserver) => {
       const reactionsBtnContainer = this.player.querySelector(
         ".atvwebplayersdk-player-container div:has(> button:nth-child(2):last-child)"
@@ -5760,6 +5806,37 @@ class ElementController {
         }
       );
     }).observe(this.player, OBSERVER_CONFIG);
+  }
+
+  hideNewUiReactions(options = getDefaultOptions()) {
+    const renderStyle = () => {
+      const hiddenSelectors =
+        PrimeVideoTextRepository.generateReactionsContainerSelectors(
+          this.player
+        );
+      const css = !options.showReactionsOnOverlay
+        ? `
+        ${hiddenSelectors} {
+          display: none !important;
+        }
+      `
+        : `
+        ${hiddenSelectors} {
+          visibility: hidden !important;
+        }
+        ${PrimeVideoTextRepository.generateReactionsContainerSelectors(this.player, true)} {
+          visibility: visible !important;
+        }
+        `;
+      upsertStyle(css, `ext-hideNewUiReactions-${this.player.id}`);
+    };
+
+    renderStyle();
+
+    const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+      renderStyle();
+      unsubscribe();
+    });
   }
 
   hideRecommendations(options = getDefaultOptions()) {
