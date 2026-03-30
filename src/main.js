@@ -625,7 +625,7 @@ const pauseVideo = () => {
       if (!video.paused) {
         const player = document.querySelector(".dv-player-fullscreen");
         const playerVariant = player.dataset.playerVariant;
-        if (!playerVariant && playerVariant === "legacy") {
+        if (!playerVariant || playerVariant === "legacy") {
           toggleLegacyPlayAndPause();
         } else if (playerVariant === "new") {
           toggleNewUiPlayAndPause();
