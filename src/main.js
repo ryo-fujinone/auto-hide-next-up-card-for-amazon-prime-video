@@ -3290,6 +3290,94 @@ const runXhook = () => {
 
   document.head.appendChild(script);
 
+  const createPlayerVariantGate = () => {
+    const stateMap = new WeakMap();
+
+    const getResolvedVariant = (player) => {
+      const variant = player?.dataset?.playerVariant;
+      if (variant === "legacy" || variant === "new") {
+        return variant;
+      }
+      return null;
+    };
+
+    const ensureState = (player) => {
+      let state = stateMap.get(player);
+      if (state) {
+        return state;
+      }
+
+      state = {
+        queue: [],
+        observer: null,
+        resolvedVariant: null,
+      };
+
+      state.observer = new MutationObserver(() => {
+        const variant = getResolvedVariant(player);
+        if (!variant) {
+          return;
+        }
+
+        state.resolvedVariant = variant;
+        state.observer.disconnect();
+        state.observer = null;
+
+        const tasks = state.queue.splice(0);
+        for (const task of tasks) {
+          try {
+            task(variant);
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      });
+
+      state.observer.observe(player, {
+        attributes: true,
+        attributeFilter: ["data-player-variant"],
+      });
+
+      stateMap.set(player, state);
+      return state;
+    };
+
+    const runWhenReady = (player, task) => {
+      const variant = getResolvedVariant(player);
+      if (variant) {
+        task(variant);
+        return;
+      }
+
+      const state = ensureState(player);
+      state.queue.push(task);
+
+      // Safeguard in case the variant is already resolved right after observation starts.
+      const resolved = getResolvedVariant(player);
+      if (resolved && !state.resolvedVariant) {
+        state.resolvedVariant = resolved;
+        if (state.observer) {
+          state.observer.disconnect();
+          state.observer = null;
+        }
+
+        const tasks = state.queue.splice(0);
+        for (const fn of tasks) {
+          try {
+            fn(resolved);
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }
+    };
+
+    return {
+      getResolvedVariant,
+      runWhenReady,
+    };
+  };
+
   const identificationGetVodPlaybackResources = () => {
     try {
       const getVodPlaybackResources =
@@ -3348,7 +3436,6 @@ const runXhook = () => {
 
         // mp4 may not have started playing yet when it loads.
         // This can be addressed by verifying using the title name currently playing.
-
         let titleElement = this.player.querySelector(
           ".atvwebplayersdk-subtitle-text"
         );
@@ -3381,7 +3468,6 @@ const runXhook = () => {
         }
 
         // Verify the title name
-
         if (
           !title.includes(
             metadataResource.data.resources?.catalogMetadataV2?.catalog?.title
@@ -3391,7 +3477,6 @@ const runXhook = () => {
         }
 
         // The following code must be executed after verifying the title name.
-
         const resolution = XhookAfter.resolutionInfoArray.find((r) => {
           return XhookAfter.mp4Url.includes(r.baseURL);
         });
