@@ -557,12 +557,19 @@ const getVisibleVideo = () => {
   return Array.from(videos).find((v) => v.checkVisibility());
 };
 
-const togglePlayAndPause = () => {
+const toggleLegacyPlayAndPause = () => {
   const uiContainer = document.querySelector(
     ".dv-player-fullscreen .webPlayerSDKUiContainer"
   );
   if (uiContainer) {
     uiContainer.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
+  }
+};
+
+const toggleNewUiPlayAndPause = () => {
+  const player = document.querySelector(".dv-player-fullscreen");
+  if (player) {
+    player.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
   }
 };
 
@@ -584,7 +591,13 @@ const playVideo = () => {
     }
     try {
       if (video.paused) {
-        togglePlayAndPause();
+        const player = document.querySelector(".dv-player-fullscreen");
+        const playerVariant = player.dataset.playerVariant;
+        if (!playerVariant || playerVariant === "legacy") {
+          toggleLegacyPlayAndPause();
+        } else if (playerVariant === "new") {
+          toggleNewUiPlayAndPause();
+        }
       }
     } catch (e) {
       console.log(e);
@@ -610,7 +623,13 @@ const pauseVideo = () => {
     }
     try {
       if (!video.paused) {
-        togglePlayAndPause();
+        const player = document.querySelector(".dv-player-fullscreen");
+        const playerVariant = player.dataset.playerVariant;
+        if (!playerVariant && playerVariant === "legacy") {
+          toggleLegacyPlayAndPause();
+        } else if (playerVariant === "new") {
+          toggleNewUiPlayAndPause();
+        }
       }
     } catch (e) {
       console.log(e);
@@ -4925,6 +4944,7 @@ class ElementController {
         this.runPendingTasks();
       }
       adjustOptionDialogByPlayerVariant(this.playerVariant);
+      this.player.dataset.playerVariant = this.playerVariant;
     };
 
     new MutationObserver((_, observer) => {
