@@ -6090,8 +6090,10 @@ class ElementController {
       }
 
       const cssForText = `
+          /* timing-info appears at the top of LiveTV */
           .atvwebplayersdk-title-text,
-          .atvwebplayersdk-episode-info {
+          .atvwebplayersdk-episode-info,
+          .atvwebplayersdk-timing-info {
             paint-order: stroke fill;
             -webkit-text-stroke: 0.05em black;
             font-weight: bold !important;
@@ -6173,6 +6175,10 @@ class ElementController {
           }
           ${PrimeVideoTextRepository.generateReactionsIconSelectors(this.player)},
           ${PrimeVideoTextRepository.generateHoveredReactionsIconSelectors(this.player)} {
+            filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
+          }
+          /* LiveTV - The separator between episode-info and timing-info */
+          .atvwebplayersdk-bullet-separator {
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
         `;
