@@ -4884,6 +4884,7 @@ class ElementController {
     this.centerOverlaysWrapperIsMarked = false;
     this.playerVariant = "unknown";
     this.pendingTasks = new Map();
+    this.isLiveTvCandidate = false;
   }
 
   hasResolvedVariant() {
@@ -5122,6 +5123,7 @@ class ElementController {
         return;
       }
       videos[0].before(videos[1]);
+      this.isLiveTvCandidate = true;
     });
 
     new MutationObserver((_, observer) => {
@@ -5843,7 +5845,14 @@ class ElementController {
     if (!options.hideRecommendations) {
       return;
     }
+    if (this.isVariantLegacy()) {
+      this.hideLegacyRecommendations(options);
+    } else if (this.isVariantNew()) {
+      this.hideNewUiRecommendations(options);
+    }
+  }
 
+  hideLegacyRecommendations(options = getDefaultOptions()) {
     if (!options.showRecommendationsOnOverlay) {
       if (!document.querySelector("#ext-hideRecommendations")) {
         const css = `
@@ -5955,6 +5964,169 @@ class ElementController {
         }
       }
     }).observe(targetContainer, OBSERVER_CONFIG);
+  }
+
+  hideNewUiRecommendations(options = getDefaultOptions()) {
+    const expandRecommendationsButtonSelector =
+      "[data-nextup-ext-role='expand-recommendations-button']";
+    const recommendationsButtonSelector =
+      "[data-nextup-ext-role='recommendations-button']";
+    const hideRecommendationsButtonSelector =
+      "[data-nextup-ext-role='hide-recommendations-button']";
+    const stopAutoPlayButtonSelector = "button[aria-label='Stop Autoplay']";
+    const forwardButtonSelector =
+      PrimeVideoTextRepository.generateForwardButtonSelectors(this.player);
+
+    const renderStyle = () => {
+      if (options.showRecommendationsOnOverlay) {
+        return;
+      }
+      const css = `
+        [id^='dv-web-player']:not([data-is-live-tv='true']) .atvwebplayersdk-carousel {
+          display: none !important;
+        }
+        [id^='dv-web-player']:not([data-is-live-tv='true']) div.fw1kd31.fgmsvgp.fg426ew:has(.atvwebplayersdk-carousel) {
+          display: none !important;
+        }
+        ${expandRecommendationsButtonSelector} {
+          display: none !important;
+        }
+      `;
+      addStyle(css, "ext-hideNewUiRecommendations");
+    };
+
+    renderStyle();
+
+    let hideObserver;
+    let liveTvVideoObserver;
+    let liveTvForwardButtonObserver;
+    let abortController;
+
+    const markLiveTV = () => {
+      if (!options.useOnLiveTv) {
+        return;
+      }
+      if (!this.isLiveTvCandidate) {
+        false;
+      }
+      if (liveTvVideoObserver) {
+        liveTvVideoObserver.disconnect();
+      }
+      if (liveTvForwardButtonObserver) {
+        liveTvForwardButtonObserver.disconnect();
+      }
+
+      liveTvVideoObserver = new MutationObserver(() => {
+        const videos = this.player.querySelectorAll("video");
+        if (videos.length < 2) {
+          this.isLiveTvCandidate = false;
+        } else {
+          this.isLiveTvCandidate = true;
+        }
+      });
+
+      const target =
+        this.player.querySelector(".atvwebplayersdk-video-surface") ??
+        this.player;
+      liveTvVideoObserver.observe(target, OBSERVER_CONFIG);
+
+      liveTvForwardButtonObserver = new MutationObserver(() => {
+        const forwardButton = this.player.querySelector(forwardButtonSelector);
+        if (!forwardButton) return;
+        const isDisabled = forwardButton.hasAttribute("disabled");
+        if (isDisabled) {
+          this.player.dataset.isLiveTv = "true";
+        } else {
+          delete this.player.dataset.isLiveTv;
+        }
+      });
+
+      liveTvForwardButtonObserver.observe(this.player, OBSERVER_CONFIG);
+      this.tempAddElemToPlayer();
+    };
+
+    const hide = () => {
+      if (hideObserver) {
+        hideObserver.disconnect();
+      }
+      if (abortController) {
+        abortController.abort();
+        abortController = null;
+      }
+
+      abortController = new AbortController();
+      const { signal } = abortController;
+      let isOpenedByUser = false;
+
+      this.player.addEventListener(
+        "click",
+        (e) => {
+          if (e.target.closest(expandRecommendationsButtonSelector)) {
+            isOpenedByUser = true;
+            return;
+          }
+
+          if (e.target.closest(recommendationsButtonSelector)) {
+            isOpenedByUser = true;
+            return;
+          }
+
+          if (e.target.closest(".generic-carousel-scroll-handles")) {
+            isOpenedByUser = true;
+            return;
+          }
+
+          if (e.target.classList.contains("f1yl09d4")) {
+            // A case where the user clicked the collapsed recommendations section at the bottom of the screen instead of the expand button
+            isOpenedByUser = true;
+            return;
+          }
+
+          isOpenedByUser = false;
+        },
+        { signal }
+      );
+
+      hideObserver = new MutationObserver(() => {
+        const isLiveTv = this.player.dataset.isLiveTv === "true";
+        if (isLiveTv) {
+          return;
+        }
+        const hideButton = this.player.querySelector(
+          hideRecommendationsButtonSelector
+        );
+        if (hideButton && !isOpenedByUser) {
+          try {
+            const stopAutoPlayButton = this.player.querySelector(
+              stopAutoPlayButtonSelector
+            );
+            if (stopAutoPlayButton) {
+              stopAutoPlayButton.click();
+              console.log("Recommendations: stopAutoPlayButton clicked");
+            }
+            hideButton.click();
+            console.log("Recommendations: hideButton clicked");
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      });
+
+      hideObserver.observe(this.player, {
+        ...OBSERVER_CONFIG,
+        attributes: true,
+        attributeFilter: ["data-nextup-ext-role"],
+      });
+    };
+
+    markLiveTV();
+    hide();
+
+    const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+      markLiveTV();
+      hide();
+      unsubscribe();
+    });
   }
 
   hidePlaybackStartNotices(options = getDefaultOptions()) {
