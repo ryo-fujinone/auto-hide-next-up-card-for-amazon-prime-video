@@ -5553,24 +5553,33 @@ class ElementController {
     updateOverlayState();
   }
 
-  markToIdentifyNonDarkeningOverlays() {
-    const overlays = this.player.querySelectorAll(
-      "div:has(>.atvwebplayersdk-regulatory-overlay) > div"
-    );
-    if (overlays.length === 0) {
-      return;
-    }
-    if (this.player.querySelector("[data-non-darkening-overlay]")) {
-      return;
-    }
+  markIdentifyLegacyNonDarkeningOverlays() {
+    this.runFeatureWhenVariantResolved(
+      "markIdentifyLegacyNonDarkeningOverlays",
+      () => {
+        if (!this.isVariantLegacy()) {
+          return;
+        }
 
-    const selector =
-      "div:has(>.atvwebplayersdk-regulatory-overlay) > div:not(:has(>.atvwebplayersdk-loadingspinner-overlay) ~ div):not(:has(>.atvwebplayersdk-loadingspinner-overlay)):has(> div:nth-child(2):last-child)";
-    for (const overlay of overlays) {
-      if (!overlay.matches(selector)) {
-        overlay.dataset.nonDarkeningOverlay = "true";
+        const overlays = this.player.querySelectorAll(
+          "div:has(>.atvwebplayersdk-regulatory-overlay) > div"
+        );
+        if (overlays.length === 0) {
+          return;
+        }
+        if (this.player.querySelector("[data-non-darkening-overlay]")) {
+          return;
+        }
+
+        const selector =
+          "div:has(>.atvwebplayersdk-regulatory-overlay) > div:not(:has(>.atvwebplayersdk-loadingspinner-overlay) ~ div):not(:has(>.atvwebplayersdk-loadingspinner-overlay)):has(> div:nth-child(2):last-child)";
+        for (const overlay of overlays) {
+          if (!overlay.matches(selector)) {
+            overlay.dataset.nonDarkeningOverlay = "true";
+          }
+        }
       }
-    }
+    );
   }
 
   skipAds(options = getDefaultOptions()) {
@@ -7752,7 +7761,7 @@ const main = async () => {
         }
 
         try {
-          controller.markToIdentifyNonDarkeningOverlays();
+          controller.markIdentifyLegacyNonDarkeningOverlays();
         } catch (e) {
           console.log(e);
         }
