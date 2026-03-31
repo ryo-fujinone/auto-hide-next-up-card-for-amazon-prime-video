@@ -3608,7 +3608,7 @@ const runXhook = () => {
         let resolution;
         if (existsResolution) {
           const videoInfo = this.videoInfoBySrc[src];
-          if (title) {
+          if (title && videoInfo) {
             if (title === videoInfo.title) {
               // Same title
               resolution = videoInfo.resolution;
@@ -3619,7 +3619,6 @@ const runXhook = () => {
             }
           } else {
             // While the rating is displayed
-            //
             resolution = videoInfo.resolution;
           }
         } else {
