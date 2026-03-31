@@ -6670,13 +6670,20 @@ class ElementController {
     });
   }
 
-  // Move the center buttons(Play/Pause, Back and Forward) to the bottom.
   moveCenterButtonsToBottom(options = getDefaultOptions()) {
     if (!options.moveCenterButtonsToBottom) {
       return;
     }
+    this.runFeatureWhenVariantResolved("moveCenterButtonsToBottom", () => {
+      if (this.isVariantLegacy()) {
+        this.moveLegacyCenterButtonsToBottom(options);
+      }
+    });
+  }
+
+  moveLegacyCenterButtonsToBottom(options = getDefaultOptions()) {
     if (options.addVideoControllerToBottomLeft) {
-      this.addVideoControllerToBottomLeft(options);
+      this.addLegacyVideoControllerToBottomLeft(options);
       return;
     }
 
@@ -6721,7 +6728,7 @@ class ElementController {
     });
   }
 
-  addVideoControllerToBottomLeft(options = getDefaultOptions()) {
+  addLegacyVideoControllerToBottomLeft(options = getDefaultOptions()) {
     if (!options.addVideoControllerToBottomLeft) {
       return;
     }
