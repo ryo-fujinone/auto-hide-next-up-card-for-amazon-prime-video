@@ -4557,7 +4557,7 @@ class NewUiElementLocator {
     };
   }
 
-  static findCollapsedRecommendationsButton(player) {
+  static findOverlayBottomLeftContainer(player) {
     const backwardButton = player.querySelector(
       PrimeVideoTextRepository.generateBackwardButtonSelectors(player)
     );
@@ -4572,7 +4572,12 @@ class NewUiElementLocator {
     );
     if (!playbackToggleButton || !forwardButton) return null;
 
-    const candidateContainer = centerButtonsContainer.previousElementSibling;
+    const container = centerButtonsContainer.previousElementSibling;
+    return container ?? null;
+  }
+
+  static findCollapsedRecommendationsButton(player) {
+    const candidateContainer = this.findOverlayBottomLeftContainer(player);
     if (!candidateContainer) return null;
     const candidateButton =
       candidateContainer.querySelector("button[aria-label]");
@@ -4617,6 +4622,21 @@ class NewUiElementLocator {
         recommendationsButton,
         hideRecommendationsButton: null,
       };
+    }
+  }
+
+  static getOverlayBottomLeftContainer(player) {
+    const container = this.findOverlayBottomLeftContainer(player);
+    if (!container) return;
+
+    if (container.childElementCount === 0) {
+      return container;
+    } else {
+      const recommendationsButton =
+        this.findCollapsedRecommendationsButton(player);
+      if (recommendationsButton) {
+        return container;
+      }
     }
   }
 }
@@ -5436,6 +5456,61 @@ class ElementController {
 
     this.runFeatureWhenVariantResolved(
       "markNewUiRecommendationsElements",
+      callback
+    );
+  }
+
+  markNewUiOverlayBottomLeftContainer(options = getDefaultOptions()) {
+    if (!options.showVideoResolution_xhook) {
+      return;
+    }
+
+    const callback = () => {
+      if (!this.isVariantNew()) {
+        return;
+      }
+
+      let observer;
+
+      const getOverlayBottomLeftContainer = () => {
+        if (observer) {
+          observer.disconnect();
+        }
+
+        observer = new MutationObserver(() => {
+          if (
+            this.player.querySelector(
+              "[data-nextup-ext-role='bottom-left-container']"
+            )
+          ) {
+            return;
+          }
+
+          const bottomLeftContainer =
+            NewUiElementLocator.getOverlayBottomLeftContainer(this.player);
+          if (!bottomLeftContainer) return;
+
+          bottomLeftContainer.dataset.nextupExtRole = "bottom-left-container";
+        });
+
+        observer.observe(this.player, {
+          ...OBSERVER_CONFIG,
+          // attributes: true,
+          // attributeFilter: ["class", "style"],
+        });
+        this.tempAddElemToPlayer();
+      };
+
+      getOverlayBottomLeftContainer();
+
+      const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+        getOverlayBottomLeftContainer();
+        unsubscribe();
+      });
+    };
+
+    this.runFeatureWhenVariantResolved(
+      "markNewUiOverlayBottomLeftContainer",
       callback
     );
   }
@@ -7657,6 +7732,12 @@ const main = async () => {
 
         try {
           controller.markNewUiRecommendationsElements();
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.markNewUiOverlayBottomLeftContainer(options);
         } catch (e) {
           console.log(e);
         }
