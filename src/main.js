@@ -5284,33 +5284,42 @@ class ElementController {
   }
 
   // Preparation for detecting the display state of the overlay.
-  markCenterOverlaysWrapper() {
+  markLegacyCenterOverlaysWrapper() {
     if (this.centerOverlaysWrapperIsMarked) {
       return true;
     }
 
-    const playPauseButton = this.player.querySelector(
-      ".atvwebplayersdk-playpause-button"
-    );
-    if (!playPauseButton) {
-      return false;
-    }
-    try {
-      const centerOverlaysWrapper =
-        playPauseButton.parentNode.parentNode.parentNode.parentNode;
-      const hasCursorStyle1 =
-        centerOverlaysWrapper.style.cssText.includes("cursor: none");
-      const hasCursorStyle2 =
-        centerOverlaysWrapper.style.cssText.includes("cursor: pointer");
-      if (hasCursorStyle1 || hasCursorStyle2) {
-        centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
+    this.runFeatureWhenVariantResolved(
+      "markLegacyCenterOverlaysWrapper",
+      () => {
+        if (!this.isVariantLegacy()) {
+          return false;
+        }
+
+        const playPauseButton = this.player.querySelector(
+          ".atvwebplayersdk-playpause-button"
+        );
+        if (!playPauseButton) {
+          return false;
+        }
+        try {
+          const centerOverlaysWrapper =
+            playPauseButton.parentNode.parentNode.parentNode.parentNode;
+          const hasCursorStyle1 =
+            centerOverlaysWrapper.style.cssText.includes("cursor: none");
+          const hasCursorStyle2 =
+            centerOverlaysWrapper.style.cssText.includes("cursor: pointer");
+          if (hasCursorStyle1 || hasCursorStyle2) {
+            centerOverlaysWrapper.dataset.ident = "center-overlays-wrapper";
+          }
+          this.centerOverlaysWrapperIsMarked = true;
+          return true;
+        } catch (e) {
+          console.log(e);
+          return false;
+        }
       }
-      this.centerOverlaysWrapperIsMarked = true;
-      return true;
-    } catch (e) {
-      console.log(e);
-      return false;
-    }
+    );
   }
 
   markNewUiNextUpElements() {
@@ -5664,7 +5673,7 @@ class ElementController {
       return;
     }
 
-    if (!this.markCenterOverlaysWrapper()) {
+    if (!this.markLegacyCenterOverlaysWrapper()) {
       return;
     }
 
@@ -5861,7 +5870,7 @@ class ElementController {
       this.preventsDarkeningInConjunctionWithNextup(options);
 
       if (options.showNextupOnOverlay) {
-        if (!this.markCenterOverlaysWrapper()) {
+        if (!this.markLegacyCenterOverlaysWrapper()) {
           return;
         }
 
@@ -5960,7 +5969,7 @@ class ElementController {
         return;
       }
 
-      if (!this.markCenterOverlaysWrapper()) {
+      if (!this.markLegacyCenterOverlaysWrapper()) {
         return;
       }
 
@@ -7715,7 +7724,7 @@ const main = async () => {
       }
 
       new MutationObserver((_, observer) => {
-        controller.markCenterOverlaysWrapper();
+        controller.markLegacyCenterOverlaysWrapper();
 
         const video = player.querySelector("video");
         if (!video?.checkVisibility()) {
