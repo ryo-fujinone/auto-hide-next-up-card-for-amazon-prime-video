@@ -3619,7 +3619,7 @@ const runXhook = () => {
             }
           } else {
             // While the rating is displayed
-            resolution = videoInfo.resolution;
+            resolution = videoInfo?.resolution;
           }
         } else {
           if (title) {
@@ -7271,7 +7271,7 @@ class ElementController {
 
     const isPlayerOpen = () => {
       const video = getVisibleVideo();
-      return video && video?.checkVisibility() ? true : false;
+      return video ? true : false;
     };
 
     window.addEventListener("blur", () => {
