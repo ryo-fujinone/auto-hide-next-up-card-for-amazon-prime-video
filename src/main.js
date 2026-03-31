@@ -7048,6 +7048,21 @@ class ElementController {
       elem.classList.remove("nextup-ext-temp-show");
     };
 
+    let hideTimer = null;
+    this.player.addEventListener("mousemove", (e) => {
+      if (isShortcutKeyActive()) {
+        this.player.dataset.nextupExtTempShow = "true";
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+        }
+        hideTimer = setTimeout(() => {
+          delete this.player.dataset.nextupExtTempShow;
+        }, 300);
+      } else {
+        delete this.player.dataset.nextupExtTempShow;
+      }
+    });
+
     const hideTitle = () => {
       if (!options.hideTitle) {
         return;
@@ -7058,31 +7073,12 @@ class ElementController {
           .atvwebplayersdk-title-text {
             opacity: 0 !important;
           }
-          .atvwebplayersdk-title-text.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-title-text {
             opacity: 1 !important;
           }
         `;
         addStyle(css, "ext-hideTitle");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const title = this.player.querySelector(".atvwebplayersdk-title-text");
-        if (!title) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(title);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(title);
-          }, 300);
-        } else {
-          hide(title);
-        }
-      });
     };
 
     const hideEpisodeTitle = () => {
@@ -7095,33 +7091,12 @@ class ElementController {
           .atvwebplayersdk-subtitle-text {
             opacity: 0 !important;
           }
-          .atvwebplayersdk-subtitle-text.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-subtitle-text {
             opacity: 1 !important;
           }
         `;
         addStyle(css, "ext-hideEpisodeTitle");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const episodeTitle = this.player.querySelector(
-          ".atvwebplayersdk-subtitle-text"
-        );
-        if (!episodeTitle) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(episodeTitle);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(episodeTitle);
-          }, 300);
-        } else {
-          hide(episodeTitle);
-        }
-      });
     };
 
     const hideVariousButtonsInTopRight = () => {
@@ -7137,42 +7112,15 @@ class ElementController {
           .atvwebplayersdk-closebutton-wrapper {
             opacity: 0 !important;
           }
-          .atvwebplayersdk-hideabletopbuttons-container.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-hideabletopbuttons-container {
             opacity: 1 !important;
           }
-          .atvwebplayersdk-closebutton-wrapper.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-closebutton-wrapper {
             opacity: 1 !important;
           }
         `;
         addStyle(css, "ext-hideVariousButtonsInTopRight");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const buttonsContainer = this.player.querySelector(
-          ".atvwebplayersdk-hideabletopbuttons-container"
-        );
-        const closeButtonWrapper = this.player.querySelector(
-          ".atvwebplayersdk-closebutton-wrapper"
-        );
-        if (!buttonsContainer || !closeButtonWrapper) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(buttonsContainer);
-          show(closeButtonWrapper);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(buttonsContainer);
-            hide(closeButtonWrapper);
-          }, 300);
-        } else {
-          hide(buttonsContainer);
-          hide(closeButtonWrapper);
-        }
-      });
     };
 
     const hideSeekBar = () => {
@@ -7185,33 +7133,12 @@ class ElementController {
           .atvwebplayersdk-seekbar-container {
             visibility: hidden !important;
           }
-          .atvwebplayersdk-seekbar-container.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-seekbar-container {
             visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideSeekBar");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const seekBar = this.player.querySelector(
-          ".atvwebplayersdk-seekbar-container"
-        );
-        if (!seekBar) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(seekBar);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(seekBar);
-          }, 300);
-        } else {
-          hide(seekBar);
-        }
-      });
     };
 
     const hidePlaybackTime = () => {
@@ -7224,33 +7151,12 @@ class ElementController {
           .atvwebplayersdk-timeindicator-text {
             visibility: hidden !important;
           }
-          .atvwebplayersdk-timeindicator-text.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-timeindicator-text {
             visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hidePlaybackTime");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const timeindicator = this.player.querySelector(
-          ".atvwebplayersdk-timeindicator-text"
-        );
-        if (!timeindicator) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(timeindicator);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(timeindicator);
-          }, 300);
-        } else {
-          hide(timeindicator);
-        }
-      });
     };
 
     const hideCenterButtons = () => {
@@ -7259,7 +7165,7 @@ class ElementController {
       }
 
       if (!document.querySelector("#ext-hideCenterButtons")) {
-        const css = `
+        const css1 = `
           .atvwebplayersdk-fastseekback-button {
             visibility: hidden !important;
           }
@@ -7269,58 +7175,34 @@ class ElementController {
           .atvwebplayersdk-fastseekforward-button {
             visibility: hidden !important;
           }
-          .nextup-ext-video-controller-container {
-            visibility: hidden !important;
-          }
-          .atvwebplayersdk-fastseekback-button.nextup-ext-temp-show {
-            visibility: visible !important;
-          }
-          .atvwebplayersdk-playpause-button.nextup-ext-temp-show {
-            visibility: visible !important;
-          }
-          .atvwebplayersdk-fastseekforward-button.nextup-ext-temp-show {
-            visibility: visible !important;
-          }
-          .nextup-ext-video-controller-container.nextup-ext-temp-show {
-            visibility: visible !important;
-          }
         `;
-        addStyle(css, "ext-hideCenterButtons");
-      }
+        addStyle(css1, "ext-hideCenterButtons1");
 
-      let hideTimer = null;
-      let targetSelector =
-        ".atvwebplayersdk-fastseekback-button, .atvwebplayersdk-playpause-button, .atvwebplayersdk-fastseekforward-button";
-      if (options.addVideoControllerToBottomLeft) {
-        targetSelector = ".nextup-ext-video-controller-container";
-      }
-      this.player.addEventListener("mousemove", (e) => {
-        const targets = this.player.querySelectorAll(targetSelector);
-        if (!targets.length) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          if (!targets[0].classList.contains("nextup-ext-temp-show")) {
-            for (const t of targets) {
-              show(t);
+        if (!options.addVideoControllerToBottomLeft) {
+          const css2 = `
+            [data-nextup-ext-temp-show="true"] .atvwebplayersdk-fastseekback-button {
+              visibility: visible !important;
             }
-          }
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            for (const t of targets) {
-              hide(t);
+            [data-nextup-ext-temp-show="true"] .atvwebplayersdk-playpause-button {
+              visibility: visible !important;
             }
-          }, 300);
+            [data-nextup-ext-temp-show="true"] .atvwebplayersdk-fastseekforward-button {
+              visibility: visible !important;
+            }
+        `;
+          addStyle(css2, "ext-hideCenterButtons2");
         } else {
-          if (targets[0].classList.contains("nextup-ext-temp-show")) {
-            for (const t of targets) {
-              hide(t);
+          const css3 = `
+            .nextup-ext-video-controller-container {
+              visibility: hidden !important;
             }
-          }
+            [data-nextup-ext-temp-show="true"] .nextup-ext-video-controller-container {
+              visibility: visible !important;
+            }
+        `;
+          addStyle(css3, "ext-hideCenterButtons3");
         }
-      });
+      }
     };
 
     const hideNextEpisodeButton = () => {
@@ -7333,33 +7215,12 @@ class ElementController {
           .atvwebplayersdk-nexttitle-button {
             visibility: hidden !important;
           }
-          .atvwebplayersdk-nexttitle-button.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-nexttitle-button {
             visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideNextEpisodeButton");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const nextTitleButton = this.player.querySelector(
-          ".atvwebplayersdk-nexttitle-button"
-        );
-        if (!nextTitleButton) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(nextTitleButton);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(nextTitleButton);
-          }, 300);
-        } else {
-          hide(nextTitleButton);
-        }
-      });
     };
 
     const tweakHideSkipIntroButton = () => {
@@ -7372,33 +7233,12 @@ class ElementController {
           .atvwebplayersdk-skipelement-button {
             visibility: hidden !important;
           }
-          .atvwebplayersdk-skipelement-button.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-skipelement-button {
             visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideSkipIntroButton");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const skipIntroBtn = this.player.querySelector(
-          ".atvwebplayersdk-skipelement-button"
-        );
-        if (!skipIntroBtn) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(skipIntroBtn);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(skipIntroBtn);
-          }, 300);
-        } else {
-          hide(skipIntroBtn);
-        }
-      });
     };
 
     const tweakShowVideoResolutionInfo = () => {
@@ -7414,33 +7254,12 @@ class ElementController {
           .nextup-ext-resolution-info {
             visibility: hidden !important;
           }
-          .nextup-ext-resolution-info.nextup-ext-temp-show {
+          [data-nextup-ext-temp-show="true"] .nextup-ext-resolution-info {
             visibility: visible !important;
           }
         `;
         addStyle(css, "ext-hideVideoResolutionInfo");
       }
-
-      let hideTimer = null;
-      this.player.addEventListener("mousemove", (e) => {
-        const resolutionInfo = this.player.querySelector(
-          ".nextup-ext-resolution-info"
-        );
-        if (!resolutionInfo) {
-          return;
-        }
-        if (isShortcutKeyActive()) {
-          show(resolutionInfo);
-          if (hideTimer) {
-            clearTimeout(hideTimer);
-          }
-          hideTimer = setTimeout(() => {
-            hide(resolutionInfo);
-          }, 300);
-        } else {
-          hide(resolutionInfo);
-        }
-      });
     };
 
     const fnList = [
