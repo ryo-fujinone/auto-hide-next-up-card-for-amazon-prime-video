@@ -291,12 +291,12 @@ const deepMergeDefaults = (defaults = {}, target = {}) => {
     }
   }
 
-  // // Keeps values ​​for additional keys not in 'defaults'.
-  // for (const key of Object.keys(target)) {
-  //   if (!(key in out)) {
-  //     out[key] = target[key];
-  //   }
-  // }
+  // Keeps values ​​for additional keys not in 'defaults'.
+  for (const key of Object.keys(target)) {
+    if (!(key in out)) {
+      out[key] = target[key];
+    }
+  }
 
   return out;
 };
