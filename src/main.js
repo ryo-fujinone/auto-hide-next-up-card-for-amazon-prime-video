@@ -3378,6 +3378,14 @@ const runXhook = () => {
     };
   };
 
+  const isVariantLegacy = (playerVariant) => {
+    return playerVariant === "legacy";
+  };
+
+  const isVariantNew = (playerVariant) => {
+    return playerVariant === "new";
+  };
+
   const identificationGetVodPlaybackResources = () => {
     try {
       const getVodPlaybackResources =
@@ -3415,14 +3423,13 @@ const runXhook = () => {
       constructor(player, video) {
         this.player = player;
         this.video = video;
-        this.show = this._show.bind(this);
+        this.abortController = null;
         this.mp4Url;
+        this.videoInfoBySrc = {};
+        this.playerObserver;
       }
 
-      _show(event) {
-        if (!event) {
-          return;
-        }
+      renderLegacy() {
         if (this.mp4Url === XhookAfter.mp4Url) {
           return;
         }
@@ -3523,6 +3530,162 @@ const runXhook = () => {
         this.mp4Url = XhookAfter.mp4Url;
       }
 
+      resolveCurrentResolutionInfoForNewUi(title) {
+        if (!title) {
+          return;
+        }
+
+        const getVodPlaybackResources = identificationGetVodPlaybackResources();
+        if (!getVodPlaybackResources) {
+          return;
+        }
+
+        const titleId = getVodPlaybackResources.titleId;
+        const metadataResource = XhookAfter.metadataResourceArray.find(
+          (m) => m.entityId === titleId
+        );
+        if (!metadataResource) {
+          return;
+        }
+
+        const origTitle =
+          metadataResource.data.resources?.catalogMetadataV2?.catalog?.title;
+        if (!origTitle || !title.includes(origTitle)) {
+          return;
+        }
+
+        const resolution = XhookAfter.resolutionInfoArray.find((r) => {
+          return XhookAfter.mp4Url.includes(r.baseURL);
+        });
+        return resolution;
+      }
+
+      renderNewUi() {
+        const bottomLeftContainer = this.player.querySelector(
+          "[data-nextup-ext-role='bottom-left-container']"
+        );
+        if (!bottomLeftContainer) {
+          return;
+        }
+
+        const video = this.player.querySelector("video[src]");
+        if (!video) {
+          return;
+        }
+        const src = video.src;
+        if (!src) {
+          return;
+        }
+
+        // TODO: レコメンデーションの前に解像度が来るなら解像度を消して再追加
+        const existingTarget = this.player.querySelector(
+          "[data-nextup-ext-role='resolution-info']"
+        );
+        if (existingTarget) {
+          const nextElement = existingTarget.nextElementSibling;
+          if (!nextElement) {
+            return;
+          }
+          existingTarget.remove();
+        }
+
+        const existsResolution = src in this.videoInfoBySrc;
+
+        let titleElement = this.player.querySelector(
+          ".atvwebplayersdk-episode-info"
+        );
+        if (!titleElement || !titleElement?.textContent) {
+          titleElement = this.player.querySelector(
+            ".atvwebplayersdk-title-text"
+          );
+        }
+
+        let title;
+        if (titleElement) {
+          title = titleElement.textContent;
+        }
+
+        let resolution;
+        if (existsResolution) {
+          const videoInfo = this.videoInfoBySrc[src];
+          if (title) {
+            if (title === videoInfo.title) {
+              // Same title
+              resolution = videoInfo.resolution;
+            } else {
+              // Different title
+              // Normally, this case probably won't occur.
+              resolution = this.resolveCurrentResolutionInfoForNewUi(title);
+            }
+          } else {
+            // While the rating is displayed
+            //
+            resolution = videoInfo.resolution;
+          }
+        } else {
+          if (title) {
+            // The first case for each title
+            resolution = this.resolveCurrentResolutionInfoForNewUi(title);
+          }
+        }
+
+        if (!resolution) {
+          return;
+        }
+
+        try {
+          const target = document.createElement("div");
+          target.dataset.nextupExtRole = "resolution-info";
+          bottomLeftContainer.append(target);
+
+          const width = resolution.width;
+          const height = resolution.height;
+          const resolutionText = `${width}×${height}`;
+          target.textContent = resolutionText;
+
+          if (title) {
+            this.videoInfoBySrc[src] = {
+              title,
+              resolution,
+            };
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      render() {
+        if (this.abortController) {
+          this.abortController.abort();
+        }
+        if (this.playerObserver) {
+          this.playerObserver.disconnect();
+        }
+
+        this.abortController = new AbortController();
+        const { signal } = this.abortController;
+
+        const playerVariantGate = createPlayerVariantGate();
+        playerVariantGate.runWhenReady(this.player, (playerVariant) => {
+          if (isVariantLegacy(playerVariant)) {
+            this.video.addEventListener(
+              "timeupdate",
+              this.renderLegacy.bind(this),
+              { signal }
+            );
+          } else if (isVariantNew(playerVariant)) {
+            this.playerObserver = new MutationObserver(() => {
+              this.renderNewUi();
+            }).observe(this.player, {
+              childList: true,
+              subtree: true,
+              attributes: true,
+              attributeFilter: ["class", "style"],
+            });
+          }
+        });
+      }
+
       runVideoOpenCloseObserver() {
         new MutationObserver((_, videoOpenObserver) => {
           if (!this.player.classList.contains("dv-player-fullscreen")) {
@@ -3530,7 +3693,7 @@ const runXhook = () => {
           }
           videoOpenObserver.disconnect();
 
-          this.video.addEventListener("timeupdate", this.show);
+          this.render();
 
           new MutationObserver((_, videoCloseObserver) => {
             if (this.player.classList.contains("dv-player-fullscreen")) {
@@ -3538,7 +3701,14 @@ const runXhook = () => {
             }
             videoCloseObserver.disconnect();
 
-            this.video.removeEventListener("timeupdate", this.show);
+            if (this.abortController) {
+              this.abortController.abort();
+              this.abortController = null;
+            }
+            if (this.playerObserver) {
+              this.playerObserver.disconnect();
+              this.playerObserver = null;
+            }
             this.mp4Url = null;
 
             this.runVideoOpenCloseObserver();
@@ -6575,7 +6745,8 @@ class ElementController {
           [data-nextup-ext-role="dismiss-nextup-button"],
           [data-nextup-ext-role="expand-recommendations-button"],
           [data-nextup-ext-role="hide-recommendations-button"],
-          button:has(> .atvweb-inplayback-carousel-card):not(:hover) .atvweb-inplayback-carousel-card-title
+          button:has(> .atvweb-inplayback-carousel-card):not(:hover) .atvweb-inplayback-carousel-card-title,
+          [data-nextup-ext-role="resolution-info"]
           {
             paint-order: stroke fill;
             -webkit-text-stroke: 0.07em black;
@@ -7382,6 +7553,55 @@ class ElementController {
     }
   }
 
+  adjustNewUiResolutionInfoStyle(options = getDefaultOptions()) {
+    if (!options.showVideoResolution_xhook) {
+      return;
+    }
+
+    this.runFeatureWhenVariantResolved("adjustNewUiResolutionInfoStyle", () => {
+      if (!this.isVariantNew()) {
+        return;
+      }
+
+      const adjustStyle = () => {
+        const optBtnImg = this.player.querySelector(
+          ".nextup-ext-opt-btn-container img"
+        );
+        if (!optBtnImg) return;
+
+        const computedStyle = getComputedStyle(optBtnImg);
+        const width = computedStyle.width;
+        if (!width) return;
+
+        let num = parseFloat(width);
+        if (num === 0 || !Number.isFinite(num)) {
+          return;
+        }
+        if (num < 10) {
+          return;
+        }
+
+        const fontSize = num - 5 + "px";
+        const css = `
+          [data-nextup-ext-role="resolution-info"] {
+            font-size: ${fontSize}
+          }
+        `;
+        upsertStyle(css, "ext-adjustNewUiResolutionInfoStyle");
+      };
+
+      adjustStyle();
+      new MutationObserver(adjustStyle).observe(this.player, {
+        attributes: true,
+        attributeFilter: ["data-nextup-ext-overlay-visible"],
+      });
+
+      window.addEventListener("resize", () => {
+        adjustStyle();
+      });
+    });
+  }
+
   forcePlayNextEpisode(options = getDefaultOptions()) {
     if (!options.forcePlayNextEpisode_xhook) {
       return;
@@ -7839,6 +8059,12 @@ const main = async () => {
 
         try {
           controller.hideVariousTextAndButtons(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.adjustNewUiResolutionInfoStyle(options);
         } catch (e) {
           console.log(e);
         }
