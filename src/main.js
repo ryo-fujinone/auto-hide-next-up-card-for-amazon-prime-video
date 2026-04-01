@@ -954,7 +954,7 @@ const createOptionMessages = () => {
     hideVariousButtonsInTopRight: "右上の各種ボタンを非表示にする",
     hidePlaybackTime: "再生時間表示を非表示にする",
     hideSeekBar: "シークバーを非表示にする",
-    hideCenterButtons: "中央のボタンを非表示にする",
+    hideCenterButtons: "中央の操作ボタンを非表示にする",
     hideNextEpisodeButton: "次のエピソードボタンを非表示にする",
     tweakHideSkipIntroButton: "イントロスキップボタンの非表示機能を調整する",
     tweakHideSkipIntroButton_Tooltip: `「イントロスキップボタンを非表示にする」が有効になっている場合の挙動を調整します。
@@ -1082,7 +1082,7 @@ const createOptionMessages = () => {
     hideVariousButtonsInTopRight: "Hide various buttons in the top right",
     hideSeekBar: "Hide seek bar",
     hidePlaybackTime: "Hide playback time",
-    hideCenterButtons: "Hide center buttons",
+    hideCenterButtons: "Hide control buttons in the center",
     hideNextEpisodeButton: "Hide next episode button",
     tweakHideSkipIntroButton: "Tweak the feature to hide skip intro button",
     tweakHideSkipIntroButton_Tooltip: `Tweaks the behavior when [Hide skip intro button] is enabled.
