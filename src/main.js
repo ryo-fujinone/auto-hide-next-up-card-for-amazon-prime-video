@@ -3838,7 +3838,9 @@ const runXhook = () => {
           ? nextEpisodeId
           : "null";
 
-        this.video.removeEventListener("timeupdate", this.detect);
+        if (this.abortController) {
+          this.abortController.abort();
+        }
 
         // Detection of auto play
         this.videoSrc = this.video.getAttribute("src");
@@ -3954,9 +3956,15 @@ const runXhook = () => {
       createVideoSrcObserver() {
         return new MutationObserver((_, observer) => {
           const newVideoSrc = this.video.getAttribute("src");
-          if (this.videoSrc !== newVideoSrc) {
+          if (newVideoSrc && this.videoSrc !== newVideoSrc) {
             observer.disconnect();
-            this.video.addEventListener("timeupdate", this.detect);
+            this.abortController = new AbortController();
+            const { signal } = this.abortController;
+            this.video.addEventListener(
+              "timeupdate",
+              this.detectOnLegacy.bind(this),
+              { signal }
+            );
             delete this.player.dataset.nextEpisodeId;
           }
         });
