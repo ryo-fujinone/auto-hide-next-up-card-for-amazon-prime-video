@@ -8189,12 +8189,7 @@ class ElementController {
     };
     video?.addEventListener("timeupdate", remainingListener, { signal });
 
-    new MutationObserver((_, outerObserver) => {
-      if (this.player.classList.contains("dv-player-fullscreen")) {
-        return;
-      }
-      outerObserver.disconnect();
-
+    const afteVideorClose = () => {
       if (videoInfoWatcher) {
         clearInterval(videoInfoWatcher);
       }
@@ -8202,23 +8197,57 @@ class ElementController {
       setTimeout(() => {
         abortController.abort();
       }, 800);
+    };
 
+    const afterVideoOpen = () => {
+      delete this.player.dataset.nextupExtVideoInfo;
+      this.forcePlayNextEpisodeNewUi(options);
+    };
+
+    const videoOpenObserver = new MutationObserver(() => {
+      if (this.player.classList.contains("dv-player-fullscreen")) {
+        videoOpenObserver.disconnect();
+        afterVideoOpen();
+      }
+    });
+
+    const videoCloseObserver = new MutationObserver(() => {
+      if (this.player.classList.contains("dv-player-fullscreen")) {
+        return;
+      }
+      videoCloseObserver.disconnect();
+      afteVideorClose();
       playNextEpisode();
-
-      new MutationObserver((_, observer) => {
-        if (this.player.classList.contains("dv-player-fullscreen")) {
-          observer.disconnect();
-          delete this.player.dataset.nextupExtVideoInfo;
-          this.forcePlayNextEpisodeNewUi(options);
-        }
-      }).observe(this.player, {
+      videoOpenObserver.observe(this.player, {
         attributes: true,
         attributeFilter: ["class"],
       });
-    }).observe(this.player, {
+    });
+
+    videoCloseObserver.observe(this.player, {
       attributes: true,
       attributeFilter: ["class"],
     });
+
+    const videoSrcObserver = new MutationObserver(() => {
+      const video = getVisibleVideo();
+      const src = video?.src;
+      if (src && videoSrc && videoSrc !== src) {
+        videoSrcObserver.disconnect();
+        videoSrc = src;
+        console.log("Video src has changed (and probably the title too)");
+        videoCloseObserver.disconnect();
+        videoOpenObserver.disconnect();
+        afteVideorClose();
+        afterVideoOpen();
+      }
+    });
+    if (video) {
+      videoSrcObserver.observe(video, {
+        attributes: true,
+        attributeFilter: ["src"],
+      });
+    }
   }
 }
 
