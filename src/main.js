@@ -54,7 +54,6 @@ const getDefaultOptions = () => {
     hideNextEpisodeButton: false,
     tweakHideSkipIntroButton: false,
     tweakShowVideoResolutionInfo: false,
-    useOnLiveTv: false,
     shortcuts: {
       openOptionsDialog: {
         enabled: true,
@@ -550,12 +549,24 @@ const getShortcutKeyInputTemporarilyShowHidden = () => {
   return document.querySelector("#shortcutkey-temporarily-show-hidden");
 };
 
-const getVisibleVideo = () => {
-  const videos = document.querySelectorAll(".dv-player-fullscreen video");
+const getVisibleVideo = (player) => {
+  let videos = [];
+  if (!player) {
+    videos = document.querySelectorAll(".dv-player-fullscreen video");
+  } else {
+    videos = player.querySelectorAll("video");
+  }
   if (videos.length === 0) {
     return;
   }
   return Array.from(videos).find((v) => v.checkVisibility());
+};
+
+const toggleNewUiPlayAndPause = () => {
+  const player = document.querySelector(".dv-player-fullscreen");
+  if (player) {
+    player.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
+  }
 };
 
 const toggleLegacyPlayAndPause = () => {
@@ -564,13 +575,8 @@ const toggleLegacyPlayAndPause = () => {
   );
   if (uiContainer) {
     uiContainer.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
-  }
-};
-
-const toggleNewUiPlayAndPause = () => {
-  const player = document.querySelector(".dv-player-fullscreen");
-  if (player) {
-    player.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
+  } else {
+    toggleNewUiPlayAndPause();
   }
 };
 
@@ -950,13 +956,6 @@ const createOptionMessages = () => {
       [修飾キー1つ + 英数字] は必須。
       Windows：Ctrl/Shift/Alt/英数字をサポート
       Mac：Command/Shift/Option/英数字をサポート`,
-    useOnLiveTv: "実験的: ライブ配信の再生でこの拡張機能を使用する",
-    useOnLiveTv_Tooltip: `ライブ配信の再生でこの拡張機能を動作させたい場合に有効にしてください。
-      なおこのオプションが無効でもダイアログを開くためのアイコンは表示されます。\n
-      ライブ配信で動作確認が取れている機能は以下です。
-      - オーバーレイ表示が有効な時に暗くならないようにする
-      - 中央のボタン（再生/停止、戻る、進む）を下部に移動する
-      - 各種テキストやボタンを非表示にする`,
     enableOpenOptionsDialog:
       "動画再生中にショートカットキーでオプションダイアログを開けるようにする",
     shortcutKeyForDialog: "オプションダイアログを開くショートカットキー",
@@ -1085,13 +1084,6 @@ const createOptionMessages = () => {
       [One modifier key + alphanumeric] is required.
       Windows: Supports Ctrl/Shift/Alt/alphanumeric
       Mac: Supports Command/Shift/Option/alphanumeric`,
-    useOnLiveTv: "Experimental: Use this extension on LiveTV",
-    useOnLiveTv_Tooltip: `Enable this option if you want this extension to work with LiveTV.
-      Note that even if this option is disabled, the icon to open the dialog will still be displayed.\n
-      The following features have been confirmed to work with LiveTV.
-      - Prevents darkening when overlay display is enabled
-      - Move the center buttons(Play/Pause, Back and Forward) to the bottom
-      - Hide various text and buttons`,
     enableOpenOptionsDialog:
       "Enable shortcut key to open the options dialog during video playback",
     shortcutKeyForDialog: "Shortcut key to open the options dialog",
@@ -1556,19 +1548,6 @@ const createOptionDialog = async () => {
                       </ul>
                   </li>
               </ul>
-
-              <div class="nextup-ext-opt-dialog-item-container">
-                  <label>
-                      <input type="checkbox" id="use-on-live-tv" name="use-on-live-tv" ${
-                        options.useOnLiveTv ? "checked" : ""
-                      } />
-                      <p>${messages.useOnLiveTv}</p>
-                  </label>
-                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.useOnLiveTv_Tooltip.replaceAll(
-                    regexForMultiineTooltips,
-                    ""
-                  )}" data-msg-id="useOnLiveTv"></p>
-              </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
@@ -2110,9 +2089,6 @@ const createOptionDialog = async () => {
               },
             },
           });
-          break;
-        case "use-on-live-tv":
-          await saveOptions({ useOnLiveTv: e.target.checked });
           break;
         case "enable-open-options-dialog":
           await saveOptions({
@@ -5503,7 +5479,6 @@ class ElementController {
     this.centerOverlaysWrapperIsMarked = false;
     this.playerVariant = "unknown";
     this.pendingTasks = new Map();
-    this.isLiveTvCandidate = false;
   }
 
   hasResolvedVariant() {
@@ -5712,58 +5687,6 @@ class ElementController {
       cloneButton.addEventListener("click", (_) => {
         const optDialog = getOptionDialog();
         optDialog.showModal();
-      });
-    }).observe(this.player, OBSERVER_CONFIG);
-  }
-
-  // for LiveTV
-  changeOrderOfVideoElements(options = getOptions()) {
-    if (!options.useOnLiveTv) {
-      return;
-    }
-
-    let videoWrapper;
-
-    const videoElementsObserver = new MutationObserver((_) => {
-      if (!videoWrapper) {
-        return;
-      }
-
-      const videos = videoWrapper.querySelectorAll("video");
-      if (videos.length !== 2) {
-        return;
-      }
-      if (
-        videos[0].style.display !== "none" ||
-        videos[1].style.display !== ""
-      ) {
-        return;
-      }
-      if (videos[0].hasAttribute("src") || !videos[1].hasAttribute("src")) {
-        return;
-      }
-      videos[0].before(videos[1]);
-      this.isLiveTvCandidate = true;
-    });
-
-    new MutationObserver((_, observer) => {
-      /**
-       * at amazon.co.jp
-       * .rendererContainer - before 2025/05/03 and after 2025/05/07
-       * .atvwebplayersdk-video-surface - existed from 2025/05/03 to 2025/05/07
-       */
-      const wrapper1 = this.player.querySelector(".rendererContainer");
-      const wrapper2 = this.player.querySelector(
-        ".atvwebplayersdk-video-surface"
-      );
-      videoWrapper = wrapper1 ?? wrapper2;
-      if (!videoWrapper) {
-        return;
-      }
-      observer.disconnect();
-      videoElementsObserver.observe(videoWrapper, {
-        ...OBSERVER_CONFIG,
-        attributes: true,
       });
     }).observe(this.player, OBSERVER_CONFIG);
   }
@@ -6561,7 +6484,7 @@ class ElementController {
     const optionsWrapper = this.player.querySelector(
       ".atvwebplayersdk-options-wrapper"
     );
-    if (options.useOnLiveTv && optionsWrapper) {
+    if (optionsWrapper) {
       const checkJumpLiveButtonStyles = () => {
         const jumpLiveButton = this.player.querySelector(
           ".atvwebplayersdk-jumptolive-button"
@@ -6638,7 +6561,6 @@ class ElementController {
         _isOpenedByUser = false;
       }
 
-      // If useOnLiveTv is disabled, this will always be false
       const isJumpLiveButtonVisible =
         this.player.dataset.isJumpLiveButtonVisible === "true";
 
@@ -6691,43 +6613,23 @@ class ElementController {
     renderStyle();
 
     let hideObserver;
-    let liveTvVideoObserver;
     let liveTvForwardButtonObserver;
     let abortController;
 
     const markLiveTV = () => {
-      if (!options.useOnLiveTv) {
-        return;
-      }
-      if (!this.isLiveTvCandidate) {
-        false;
-      }
-      if (liveTvVideoObserver) {
-        liveTvVideoObserver.disconnect();
-      }
       if (liveTvForwardButtonObserver) {
         liveTvForwardButtonObserver.disconnect();
       }
 
-      liveTvVideoObserver = new MutationObserver(() => {
-        const videos = this.player.querySelectorAll("video");
-        if (videos.length < 2) {
-          this.isLiveTvCandidate = false;
-        } else {
-          this.isLiveTvCandidate = true;
-        }
-      });
-
-      const target =
-        this.player.querySelector(".atvwebplayersdk-video-surface") ??
-        this.player;
-      liveTvVideoObserver.observe(target, OBSERVER_CONFIG);
-
       liveTvForwardButtonObserver = new MutationObserver(() => {
         const forwardButton = this.player.querySelector(forwardButtonSelector);
-        if (!forwardButton) return;
+        if (!forwardButton) {
+          delete this.player.dataset.isLiveTv;
+          return;
+        }
+        const videos = this.player.querySelectorAll("video");
         const isDisabled = forwardButton.hasAttribute("disabled");
-        if (isDisabled) {
+        if (isDisabled && videos.length >= 2) {
           this.player.dataset.isLiveTv = "true";
         } else {
           delete this.player.dataset.isLiveTv;
@@ -8734,12 +8636,6 @@ const main = async () => {
       }
 
       try {
-        controller.changeOrderOfVideoElements(options);
-      } catch (e) {
-        console.log(e);
-      }
-
-      try {
         controller.createOptionBtn();
       } catch (e) {
         console.log(e);
@@ -8773,8 +8669,8 @@ const main = async () => {
       new MutationObserver((_, observer) => {
         controller.markLegacyCenterOverlaysWrapper();
 
-        const video = player.querySelector("video");
-        if (!video?.checkVisibility()) {
+        const video = getVisibleVideo(player);
+        if (!video) {
           return;
         }
 
