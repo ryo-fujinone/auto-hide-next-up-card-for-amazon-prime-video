@@ -2070,7 +2070,7 @@ const createOptionDialog = async () => {
           break;
         case "add-video-controller-to-bottom-left":
           await saveOptions({
-            addVideoControllerToBototmLeft: e.target.checked,
+            addVideoControllerToBottomLeft: e.target.checked,
           });
           break;
         case "add-video-close-button-to-top-right":
@@ -2235,6 +2235,11 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
 
     const hideCloseButton = getItemFromItemContainer("hide-close-button");
     hide(hideCloseButton);
+
+    const addVideoCloseButtonToTopRight = getItemFromItemContainer(
+      "add-video-close-button-to-top-right"
+    );
+    hide(addVideoCloseButtonToTopRight);
   }
 };
 
