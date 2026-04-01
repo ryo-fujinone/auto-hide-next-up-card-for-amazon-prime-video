@@ -3577,7 +3577,6 @@ const runXhook = () => {
           return;
         }
 
-        // TODO: レコメンデーションの前に解像度が来るなら解像度を消して再追加
         const existingTarget = this.player.querySelector(
           "[data-nextup-ext-role='resolution-info']"
         );
@@ -3757,8 +3756,8 @@ const runXhook = () => {
       constructor(player, video) {
         this.player = player;
         this.video = video;
-        this.detect = this._detect.bind(this);
         this.videoSrcObserver = this.createVideoSrcObserver();
+        this.abortController;
       }
 
       getSubtitleText() {
@@ -3775,10 +3774,36 @@ const runXhook = () => {
         return newSubtitleText;
       }
 
-      _detect(event) {
-        if (!event) {
-          return;
+      getNextEpisodeId(nextUpV2Resource) {
+        try {
+          if (!nextUpV2Resource || !nextUpV2Resource.data) {
+            return;
+          }
+          const data = nextUpV2Resource.data;
+          if (data.resources?.nextUpV2?.carousel) {
+            return;
+          }
+
+          const carouselItem =
+            data.resources?.nextUpV2?.card?.carouselItems?.[0];
+          if (!carouselItem) {
+            return;
+          }
+          const autoplayConfig = data.resources?.nextUpV2?.card?.autoPlayConfig;
+          if (carouselItem.analytics?.slotType !== "NEXT_EPISODE_SLOT") {
+            return;
+          } else if (autoplayConfig?.autoplayCardPreferredImage !== "episode") {
+            return;
+          }
+
+          const nextEpisodeId = carouselItem.titleId;
+          return nextEpisodeId;
+        } catch (e) {
+          console.log(e);
         }
+      }
+
+      detectOnLegacy() {
         const subtitleText = this.getSubtitleText();
         if (!subtitleText) {
           return;
@@ -3812,33 +3837,10 @@ const runXhook = () => {
           return;
         }
 
-        const data = nextUpV2Resource.data;
-        if (!data.resources.nextUpV2.carousel) {
-          const carouselItem = data.resources.nextUpV2.card.carouselItems[0];
-          if (!carouselItem) {
-            return;
-          }
-
-          const autoplayConfig = data.resources?.nextUpV2?.card?.autoPlayConfig;
-          if (carouselItem.analytics?.slotType !== "NEXT_EPISODE_SLOT") {
-            this.player.dataset.nextEpisodeId = "null";
-          } else if (autoplayConfig?.autoplayCardPreferredImage !== "episode") {
-            this.player.dataset.nextEpisodeId = "null";
-          }
-
-          if (this.player.dataset.nextEpisodeId !== "null") {
-            const nextEpisodeId = carouselItem.titleId;
-            if (nextEpisodeId) {
-              if (!this.player.dataset.nextEpisodeId) {
-                this.player.dataset.nextEpisodeId = nextEpisodeId;
-              } else if (this.player.dataset.nextEpisodeId !== nextEpisodeId) {
-                this.player.dataset.nextEpisodeId = nextEpisodeId;
-              }
-            }
-          }
-        } else {
-          this.player.dataset.nextEpisodeId = "null";
-        }
+        const nextEpisodeId = this.getNextEpisodeId(nextUpV2Resource);
+        this.player.dataset.nextEpisodeId = nextEpisodeId
+          ? nextEpisodeId
+          : "null";
 
         this.video.removeEventListener("timeupdate", this.detect);
 
@@ -3847,6 +3849,109 @@ const runXhook = () => {
         this.videoSrcObserver.observe(this.video, {
           attributes: true,
           attributeFilter: ["src"],
+        });
+      }
+
+      getVideoInfo() {
+        const str = this.player.dataset.nextupExtVideoInfo;
+        if (str) {
+          return JSON.parse(str);
+        }
+      }
+
+      detectOnNewUi() {
+        const nextEpisodeInfoStr = this.player.dataset.nextupExtNextEpisodeInfo;
+        if (nextEpisodeInfoStr) {
+          const nextEpisodeInfo = JSON.parse(nextEpisodeInfoStr);
+          if (
+            this.video?.src === nextEpisodeInfo.videoSrc &&
+            nextEpisodeInfo.nextEpisodeId
+          ) {
+            return;
+          } else {
+            delete this.player.dataset.nextupExtNextEpisodeInfo;
+          }
+        }
+
+        const videoInfo = this.getVideoInfo();
+        if (!videoInfo) {
+          return;
+        }
+        const episodeTitle = videoInfo.episodeTitle;
+        const videoSrc = videoInfo.videoSrc;
+        if (!episodeTitle || !videoSrc) {
+          return;
+        }
+
+        if (this.video?.src !== videoSrc) {
+          return;
+        }
+
+        const getVodPlaybackResources = identificationGetVodPlaybackResources();
+        if (!getVodPlaybackResources) {
+          return;
+        }
+
+        const titleId = getVodPlaybackResources.titleId;
+        const metadataResource = XhookAfter.metadataResourceArray.find(
+          (m) => m.entityId === titleId
+        );
+        if (!metadataResource) {
+          return;
+        }
+
+        const origTitle =
+          metadataResource.data.resources?.catalogMetadataV2?.catalog?.title;
+        if (!origTitle || !episodeTitle.includes(origTitle)) {
+          return;
+        }
+
+        const nextUpV2Resource = XhookAfter.nextUpV2ResourceArray.find(
+          (n) => n.entityId === titleId
+        );
+        if (!nextUpV2Resource) {
+          return;
+        }
+
+        const nextEpisodeId = this.getNextEpisodeId(nextUpV2Resource);
+        if (nextEpisodeId) {
+          const newNextEpisodeInfo = {
+            nextEpisodeId,
+            videoSrc: this.video?.src,
+          };
+          this.player.dataset.nextupExtNextEpisodeInfo =
+            JSON.stringify(newNextEpisodeInfo);
+        } else {
+          delete this.player.dataset.nextupExtNextEpisodeInfo;
+        }
+      }
+
+      detect() {
+        if (this.abortController) {
+          this.abortController.abort();
+        }
+
+        this.abortController = new AbortController();
+        const { signal } = this.abortController;
+
+        const playerVariantGate = createPlayerVariantGate();
+        playerVariantGate.runWhenReady(this.player, (playerVariant) => {
+          if (isVariantLegacy(playerVariant)) {
+            this.video.addEventListener(
+              "timeupdate",
+              this.detectOnLegacy.bind(this),
+              { signal }
+            );
+          } else if (isVariantNew(playerVariant)) {
+            this.playerObserver = new MutationObserver(() => {
+              this.detectOnNewUi();
+            }).observe(this.player, {
+              childList: true,
+              subtree: true,
+              attributes: true,
+              attributeFilter: ["class", "style"],
+            });
+          }
         });
       }
 
@@ -3868,7 +3973,7 @@ const runXhook = () => {
           }
           videoOpenObserver.disconnect();
 
-          this.video.addEventListener("timeupdate", this.detect);
+          this.detect();
 
           new MutationObserver((_, videoCloseObserver) => {
             if (this.player.classList.contains("dv-player-fullscreen")) {
@@ -3876,7 +3981,11 @@ const runXhook = () => {
             }
             videoCloseObserver.disconnect();
 
-            this.video.removeEventListener("timeupdate", this.detect);
+            if (this.abortController) {
+              this.abortController.abort();
+              this.abortController = null;
+            }
+
             this.videoSrcObserver.disconnect();
 
             this.runVideoOpenCloseObserver();
@@ -7605,7 +7714,16 @@ class ElementController {
     if (!options.forcePlayNextEpisode_xhook) {
       return;
     }
+    this.runFeatureWhenVariantResolved("forcePlayNextEpisode", () => {
+      if (this.isVariantLegacy()) {
+        this.forcePlayNextEpisodeLegacy(options);
+      } else if (this.isVariantNew()) {
+        this.forcePlayNextEpisodeNewUi(options);
+      }
+    });
+  }
 
+  forcePlayNextEpisodeLegacy(options = getDefaultOptions()) {
     let titleText = null;
     let titleChanged = false;
     let subtitleText = null;
@@ -7855,6 +7973,248 @@ class ElementController {
           attributeFilter: ["class"],
         });
       }
+    }).observe(this.player, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+  }
+
+  forcePlayNextEpisodeNewUi(options = getDefaultOptions()) {
+    let titleText = null;
+    let episodeTitle = null;
+    let videoSrc = null;
+    let isTryingToGetVideoInfo = false;
+    let videoInfoWatcher;
+    let videoClosedByUser = false;
+
+    const getTitleText = () => {
+      const title = this.player.querySelector(".atvwebplayersdk-title-text");
+      return title?.textContent;
+    };
+
+    const getEpisodeTitle = () => {
+      const episodeInfo = this.player.querySelector(
+        ".atvwebplayersdk-episode-info"
+      );
+      return episodeInfo?.textContent;
+    };
+
+    const getVideoSrc = () => {
+      const video = getVisibleVideo();
+      return video?.src;
+    };
+
+    const getVideoInfo = () => {
+      if (!titleText) {
+        titleText = getTitleText() ?? null;
+      }
+      if (!episodeTitle) {
+        episodeTitle = getEpisodeTitle() ?? null;
+      }
+      if (!videoSrc) {
+        videoSrc = getVideoSrc();
+      }
+    };
+
+    const setVideoInfoJsonStr = () => {
+      const obj = {
+        titleText,
+        episodeTitle,
+        videoSrc,
+      };
+      const str = JSON.stringify(obj);
+      this.player.dataset.nextupExtVideoInfo = str;
+    };
+
+    const dispatchKeyboardEvent = () => {
+      const event = new KeyboardEvent("keydown", { keyCode: 9 });
+      this.player.dispatchEvent(event);
+    };
+
+    const tryDispatchKeyboardEvent = () => {
+      if (isTryingToGetVideoInfo) {
+        return;
+      }
+      if (episodeTitle && videoSrc) {
+        return;
+      }
+      if (this.player.dataset.nextupExtOverlayVisible === "true") {
+        return;
+      }
+
+      dispatchKeyboardEvent();
+      temporarilyDisableOverlay(this.player, 3500);
+
+      setTimeout(() => {
+        getVideoInfo();
+        setVideoInfoJsonStr();
+      }, 500);
+    };
+
+    const tryGetVideoInfo = (startTime) => {
+      videoInfoWatcher = setInterval(() => {
+        if (performance.now() - startTime >= 30_000) {
+          isTryingToGetVideoInfo = false;
+          clearInterval(videoInfoWatcher);
+          tryDispatchKeyboardEvent();
+          return;
+        }
+        getVideoInfo();
+        setVideoInfoJsonStr();
+        if (titleText && episodeTitle && videoSrc) {
+          isTryingToGetVideoInfo = false;
+          clearInterval(videoInfoWatcher);
+        }
+      }, 200);
+    };
+    const startTime = performance.now();
+    isTryingToGetVideoInfo = true;
+    tryGetVideoInfo(startTime);
+
+    const playNextEpisode = () => {
+      if (videoClosedByUser) {
+        console.log("forcePlayNextEpisode:", "Video closed by user");
+        return;
+      }
+
+      const nextEpisodeInfoStr = this.player.dataset.nextupExtNextEpisodeInfo;
+      if (!nextEpisodeInfoStr) {
+        console.log("forcePlayNextEpisode:", "Next episode not found");
+        return;
+      }
+      delete this.player.dataset.nextupExtNextEpisodeInfo;
+      const nextEpisodeInfo = JSON.parse(nextEpisodeInfoStr);
+      const nextEpisodeId = nextEpisodeInfo.nextEpisodeId;
+      if (!nextEpisodeId || videoSrc !== nextEpisodeInfo.videoSrc) {
+        console.log("forcePlayNextEpisode:", "Next episode not found");
+        return;
+      }
+
+      // Temporarily darkens the page.
+      document.body.style.filter = "brightness(0)";
+      setTimeout(() => {
+        document.body.style.filter = "";
+      }, 2000);
+
+      setTimeout(() => {
+        document.body.style.filter = "";
+        if (videoClosedByUser) {
+          console.log("forcePlayNextEpisode:", "Video closed by user");
+          return;
+        }
+
+        console.log("Play next episode");
+        const origin = window.location.origin;
+        let url = `${origin}/gp/video/detail/${nextEpisodeId}/?autoplay=1&t=0&play-next-episode`;
+        console.log(url);
+        const volumeKey = "atvwebplayersdk_volume";
+        const volumeStr = localStorage.getItem(volumeKey);
+        const volume = parseFloat(volumeStr);
+        if (!Number.isNaN(volume)) {
+          url = `${url}&volume=${volumeStr}`;
+        }
+        window.location.href = url;
+      }, 1500);
+    };
+
+    const closeButtonClicked = (e) => {
+      if (!e) {
+        return;
+      }
+      videoClosedByUser = true;
+    };
+
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
+    const closeButtonObserver = new MutationObserver(() => {
+      const selector = PrimeVideoTextRepository.generateCloseButtonSelectors(
+        this.player
+      );
+      const closeButton = this.player.querySelector(selector);
+      if (!closeButton) {
+        return;
+      }
+      closeButton.addEventListener("click", closeButtonClicked, { signal });
+    });
+
+    closeButtonObserver.observe(this.player, {
+      ...OBSERVER_CONFIG,
+      attributes: true,
+    });
+
+    const escPressed = (e) => {
+      if (!e) {
+        return;
+      }
+      if (e.key !== "Escape") {
+        return;
+      }
+      setTimeout(() => {
+        videoClosedByUser = !this.player.classList.contains(
+          "dv-player-fullscreen"
+        );
+      }, 500);
+    };
+
+    document.body.addEventListener("keydown", escPressed, { signal });
+
+    const video = getVisibleVideo();
+    let remainingListenerisFinished = false;
+    const remainingListener = () => {
+      if (titleText || episodeTitle || remainingListenerisFinished) {
+        remainingListenerisFinished = true;
+        video?.removeEventListener("timeupdate", remainingListener);
+        return;
+      }
+
+      try {
+        if (Number.isNaN(video.duration)) {
+          return;
+        }
+        const remaining = video.duration - video.currentTime;
+        if (remaining >= 20) {
+          return;
+        }
+        remainingListenerisFinished = true;
+
+        tryDispatchKeyboardEvent();
+        setTimeout(() => {
+          video?.removeEventListener("timeupdate", remainingListener);
+        }, 500);
+      } catch (e) {
+        console.log(e);
+        remainingListenerisFinished = true;
+      }
+    };
+    video?.addEventListener("timeupdate", remainingListener, { signal });
+
+    new MutationObserver((_, outerObserver) => {
+      if (this.player.classList.contains("dv-player-fullscreen")) {
+        return;
+      }
+      outerObserver.disconnect();
+
+      if (videoInfoWatcher) {
+        clearInterval(videoInfoWatcher);
+      }
+      closeButtonObserver.disconnect();
+      setTimeout(() => {
+        abortController.abort();
+      }, 800);
+
+      playNextEpisode();
+
+      new MutationObserver((_, observer) => {
+        if (this.player.classList.contains("dv-player-fullscreen")) {
+          observer.disconnect();
+          delete this.player.dataset.nextupExtVideoInfo;
+          this.forcePlayNextEpisodeNewUi(options);
+        }
+      }).observe(this.player, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
     }).observe(this.player, {
       attributes: true,
       attributeFilter: ["class"],
