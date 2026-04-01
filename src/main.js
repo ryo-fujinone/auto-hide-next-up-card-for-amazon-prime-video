@@ -5998,32 +5998,29 @@ class ElementController {
   }
 
   observeNewUiOverlayState(options = getDefaultOptions()) {
-    const showSkipIntroBtnOnOverlay =
-      options.hideSkipIntroBtn && options.showSkipIntroBtnOnOverlay;
-    const overlayDependentOptions = [showSkipIntroBtnOnOverlay];
-    const shouldobserveNewUiOverlayState =
-      overlayDependentOptions.some(Boolean);
-    if (!shouldobserveNewUiOverlayState) {
-      return;
-    }
-
-    const updateOverlayState = () => {
-      const xrayQuickView = this.player.querySelector(".xrayQuickView");
-      if (xrayQuickView && xrayQuickView.classList.contains("show")) {
-        this.player.dataset.nextupExtOverlayVisible = "true";
-      } else {
-        delete this.player.dataset.nextupExtOverlayVisible;
+    this.runFeatureWhenVariantResolved("observeNewUiOverlayState", () => {
+      if (!this.isVariantNew()) {
+        return;
       }
-    };
 
-    const observeTarget = getPlayerUIGridRoot(this.player) ?? this.player;
-    new MutationObserver(updateOverlayState).observe(observeTarget, {
-      ...OBSERVER_CONFIG,
-      attributes: true,
-      attributeFilter: ["class", "style", "aria-hidden"],
+      const updateOverlayState = () => {
+        const xrayQuickView = this.player.querySelector(".xrayQuickView");
+        if (xrayQuickView && xrayQuickView.classList.contains("show")) {
+          this.player.dataset.nextupExtOverlayVisible = "true";
+        } else {
+          delete this.player.dataset.nextupExtOverlayVisible;
+        }
+      };
+
+      const observeTarget = getPlayerUIGridRoot(this.player) ?? this.player;
+      new MutationObserver(updateOverlayState).observe(observeTarget, {
+        ...OBSERVER_CONFIG,
+        attributes: true,
+        attributeFilter: ["class", "style", "aria-hidden"],
+      });
+
+      updateOverlayState();
     });
-
-    updateOverlayState();
   }
 
   markIdentifyLegacyNonDarkeningOverlays() {
