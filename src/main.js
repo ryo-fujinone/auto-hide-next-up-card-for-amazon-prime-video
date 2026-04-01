@@ -7691,11 +7691,14 @@ class ElementController {
       }
 
       if (!document.querySelector("#ext-hideEpisodeTitle")) {
+        // second selector is for LiveTV
         const css = `
-          .atvwebplayersdk-episode-timing-container {
+          .atvwebplayersdk-episode-timing-container,
+          div:has(>.atvwebplayersdk-title-text) div:has(+.atvwebplayersdk-episode-timing-container) {
             opacity: 0 !important;
           }
-          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-episode-timing-container {
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-episode-timing-container,
+          [data-nextup-ext-temp-show="true"] div:has(>.atvwebplayersdk-title-text) div:has(+.atvwebplayersdk-episode-timing-container) {
             opacity: 1 !important;
           }
         `;
