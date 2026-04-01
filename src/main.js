@@ -7561,6 +7561,7 @@ class ElementController {
     const relatedOptions = [
       options.hideTitle,
       options.hideEpisodeTitle,
+      options.hideCloseButton,
       options.hideVariousButtonsInTopRight,
       options.hideSeekBar,
       options.hidePlaybackTime,
@@ -7776,11 +7777,13 @@ class ElementController {
 
       const css = `
         ${PrimeVideoTextRepository.generateCloseButtonSelectors(this.player)},
-        ${PrimeVideoTextRepository.generateCloseButtonTooltipSelectors(this.player)} {
+        ${PrimeVideoTextRepository.generateCloseButtonTooltipSelectors(this.player)},
+        .next-up-ext-video-close-button-container {
           opacity: 0 !important;
         }
         ${PrimeVideoTextRepository.generateCloseButtonTempShowSelectors(this.player)},
-        ${PrimeVideoTextRepository.generateCloseButtonTooltipTempShowSelectors(this.player)} {
+        ${PrimeVideoTextRepository.generateCloseButtonTooltipTempShowSelectors(this.player)},
+        [data-nextup-ext-temp-show="true"] .next-up-ext-video-close-button-container {
           opacity: 1 !important;
         }
       `;
