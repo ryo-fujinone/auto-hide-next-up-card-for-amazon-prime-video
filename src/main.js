@@ -43,6 +43,7 @@ const getDefaultOptions = () => {
     addShadowsToSeekBar: false,
     moveCenterButtonsToBottom: false,
     addVideoControllerToBottomLeft: false,
+    addVideoCloseButtonToTopRight: false,
     hideXRay: false,
     hideTitle: false,
     hideEpisodeTitle: false,
@@ -701,6 +702,17 @@ const getSvgSignature = (img) => {
   };
 };
 
+const isNewUiSettingsIcon = (img) => {
+  const sig = getSvgSignature(img);
+  return (
+    sig.viewBox === "0 0 6 25" &&
+    sig.pathCount === 1 &&
+    sig.hasEvenOdd &&
+    sig.d.includes("M5.5 2.75a2.75") &&
+    sig.d.includes("2.75 2.75")
+  );
+};
+
 const detectPlayerVariant = (player) => {
   const optionsWrapper = player.querySelector(
     ".atvwebplayersdk-options-wrapper"
@@ -926,6 +938,8 @@ const createOptionMessages = () => {
       "中央のボタン（再生/停止、戻る、進む）を下部に移動する",
     addVideoControllerToBottomLeft:
       "中央のボタンを非表示にし、左下に同等のボタンを表示する",
+    addVideoCloseButtonToTopRight:
+      "左上の閉じるボタンを非表示にし、右上に同等のボタンを表示する",
     hideXRay: "実験的: X-Rayを非表示にする（提供地域のみ）",
     hideXRay_Tooltip: `X-Rayは一部の地域で提供されている機能です。
       日本のプライムビデオでは通常表示されないため、日本ではこの設定の影響はありません。
@@ -1053,6 +1067,8 @@ const createOptionMessages = () => {
       "Move the center buttons(Play/Pause, Back and Forward) to the bottom",
     addVideoControllerToBottomLeft:
       "Hide the center buttons and show the equivalent buttons in the bottom left",
+    addVideoCloseButtonToTopRight:
+      "Hide the close button and show the equivalent buttons in the top right",
     hideXRay: "Experimental: Hide X-Ray (available in supported regions)",
     hideXRay_Tooltip: `X-Ray is only available in some regions.
       It is not normally displayed on Prime Video Japan, so this setting has no effect in Japan.
@@ -1363,6 +1379,15 @@ const createOptionDialog = async () => {
                         options.addVideoControllerToBottomLeft ? "checked" : ""
                       } />
                       <p>${messages.addVideoControllerToBottomLeft}</p>
+                  </label>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label>
+                      <input type="checkbox" id="add-video-close-button-to-top-right" name="add-video-close-button-to-top-right" ${
+                        options.addVideoCloseButtonToTopRight ? "checked" : ""
+                      } />
+                      <p>${messages.addVideoCloseButtonToTopRight}</p>
                   </label>
               </div>
 
@@ -2045,7 +2070,12 @@ const createOptionDialog = async () => {
           break;
         case "add-video-controller-to-bottom-left":
           await saveOptions({
-            addVideoControllerToBottomLeft: e.target.checked,
+            addVideoControllerToBototmLeft: e.target.checked,
+          });
+          break;
+        case "add-video-close-button-to-top-right":
+          await saveOptions({
+            addVideoCloseButtonToTopRight: e.target.checked,
           });
           break;
         case "hide-xray":
@@ -6951,9 +6981,7 @@ class ElementController {
             font-weight: bold !important;
             text-shadow: 1px 1px 3px black;
           }
-          ${PrimeVideoTextRepository.generateCloseButtonTooltipSelectors(
-            this.player
-          )},
+          ${PrimeVideoTextRepository.generateCloseButtonTooltipSelectors(this.player)},
           ${PrimeVideoTextRepository.generateSubtitlesButtonTooltipSelectors(this.player)},
           ${PrimeVideoTextRepository.generateMuteToggleButtonTooltipSelectors(this.player)},
           ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonTooltipSelectors(this.player)},
@@ -6971,7 +6999,8 @@ class ElementController {
           [data-nextup-ext-role="expand-recommendations-button"],
           [data-nextup-ext-role="hide-recommendations-button"],
           button:has(> .atvweb-inplayback-carousel-card):not(:hover) .atvweb-inplayback-carousel-card-title,
-          [data-nextup-ext-role="resolution-info"]
+          [data-nextup-ext-role="resolution-info"],
+          .next-up-ext-video-close-button-container .tooltip
           {
             paint-order: stroke fill;
             -webkit-text-stroke: 0.07em black;
@@ -7009,7 +7038,8 @@ class ElementController {
           ${PrimeVideoTextRepository.generateMuteToggleButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateFullscreenToggleButtonSelectors(this.player)},
-          ${PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player)} {
+          ${PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player)},
+          .next-up-ext-video-close-button-container button {
             background: transparent !important;
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
@@ -7386,6 +7416,105 @@ class ElementController {
           button.style.height = "";
           adjustElementSize(button);
         }
+      }
+    });
+  }
+
+  addVideoCloseButtonToTopRight(options = getDefaultOptions()) {
+    if (!options.addVideoCloseButtonToTopRight) {
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (
+        this.player.querySelector(".next-up-ext-video-close-button-container")
+      ) {
+        return;
+      }
+      if (!this.player.dataset.nextupExtOverlayVisible) {
+        return;
+      }
+
+      const settingsButtonSelector =
+        PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player);
+      const settingsButton = this.player.querySelector(settingsButtonSelector);
+      if (!settingsButton) {
+        return;
+      }
+
+      let container;
+      const parentNode1 = settingsButton.parentNode;
+      const parentNode2 = parentNode1.parentNode;
+      if (parentNode1.querySelectorAll("button").length === 1) {
+        container = parentNode1;
+      }
+      if (parentNode2.querySelectorAll("button").length === 1) {
+        container = parentNode2;
+      }
+      if (!container) {
+        return;
+      }
+
+      const cloneContainer = container.cloneNode(true);
+      cloneContainer.classList.add("next-up-ext-video-close-button-container");
+      const cloneButton = cloneContainer.querySelector("button");
+      cloneButton.setAttribute("aria-label", "close-button-top-right-from-ext");
+
+      const closeButtonImgDataUrl = [
+        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzMiIGhlaWdodD0iMzMiIHZpZXdCb3g9IjAgMCAzMyAzMyIgZmlsbD0ibm",
+        "9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjcuMDk3IDcuODQ3YTEuMzc1IDEuMzc1ID",
+        "AgMCAwLTEuOTQ0LTEuOTQ0TDE2LjUgMTQuNTU1IDcuODQ3IDUuOTAzYTEuMzc1IDEuMzc1IDAgMSAwLTEuOTQ0IDEuOTQ0bDguNj",
+        "UyIDguNjUzLTguNjUyIDguNjUzYTEuMzc1IDEuMzc1IDAgMCAwIDEuOTQ0IDEuOTQ0bDguNjUzLTguNjUyIDguNjUzIDguNjUyYT",
+        "EuMzc1IDEuMzc1IDAgMCAwIDEuOTQ0LTEuOTQ0TDE4LjQ0NSAxNi41bDguNjUyLTguNjUzeiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg",
+        "==",
+      ].join("");
+
+      let isReady = false;
+      for (const cloneImg of cloneButton.querySelectorAll("img")) {
+        if (isNewUiSettingsIcon(cloneImg)) {
+          cloneImg.setAttribute("src", closeButtonImgDataUrl);
+          isReady = true;
+          break;
+        }
+      }
+      if (!isReady) {
+        return;
+      }
+
+      const tooltip = cloneContainer.querySelector(".tooltip div");
+      if (tooltip) {
+        tooltip.textContent = "Close";
+      }
+      container.after(cloneContainer);
+
+      const css = `
+        ${PrimeVideoTextRepository.generateCloseButtonSelectors(this.player)} {
+          display: none !important;
+        }
+      `;
+      upsertStyle(css, `hide-close-button-${this.player.id}`);
+
+      cloneButton.addEventListener("click", () => {
+        const selector = PrimeVideoTextRepository.generateCloseButtonSelectors(
+          this.player
+        );
+        const closeButton = this.player.querySelector(selector);
+        if (closeButton) {
+          try {
+            closeButton.click();
+            const event = new KeyboardEvent("keydown", { keyCode: 27 });
+            this.player.dispatchEvent(event);
+          } catch (e) {
+            console.log(e);
+          }
+          return;
+        }
+      });
+    });
+
+    this.runFeatureWhenVariantResolved("addVideoCloseButtonToTopRight", () => {
+      if (this.isVariantNew()) {
+        observer.observe(this.player, OBSERVER_CONFIG);
       }
     });
   }
@@ -8762,6 +8891,12 @@ const main = async () => {
 
         try {
           controller.moveCenterButtonsToBottom(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.addVideoCloseButtonToTopRight(options);
         } catch (e) {
           console.log(e);
         }
