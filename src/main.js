@@ -46,6 +46,7 @@ const getDefaultOptions = () => {
     hideXRay: false,
     hideTitle: false,
     hideEpisodeTitle: false,
+    hideCloseButton: false,
     hideVariousButtonsInTopRight: false,
     hideSeekBar: false,
     hidePlaybackTime: false,
@@ -929,6 +930,7 @@ const createOptionMessages = () => {
       表示に使用するキーは変更可能です。右上の各種ボタンについては非表示にしている場合でもクリック可能です。`,
     hideTitle: "タイトルを非表示にする",
     hideEpisodeTitle: "エピソード名を非表示にする",
+    hideCloseButton: "閉じるボタンを非表示にする",
     hideVariousButtonsInTopRight: "右上の各種ボタンを非表示にする",
     hidePlaybackTime: "再生時間表示を非表示にする",
     hideSeekBar: "シークバーを非表示にする",
@@ -1062,6 +1064,7 @@ const createOptionMessages = () => {
       You can change the show key. The various buttons in the top right corner are still clickable even when hidden.`,
     hideTitle: "Hide title",
     hideEpisodeTitle: "Hide episode title",
+    hideCloseButton: "Hide close button",
     hideVariousButtonsInTopRight: "Hide various buttons in the top right",
     hideSeekBar: "Hide seek bar",
     hidePlaybackTime: "Hide playback time",
@@ -1418,6 +1421,17 @@ const createOptionDialog = async () => {
                                     options.hideEpisodeTitle ? "checked" : ""
                                   } />
                                   <p>${messages.hideEpisodeTitle}</p>
+                              </label>
+                          </div>
+                        </li>
+
+                        <li class="list-style-none ml0">
+                          <div class="nextup-ext-opt-dialog-item-container">
+                              <label>
+                                  <input type="checkbox" id="hide-close-button" name="hide-close-button" ${
+                                    options.hideCloseButton ? "checked" : ""
+                                  } />
+                                  <p>${messages.hideCloseButton}</p>
                               </label>
                           </div>
                         </li>
@@ -2064,6 +2078,9 @@ const createOptionDialog = async () => {
         case "hide-episode-title":
           await saveOptions({ hideEpisodeTitle: e.target.checked });
           break;
+        case "hide-close-button":
+          await saveOptions({ hideCloseButton: e.target.checked });
+          break;
         case "hide-various-buttons-in-top-right":
           await saveOptions({ hideVariousButtonsInTopRight: e.target.checked });
           break;
@@ -2209,6 +2226,9 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
       "p[data-msg-id='showReactionsOnOverlay']"
     );
     hide(showReactionsOnOverlay_Tooltips[1]);
+
+    const hideCloseButton = getItemFromItemContainer("hide-close-button");
+    hide(hideCloseButton);
   }
 };
 
@@ -4414,6 +4434,14 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateSkipIntroButtonTempShowSelectors(player) {
+    return this.#snapshot.skipIntroAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateHoveredSkipIntroButtonSelectors(player) {
     return this.#snapshot.skipIntroAriaLabels
       .map((label) => {
@@ -4426,6 +4454,14 @@ class PrimeVideoTextRepository {
     return this.#snapshot.nextEpisodeAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateNextEpisodeButtonTempShowSelectors(player) {
+    return this.#snapshot.nextEpisodeAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
       })
       .join(",\n");
   }
@@ -4446,10 +4482,26 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateCloseButtonTempShowSelectors(player) {
+    return this.#snapshot.closePlayerLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateCloseButtonTooltipSelectors(player) {
     return this.#snapshot.closePlayerLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateCloseButtonTooltipTempShowSelectors(player) {
+    return this.#snapshot.closePlayerLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
       })
       .join(",\n");
   }
@@ -4462,10 +4514,26 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateSubtitlesButtonTempShowSelectors(player) {
+    return this.#snapshot.subtitlesToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateSubtitlesButtonTooltipSelectors(player) {
     return this.#snapshot.subtitlesToggleAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateSubtitlesButtonTooltipTempShowSelectors(player) {
+    return this.#snapshot.subtitlesToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
       })
       .join(",\n");
   }
@@ -4478,10 +4546,26 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateMuteToggleButtonTempShowSelectors(player) {
+    return this.#snapshot.muteToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateMuteToggleButtonTooltipSelectors(player) {
     return this.#snapshot.muteToggleAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateMuteToggleButtonTooltipTempShowSelectors(player) {
+    return this.#snapshot.muteToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
       })
       .join(",\n");
   }
@@ -4494,10 +4578,26 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generatePictureInPictureToggleButtonTempShowSelectors(player) {
+    return this.#snapshot.pictureInPictureToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generatePictureInPictureToggleButtonTooltipSelectors(player) {
     return this.#snapshot.pictureInPictureToggleAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generatePictureInPictureToggleButtonTooltipTempShowSelectors(player) {
+    return this.#snapshot.pictureInPictureToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
       })
       .join(",\n");
   }
@@ -4510,10 +4610,26 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateFullscreenToggleButtonTempShowSelectors(player) {
+    return this.#snapshot.fullscreenToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateFullscreenToggleButtonTooltipSelectors(player) {
     return this.#snapshot.fullscreenToggleAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateFullscreenToggleButtonTooltipTempShowSelectors(player) {
+    return this.#snapshot.fullscreenToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
       })
       .join(",\n");
   }
@@ -4523,9 +4639,19 @@ class PrimeVideoTextRepository {
     return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
   }
 
+  static generateExtOptionButtonTempShowSelectors(player) {
+    const label = "Option - Auto hide next up card";
+    return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+  }
+
   static generateExtOptionButtonTooltipSelectors(player) {
     const label = "Option - Auto hide next up card";
     return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
+  }
+
+  static generateExtOptionButtonTooltipTempShowSelectors(player) {
+    const label = "Option - Auto hide next up card";
+    return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
   }
 
   static generateSettingsButtonSelectors(player) {
@@ -4535,10 +4661,27 @@ class PrimeVideoTextRepository {
       })
       .join(",\n");
   }
+
+  static generateSettingsButtonTempShowSelectors(player) {
+    return this.#snapshot.settingsAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateSettingsButtonTooltipSelectors(player) {
     return this.#snapshot.settingsAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]  + .tooltip`;
+      })
+      .join(",\n");
+  }
+
+  static generateSettingsButtonTooltipTempShowSelectors(player) {
+    return this.#snapshot.settingsAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]  + .tooltip`;
       })
       .join(",\n");
   }
@@ -4551,10 +4694,42 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateTimeIndicatorTextTempShowSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] .f1yxmn6p > div:has(input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"]) > div:not(:has(input[type="range"]))`;
+      })
+      .join(",\n");
+  }
+
   static generateSeekBarSelectors(player) {
     return this.#snapshot.seekbarAriaLabels
       .map((label) => {
         return `#${player.id} input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateSeekBarTempShowSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateSeekBarContainerSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id} div:has(> input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"])`;
+      })
+      .join(",\n");
+  }
+
+  static generateSeekBarContainerTempShowSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] div:has(> input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"])`;
       })
       .join(",\n");
   }
@@ -4567,10 +4742,26 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateSeekBarPlayedRangeTempShowSelectors(player) {
+    return this.#snapshot.seekbarAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] input[type="range"][aria-label="${this.escapeCssAttrValue(label)}"] + span`;
+      })
+      .join(",\n");
+  }
+
   static generatePlaybackToggleButtonSelectors(player) {
     return this.#snapshot.playbackToggleAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generatePlaybackToggleButtonTempShowSelectors(player) {
+    return this.#snapshot.playbackToggleAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
       })
       .join(",\n");
   }
@@ -4591,10 +4782,26 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateBackwardButtonTempShowSelectors(player) {
+    return this.#snapshot.backwardAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateForwardButtonSelectors(player) {
     return this.#snapshot.forwardAriaLabels
       .map((label) => {
         return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateForwardButtonTempShowSelectors(player) {
+    return this.#snapshot.forwardAriaLabels
+      .map((label) => {
+        return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
       })
       .join(",\n");
   }
@@ -7413,19 +7620,19 @@ class ElementController {
       await updatePressedState(e, false);
     });
 
-    const show = (elem) => {
-      if (!elem || !(elem instanceof Element)) {
-        return false;
-      }
-      elem.classList.add("nextup-ext-temp-show");
-    };
+    // const show = (elem) => {
+    //   if (!elem || !(elem instanceof Element)) {
+    //     return false;
+    //   }
+    //   elem.classList.add("nextup-ext-temp-show");
+    // };
 
-    const hide = (elem) => {
-      if (!elem || !(elem instanceof Element)) {
-        return false;
-      }
-      elem.classList.remove("nextup-ext-temp-show");
-    };
+    // const hide = (elem) => {
+    //   if (!elem || !(elem instanceof Element)) {
+    //     return false;
+    //   }
+    //   elem.classList.remove("nextup-ext-temp-show");
+    // };
 
     let hideTimer = null;
     this.player.addEventListener("mousemove", (e) => {
@@ -7460,7 +7667,7 @@ class ElementController {
       }
     };
 
-    const hideEpisodeTitle = () => {
+    const hideLegacyEpisodeTitle = () => {
       if (!options.hideEpisodeTitle) {
         return;
       }
@@ -7478,7 +7685,43 @@ class ElementController {
       }
     };
 
-    const hideVariousButtonsInTopRight = () => {
+    const hideNewUiEpisodeTitle = () => {
+      if (!options.hideEpisodeTitle) {
+        return;
+      }
+
+      if (!document.querySelector("#ext-hideEpisodeTitle")) {
+        const css = `
+          .atvwebplayersdk-episode-timing-container {
+            opacity: 0 !important;
+          }
+          [data-nextup-ext-temp-show="true"] .atvwebplayersdk-episode-timing-container {
+            opacity: 1 !important;
+          }
+        `;
+        addStyle(css, "ext-hideEpisodeTitle");
+      }
+    };
+
+    const hideNewUiCloseButton = () => {
+      if (!options.hideCloseButton) {
+        return;
+      }
+
+      const css = `
+        ${PrimeVideoTextRepository.generateCloseButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateCloseButtonTooltipSelectors(this.player)} {
+          opacity: 0 !important;
+        }
+        ${PrimeVideoTextRepository.generateCloseButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateCloseButtonTooltipTempShowSelectors(this.player)} {
+          opacity: 1 !important;
+        }
+      `;
+      upsertStyle(css, `ext-hideCloseButton-${this.player.id}`);
+    };
+
+    const hideLegacyVariousButtonsInTopRight = () => {
       if (!options.hideVariousButtonsInTopRight) {
         return;
       }
@@ -7502,7 +7745,45 @@ class ElementController {
       }
     };
 
-    const hideSeekBar = () => {
+    const hideNewUiVariousButtonsInTopRight = () => {
+      if (!options.hideVariousButtonsInTopRight) {
+        return;
+      }
+
+      const css = `
+        ${PrimeVideoTextRepository.generateSubtitlesButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSubtitlesButtonTooltipSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateMuteToggleButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateMuteToggleButtonTooltipSelectors(this.player)},
+        ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonTooltipSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateFullscreenToggleButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateFullscreenToggleButtonTooltipSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateExtOptionButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateExtOptionButtonTooltipSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSettingsButtonTooltipTempShowSelectors(this.player)} {
+          opacity: 0 !important;
+        }
+        ${PrimeVideoTextRepository.generateSubtitlesButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSubtitlesButtonTooltipTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateMuteToggleButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateMuteToggleButtonTooltipTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonTooltipTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateFullscreenToggleButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateFullscreenToggleButtonTooltipTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateExtOptionButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateExtOptionButtonTooltipTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSettingsButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSettingsButtonTooltipTempShowSelectors(this.player)} {
+          opacity: 1 !important;
+        }
+      `;
+      upsertStyle(css, `ext-hideVariousButtonsInTopRight-${this.player.id}`);
+    };
+
+    const hideLegacySeekBar = () => {
       if (!options.hideSeekBar) {
         return;
       }
@@ -7520,7 +7801,31 @@ class ElementController {
       }
     };
 
-    const hidePlaybackTime = () => {
+    const hideNewUiSeekBar = () => {
+      if (!options.hideSeekBar) {
+        return;
+      }
+
+      const css = `
+        ${PrimeVideoTextRepository.generateSeekBarContainerSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSeekBarSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSeekBarPlayedRangeSelectors(this.player)},
+        .atvwebplayersdk-trickplay-container,
+        .atvwebplayersdk-progress-bar-handle {
+          visibility: hidden !important;
+        }
+        ${PrimeVideoTextRepository.generateSeekBarContainerTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSeekBarTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateSeekBarPlayedRangeTempShowSelectors(this.player)},
+        [data-nextup-ext-temp-show="true"] .atvwebplayersdk-trickplay-container,
+        [data-nextup-ext-temp-show="true"] .atvwebplayersdk-progress-bar-handle {
+          visibility: visible !important;
+        }
+      `;
+      upsertStyle(css, `ext-hideSeekBar-${this.player.id}`);
+    };
+
+    const hideLegacyPlaybackTime = () => {
       if (!options.hidePlaybackTime) {
         return;
       }
@@ -7538,7 +7843,23 @@ class ElementController {
       }
     };
 
-    const hideCenterButtons = () => {
+    const hideNewUiPlaybackTime = () => {
+      if (!options.hidePlaybackTime) {
+        return;
+      }
+
+      const css = `
+      ${PrimeVideoTextRepository.generateTimeIndicatorTextSelectors(this.player)} {
+        visibility: hidden !important;
+        }
+        ${PrimeVideoTextRepository.generateTimeIndicatorTextTempShowSelectors(this.player)} {
+          visibility: visible !important;
+          }
+          `;
+      upsertStyle(css, `ext-hidePlaybackTime-${this.player.id}`);
+    };
+
+    const hideLegacyCenterButtons = () => {
       if (!options.hideCenterButtons) {
         return;
       }
@@ -7584,7 +7905,27 @@ class ElementController {
       }
     };
 
-    const hideNextEpisodeButton = () => {
+    const hideNewUiCenterButtons = () => {
+      if (!options.hideCenterButtons) {
+        return;
+      }
+
+      const css = `
+        ${PrimeVideoTextRepository.generatePlaybackToggleButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateBackwardButtonSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateForwardButtonSelectors(this.player)} {
+          visibility: hidden !important;
+        }
+        ${PrimeVideoTextRepository.generatePlaybackToggleButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateBackwardButtonTempShowSelectors(this.player)},
+        ${PrimeVideoTextRepository.generateForwardButtonTempShowSelectors(this.player)} {
+          visibility: visible !important;
+        }
+      `;
+      upsertStyle(css, `ext-hideCenterButtons-${this.player.id}`);
+    };
+
+    const hideLegacyNextEpisodeButton = () => {
       if (!options.hideNextEpisodeButton) {
         return;
       }
@@ -7602,7 +7943,23 @@ class ElementController {
       }
     };
 
-    const tweakHideSkipIntroButton = () => {
+    const hideNewUiNextEpisodeButton = () => {
+      if (!options.hideNextEpisodeButton) {
+        return;
+      }
+
+      const css = `
+        ${PrimeVideoTextRepository.generateNextEpisodeButtonSelectors(this.player)} {
+          visibility: hidden !important;
+        }
+        ${PrimeVideoTextRepository.generateNextEpisodeButtonTempShowSelectors(this.player)} {
+          visibility: visible !important;
+        }
+      `;
+      upsertStyle(css, `ext-hideNextEpisodeButton-${this.player.id}`);
+    };
+
+    const tweakHideLegacySkipIntroButton = () => {
       if (!options.hideSkipIntroBtn || !options.tweakHideSkipIntroButton) {
         return;
       }
@@ -7620,7 +7977,23 @@ class ElementController {
       }
     };
 
-    const tweakShowVideoResolutionInfo = () => {
+    const tweakHideNewUiSkipIntroButton = () => {
+      if (!options.hideSkipIntroBtn || !options.tweakHideSkipIntroButton) {
+        return;
+      }
+
+      const css = `
+        ${PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player)} {
+          visibility: hidden !important;
+        }
+        ${PrimeVideoTextRepository.generateSkipIntroButtonTempShowSelectors(this.player)} {
+          visibility: visible !important;
+        }
+      `;
+      upsertStyle(css, `ext-hideSkipIntroButton-${this.player.id}`);
+    };
+
+    const tweakShowLegacyVideoResolutionInfo = () => {
       if (
         !options.showVideoResolution_xhook ||
         !options.tweakShowVideoResolutionInfo
@@ -7641,24 +8014,71 @@ class ElementController {
       }
     };
 
-    const fnList = [
-      hideTitle,
-      hideEpisodeTitle,
-      hideVariousButtonsInTopRight,
-      hideSeekBar,
-      hidePlaybackTime,
-      hideCenterButtons,
-      hideNextEpisodeButton,
-      tweakHideSkipIntroButton,
-      tweakShowVideoResolutionInfo,
-    ];
-    for (const fn of fnList) {
-      try {
-        fn();
-      } catch (e) {
-        console.log(e);
+    const tweakShowNewUiVideoResolutionInfo = () => {
+      if (
+        !options.showVideoResolution_xhook ||
+        !options.tweakShowVideoResolutionInfo
+      ) {
+        return;
       }
-    }
+
+      if (!document.querySelector("#ext-hideVideoResolutionInfo")) {
+        const css = `
+          [data-nextup-ext-role="resolution-info"] {
+            visibility: hidden !important;
+          }
+          [data-nextup-ext-temp-show="true"] [data-nextup-ext-role="resolution-info"] {
+            visibility: visible !important;
+          }
+        `;
+        addStyle(css, "ext-hideVideoResolutionInfo");
+      }
+    };
+
+    this.runFeatureWhenVariantResolved("hideVariousTextAndButtons", () => {
+      const runHideFns = (fnList = []) => {
+        for (const fn of fnList) {
+          try {
+            fn();
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      };
+
+      if (this.isVariantLegacy()) {
+        const fnList = [
+          hideTitle,
+          hideLegacyEpisodeTitle,
+          hideLegacyVariousButtonsInTopRight,
+          hideLegacySeekBar,
+          hideLegacyPlaybackTime,
+          hideLegacyCenterButtons,
+          hideLegacyNextEpisodeButton,
+          tweakHideLegacySkipIntroButton,
+          tweakShowLegacyVideoResolutionInfo,
+        ];
+        runHideFns(fnList);
+      } else if (this.isVariantNew()) {
+        const fnList = [
+          hideTitle,
+          hideNewUiEpisodeTitle,
+          hideNewUiCloseButton,
+          hideNewUiVariousButtonsInTopRight,
+          hideNewUiSeekBar,
+          hideNewUiPlaybackTime,
+          hideNewUiCenterButtons,
+          hideNewUiNextEpisodeButton,
+          tweakHideNewUiSkipIntroButton,
+          tweakShowNewUiVideoResolutionInfo,
+        ];
+        runHideFns(fnList);
+        const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+          runHideFns(fnList);
+          unsubscribe();
+        });
+      }
+    });
   }
 
   adjustNewUiResolutionInfoStyle(options = getDefaultOptions()) {
