@@ -2387,7 +2387,7 @@ const createOptionBtnOnNavbar = () => {
       optBtnElement.classList.add(...accountDropdownBtn.classList);
       cloneContainer.appendChild(optBtnElement);
       optBtnElement.style.backgroundColor = "rgba(0, 0, 0, 0)";
-      optBtnElement.setAttribute("title", "Option - Auto hide next up card");
+      optBtnElement.setAttribute("title", "Options - Auto hide next up card");
 
       const cloneImgContainer = imgContainer.cloneNode();
       optBtnElement.appendChild(cloneImgContainer);
@@ -4649,22 +4649,22 @@ class PrimeVideoTextRepository {
   }
 
   static generateExtOptionButtonSelectors(player) {
-    const label = "Option - Auto hide next up card";
+    const label = "Options - Auto hide next up card";
     return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
   }
 
   static generateExtOptionButtonTempShowSelectors(player) {
-    const label = "Option - Auto hide next up card";
+    const label = "Options - Auto hide next up card";
     return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
   }
 
   static generateExtOptionButtonTooltipSelectors(player) {
-    const label = "Option - Auto hide next up card";
+    const label = "Options - Auto hide next up card";
     return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
   }
 
   static generateExtOptionButtonTooltipTempShowSelectors(player) {
-    const label = "Option - Auto hide next up card";
+    const label = "Options - Auto hide next up card";
     return `#${player.id}[data-nextup-ext-temp-show="true"] button[aria-label="${this.escapeCssAttrValue(label)}"] + .tooltip`;
   }
 
@@ -5648,7 +5648,7 @@ class ElementController {
         "sepia(100%) saturate(2000%) hue-rotate(120deg)";
 
       const cloneTooltip = clone.querySelector("button + div div");
-      cloneTooltip.textContent = "Option - Auto hide next up card";
+      cloneTooltip.textContent = "Options - Auto hide next up card";
 
       cloneOptBtn.addEventListener("click", (_) => {
         const optDialog = getOptionDialog();
@@ -5671,56 +5671,78 @@ class ElementController {
       if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
         return;
       }
-      const gridRoot = getPlayerUIGridRoot(this.player);
-      if (!gridRoot) return;
-      const svgImageButtons = getSvgImageButtons(gridRoot);
-      if (svgImageButtons.length === 0) return;
 
-      const isKebabMenuIcon = (img) => {
-        const sig = getSvgSignature(img);
-        return (
-          sig.viewBox === "0 0 6 25" &&
-          sig.pathCount === 1 &&
-          sig.hasEvenOdd &&
-          sig.d.includes("M5.5 2.75a2.75") &&
-          sig.d.includes("2.75 2.75")
-        );
+      const getContainerFallback = () => {
+        const gridRoot = getPlayerUIGridRoot(this.player);
+        if (!gridRoot) return;
+        const svgImageButtons = getSvgImageButtons(gridRoot);
+        if (svgImageButtons.length === 0) return;
+
+        let settingsIcon;
+        for (const item of svgImageButtons) {
+          if (isNewUiSettingsIcon(item.img)) {
+            settingsIcon = item;
+            break;
+          }
+        }
+        if (!settingsIcon) return;
+
+        const container = settingsIcon.button.parentNode.parentNode;
+        if (container.querySelectorAll("button").length !== 1) {
+          return;
+        }
+
+        return container;
       };
 
-      let kebabMenuIcon;
-      for (const item of svgImageButtons) {
-        if (isKebabMenuIcon(item.img)) {
-          kebabMenuIcon = item;
-          item.img.dataset.isKebabMenuIcon = true;
-          break;
+      let container;
+      const settingsButtonSelector =
+        PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player);
+      const settingsButton = this.player.querySelector(settingsButtonSelector);
+      if (settingsButton) {
+        const parentNode1 = settingsButton.parentNode;
+        const parentNode2 = parentNode1.parentNode;
+        if (parentNode1.querySelectorAll("button").length === 1) {
+          container = parentNode1;
         }
+        if (parentNode2.querySelectorAll("button").length === 1) {
+          container = parentNode2;
+        }
+      } else {
+        container = getContainerFallback();
       }
-      if (!kebabMenuIcon) {
+      if (!container) {
         return;
       }
 
-      const kebabMenuIconContainer = kebabMenuIcon.button.parentNode.parentNode;
-      if (kebabMenuIconContainer.querySelectorAll("button").length !== 1)
-        return;
-
-      const cloneContainer = kebabMenuIconContainer.cloneNode(true);
+      const cloneContainer = container.cloneNode(true);
       cloneContainer.classList.add("nextup-ext-opt-btn-container");
       const cloneButton = cloneContainer.querySelector("button");
-      cloneButton.setAttribute("aria-label", "Option - Auto hide next up card");
+      cloneButton.setAttribute(
+        "aria-label",
+        "Options - Auto hide next up card"
+      );
+
+      let isReady = false;
       for (const cloneImg of cloneButton.querySelectorAll("img")) {
-        if (!cloneImg.dataset.isKebabMenuIcon) {
-          cloneImg.remove();
-        } else {
+        if (isNewUiSettingsIcon(cloneImg)) {
           cloneImg.setAttribute("src", OPTION_BTN_IMG_DATA_URL);
           cloneImg.style.filter =
             "sepia(100%) saturate(2000%) hue-rotate(120deg)";
+          isReady = true;
+        } else {
+          cloneImg.remove();
         }
       }
+      if (!isReady) {
+        return;
+      }
+
       const tooltip = cloneContainer.querySelector(".tooltip div");
       if (tooltip) {
-        tooltip.textContent = "Option - Auto hide next up card";
+        tooltip.textContent = "Options - Auto hide next up card";
       }
-      kebabMenuIconContainer.before(cloneContainer);
+      container.before(cloneContainer);
 
       cloneButton.addEventListener("click", (_) => {
         const optDialog = getOptionDialog();
