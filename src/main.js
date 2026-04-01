@@ -1173,11 +1173,7 @@ const createOptionDialog = async () => {
       </div>
       <div class="nextup-ext-opt-dialog-content nextup-ext-opt-dialog-content-active" data-tab-id="options">
           <section>
-              <div class="nextup-ext-opt-dialog-notice">
-                <p>プライムビデオの新UIでは現在多くの機能が正常に動作しません。必要であれば、Tampermonkey などで新旧UIを切り替えるユーザースクリプトを利用してください。</p>
-                <p>Prime Video's new UI currently breaks many features. If needed, please use a user script that switches between the old and new UI with Tampermonkey or a similar userscript manager.</p>
-                <a href="https://gist.github.com/ryo-fujinone/ca42fd53d6d49256b21b6317eb385f25" target="_blank">https://gist.github.com/ryo-fujinone/ca42fd53d6d49256b21b6317eb385f25</a>
-              </div>
+              <div class="nextup-ext-opt-dialog-notice"></div>
 
               <div class="group-title nextup-ext-opt-dialog-note">
                 <p>${messages.promptReloadPage}</p>
@@ -1777,6 +1773,7 @@ const createOptionDialog = async () => {
     .nextup-ext-opt-dialog-notice {
         width: 600px;
         margin-bottom: 10px;
+        display: none;
     }
     .nextup-ext-opt-dialog-notice p {
         color: red;
@@ -1912,19 +1909,6 @@ const createOptionDialog = async () => {
   `;
 
   addStyle(css);
-
-  setTimeout(() => {
-    const optionsWrapper = document.querySelector(
-      ".atvwebplayersdk-options-wrapper"
-    );
-    const playpauseButton = document.querySelector(
-      ".atvwebplayersdk-playpause-button"
-    );
-    if (optionsWrapper || playpauseButton) {
-      const notice = document.querySelector(".nextup-ext-opt-dialog-notice");
-      if (notice) notice.style.display = "none";
-    }
-  }, 3000);
 
   const tooltipElements = document.querySelectorAll(
     ".nextup-ext-opt-dialog-tooltip"
