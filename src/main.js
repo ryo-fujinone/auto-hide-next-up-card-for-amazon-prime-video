@@ -1013,11 +1013,7 @@ const createOptionMessages = () => {
       "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
     forcePlayNextEpisode_Tooltip: `この機能は自動再生の代替手段として機能します。\n
       Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
-      Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。\n
-      この機能はサジェストされたコンテンツに遷移した後の次のエピソードの再生をサポートしていません。
-      また、動作の安定性のために次のシーズンへの遷移もサポートしていません。\n
-      次のエピソードがあるかどうかの判定に1500ミリ秒の待機時間を設定しています。
-      最後まで再生して動画が閉じた場合やEscキーの入力で動画を閉じた場合、必要に応じて1500ミリ秒の間は画面を暗くします。`,
+      Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。`,
     close: "閉じる",
   };
   const enMessages = {
@@ -1142,11 +1138,7 @@ const createOptionMessages = () => {
       "Experimental: Play the next episode if the video is automatically closed at the end of the video",
     forcePlayNextEpisode_Tooltip: `This feature functions as an alternative to autoplay.\n
       For Chrome, you must allow [audio] permissions for the site.
-      For Firefox, you must allow the [Autoplay] permission for the site.\n
-      This feature does not support playing the next episode after transitioning to the suggested content.
-      Also, transitions to the next season are not supported for operational stability.\n
-      A wait time of 1500 milliseconds is set to determine if the next episode is available.
-      If the video is closed after playing to the end or by entering the Esc key, the screen is darkened for 1500 milliseconds if necessary.`,
+      For Firefox, you must allow the [Autoplay] permission for the site.`,
     close: "Close",
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
