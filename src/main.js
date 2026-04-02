@@ -5189,7 +5189,7 @@ class NextupController {
     }
 
     const remaining = this.getRemainingTime();
-    if (remaining > 4) {
+    if (remaining > 6) {
       return false;
     }
 
