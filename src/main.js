@@ -7813,7 +7813,7 @@ class ElementController {
         ${PrimeVideoTextRepository.generateExtOptionButtonSelectors(this.player)},
         ${PrimeVideoTextRepository.generateExtOptionButtonTooltipSelectors(this.player)},
         ${PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player)},
-        ${PrimeVideoTextRepository.generateSettingsButtonTooltipTempShowSelectors(this.player)} {
+        ${PrimeVideoTextRepository.generateSettingsButtonTooltipSelectors(this.player)} {
           opacity: 0 !important;
         }
         ${PrimeVideoTextRepository.generateSubtitlesButtonTempShowSelectors(this.player)},
