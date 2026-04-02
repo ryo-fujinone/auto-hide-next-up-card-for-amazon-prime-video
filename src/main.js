@@ -5335,7 +5335,7 @@ class NextupController {
 
       const { root, acceptButton, dismissButton } = elements;
       const remaining = this.getRemainingTime();
-      const phase = remaining >= 4 ? 1 : 2;
+      const phase = remaining >= 6 ? 1 : 2;
 
       this.currentNextUp = {
         phase,
