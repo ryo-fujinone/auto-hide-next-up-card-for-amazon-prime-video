@@ -8291,12 +8291,6 @@ class ElementController {
         return;
       }
 
-      // Temporarily darkens the page.
-      document.body.style.filter = "brightness(0)";
-      setTimeout(() => {
-        document.body.style.filter = "";
-      }, 2000);
-
       setTimeout(() => {
         if (videoClosedByUser) {
           // Esc key
@@ -8349,7 +8343,6 @@ class ElementController {
             movePage();
           }
         }
-        document.body.style.filter = "";
       }, 1500);
     };
 
@@ -8534,14 +8527,7 @@ class ElementController {
         return;
       }
 
-      // Temporarily darkens the page.
-      document.body.style.filter = "brightness(0)";
       setTimeout(() => {
-        document.body.style.filter = "";
-      }, 2000);
-
-      setTimeout(() => {
-        document.body.style.filter = "";
         if (videoClosedByUser) {
           console.log("forcePlayNextEpisode:", "Video closed by user");
           return;
