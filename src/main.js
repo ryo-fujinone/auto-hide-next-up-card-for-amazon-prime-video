@@ -8648,9 +8648,14 @@ class ElementController {
       this.forcePlayNextEpisodeNewUi(options);
     };
 
+    let videoSrcObserver;
+
     const videoOpenObserver = new MutationObserver(() => {
       if (this.player.classList.contains("dv-player-fullscreen")) {
         videoOpenObserver.disconnect();
+        if (videoSrcObserver) {
+          videoSrcObserver.disconnect();
+        }
         afterVideoOpen();
       }
     });
@@ -8673,7 +8678,7 @@ class ElementController {
       attributeFilter: ["class"],
     });
 
-    const videoSrcObserver = new MutationObserver(() => {
+    videoSrcObserver = new MutationObserver(() => {
       const video = getVisibleVideo();
       const src = video?.src;
       if (src && videoSrc && videoSrc !== src) {
