@@ -936,6 +936,7 @@ const createOptionMessages = () => {
     hidePlaybackTime: "再生時間表示を非表示にする",
     hideSeekBar: "シークバーを非表示にする",
     hideCenterButtons: "中央の操作ボタンを非表示にする",
+    hideCenterButtons2: "中央下部の操作ボタンを非表示にする",
     hideNextEpisodeButton: "次のエピソードボタンを非表示にする",
     tweakHideSkipIntroButton: "イントロスキップボタンの非表示機能を調整する",
     tweakHideSkipIntroButton_Tooltip: `「イントロスキップボタンを非表示にする」が有効になっている場合の挙動を調整します。
@@ -1060,6 +1061,7 @@ const createOptionMessages = () => {
     hideSeekBar: "Hide seek bar",
     hidePlaybackTime: "Hide playback time",
     hideCenterButtons: "Hide control buttons in the center",
+    hideCenterButtons2: "Hide control buttons in the bottom center",
     hideNextEpisodeButton: "Hide next episode button",
     tweakHideSkipIntroButton: "Tweak the feature to hide skip intro button",
     tweakHideSkipIntroButton_Tooltip: `Tweaks the behavior when [Hide skip intro button] is enabled.
@@ -2140,6 +2142,8 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
   };
 
   if (playerVariant === "new") {
+    const messages = createOptionMessages();
+
     const preventsDarkeningNextup = getItemFromItemContainer(
       "prevents-darkening-in-conjunction-with-nextup"
     );
@@ -2177,6 +2181,14 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
       "add-video-controller-to-bottom-left"
     );
     hide(addVideoControllerToBottomLeft);
+
+    const hideCenterButtons = getItemFromItemContainer("hide-center-buttons");
+    if (hideCenterButtons) {
+      const hideCenterButtonsP = hideCenterButtons.querySelector("p");
+      if (hideCenterButtonsP) {
+        hideCenterButtonsP.textContent = messages.hideCenterButtons2;
+      }
+    }
   } else if (playerVariant === "legacy") {
     const clickNextupBeforeVideoEnds = getItemFromItemContainer(
       "click-nextup-before-video-ends"
