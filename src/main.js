@@ -349,27 +349,8 @@ class OptionsSchemaManager {
       return out;
     },
     (stored) => {
-      const out = structuredClone(stored ?? {});
-      const defaultOptions = getDefaultOptions();
-
-      const bool1 = "clickNextupBeforeVideoEnds" in defaultOptions;
-      if (!bool1) {
-        return out;
-      }
-
-      const bool2 = "enableAutoplay_xhook" in out;
-      const bool3 = "forcePlayNextEpisode_xhook" in out;
-      if (!bool2 || !bool3) {
-        return out;
-      }
-
-      const bool4 = out.enableAutoplay_xhook;
-      const bool5 = out.forcePlayNextEpisode_xhook;
-      if (bool4 && !bool5) {
-        out.clickNextupBeforeVideoEnds = true;
-      }
-
-      return out;
+      // A silly mistake. Do not remove this item.
+      return structuredClone(stored ?? {});
     },
   ];
 
