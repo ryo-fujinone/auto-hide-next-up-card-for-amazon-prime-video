@@ -22,7 +22,7 @@ const OPTION_BTN_IMG_DATA_URL = [
 
 const getDefaultOptions = () => {
   return {
-    _scriptVersion: "2.17.0",
+    _scriptVersion: "2.17.1",
     _schemaVersion: null,
     skipAds: true,
     hideSkipIntroBtn: true,
