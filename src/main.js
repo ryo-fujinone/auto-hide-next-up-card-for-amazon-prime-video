@@ -2467,6 +2467,17 @@ const runXhook = () => {
   delete document.documentElement.dataset.xhookUrl;
   delete document.documentElement.dataset.options;
 
+  const validateResponseContentType = (response, expectedContentType) => {
+    try {
+      const contentType =
+        response.headers?.["content-type"] ||
+        response.headers.get("content-type");
+      return contentType === expectedContentType;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const isMpd = (request, response) => {
     if (!request.url.match(/\.mpd/)) {
       return false;
@@ -2474,31 +2485,29 @@ const runXhook = () => {
     if (response.status !== 200) {
       return;
     }
-    if (response.headers?.["content-type"] !== "text/xml") {
-      try {
-        const text = response.text;
-        const regex = new RegExp("^<MPD.+</MPD>$");
-        if (!regex.test(text)) {
-          return false;
-        }
-      } catch (e) {
+    if (validateResponseContentType(response, "text/xml")) {
+      return true;
+    }
+    try {
+      const text = response.text;
+      const regex = new RegExp("^<MPD.+</MPD>$");
+      if (!regex.test(text)) {
         return false;
       }
+      return true;
+    } catch (e) {
+      return false;
     }
-    return true;
   };
 
   const isGetSections = (request, response) => {
     if (!request.url.includes("GetSections")) {
       return false;
     }
-    if (request.headers?.accept !== "application/json") {
-      return false;
-    }
     if (response.status !== 200) {
       return false;
     }
-    return true;
+    return validateResponseContentType(response, "application/json");
   };
 
   const isGetVodPlaybackResources = (request, response) => {
@@ -2508,10 +2517,7 @@ const runXhook = () => {
     if (response.status !== 200) {
       return false;
     }
-    if (response.headers?.["content-type"] !== "application/json") {
-      return false;
-    }
-    return true;
+    return validateResponseContentType(response, "application/json");
   };
 
   const hasNextUpV2Resource = (request, response) => {
@@ -2524,10 +2530,7 @@ const runXhook = () => {
     if (response.status !== 200) {
       return false;
     }
-    if (response.headers?.["content-type"] !== "application/json") {
-      return false;
-    }
-    return true;
+    return validateResponseContentType(response, "application/json");
   };
 
   const hasReactionsResource = (request, response) => {
@@ -2540,10 +2543,7 @@ const runXhook = () => {
     if (response.status !== 200) {
       return false;
     }
-    if (response.headers?.["content-type"] !== "application/json") {
-      return false;
-    }
-    return true;
+    return validateResponseContentType(response, "application/json");
   };
 
   const hasCatalogMetadataV2Resource = (request, response) => {
@@ -2556,10 +2556,7 @@ const runXhook = () => {
     if (response.status !== 200) {
       return false;
     }
-    if (response.headers?.["content-type"] !== "application/json") {
-      return false;
-    }
-    return true;
+    return validateResponseContentType(response, "application/json");
   };
 
   const parseISODuration = (duration) => {
@@ -2606,6 +2603,96 @@ const runXhook = () => {
     style.textContent = css;
     document.head.appendChild(style);
   };
+
+  class XhookResponseAdapter {
+    #originalResponse;
+    #responseLike;
+    #isFetchResponse;
+    #didReadBody = false;
+    #originalText = "";
+
+    constructor(response) {
+      this.#originalResponse = response;
+      this.#isFetchResponse = response instanceof Response;
+    }
+
+    static async create(response) {
+      const adapter = new XhookResponseAdapter(response);
+      await adapter.#init();
+      return adapter;
+    }
+
+    async #init() {
+      if (!this.#isFetchResponse) {
+        this.#responseLike = this.#originalResponse;
+        this.#didReadBody = true;
+        // this.#originalText = this.#originalResponse.text ?? "";
+        return;
+      }
+
+      const contentType =
+        this.#originalResponse.headers.get("content-type") || "";
+      const textLikeTypes = ["text", "json", "xml", "dash"];
+      const isTextLike = textLikeTypes.some((t) => contentType.includes(t));
+
+      if (!isTextLike) {
+        this.#responseLike = this.#originalResponse;
+        return;
+      }
+
+      let text = await this.#originalResponse.clone().text();
+
+      this.#didReadBody = true;
+      this.#originalText = text;
+
+      this.#responseLike = {
+        text,
+        data: text,
+        status: this.#originalResponse.status,
+        statusText: this.#originalResponse.statusText,
+        headers: this.#originalResponse.headers,
+        finalUrl: this.#originalResponse.url,
+      };
+    }
+
+    get response() {
+      return this.#responseLike;
+    }
+
+    toResponse() {
+      if (!this.#isFetchResponse) {
+        return this.#responseLike;
+      }
+
+      if (!this.#didReadBody) {
+        return this.#originalResponse;
+      }
+
+      if (this.#responseLike.text === this.#originalText) {
+        return this.#originalResponse;
+      }
+
+      const headers = new Headers(this.#originalResponse.headers);
+      const modifiedResponse = new Response(this.#responseLike.text, {
+        status: this.#originalResponse.status,
+        statusText: this.#originalResponse.statusText,
+        headers,
+      });
+
+      for (const key of ["url", "bodyUsed", "redirected", "type"]) {
+        try {
+          Object.defineProperty(modifiedResponse, key, {
+            value: this.#originalResponse[key],
+            configurable: true,
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      return modifiedResponse;
+    }
+  }
 
   class XhookAfter {
     static #queue = [];
@@ -3220,14 +3307,18 @@ const runXhook = () => {
       }
     }
 
-    static run(request, response) {
+    static async run(request, response) {
+      const adapter = await XhookResponseAdapter.create(response);
+
       for (const q of this.#queue) {
         try {
-          q.call(this, request, response);
+          q.call(this, request, adapter.response);
         } catch (e) {
           console.log(e);
         }
       }
+
+      return adapter.toResponse();
     }
 
     static init(options) {
@@ -3274,15 +3365,13 @@ const runXhook = () => {
   script.src = xhookUrl;
 
   script.addEventListener("load", () => {
-    xhook.after(function (request, response) {
-      /**
-       * Although xhook has the feature to modify responses asynchronously, it is not used here.
-       * Using that feature on Prime Video often results in an error message on the screen.
-       * Error messages are as follows
-       * > That shouldn't have happened.
-       * > It looks like something went wrong on our side. Let's find you a great video to watch instead.
-       */
-      XhookAfter.run(request, response);
+    xhook.after(function (request, response, done) {
+      return XhookAfter.run(request, response)
+        .then(done)
+        .catch((e) => {
+          console.log(e);
+          done(response);
+        });
     });
   });
 
