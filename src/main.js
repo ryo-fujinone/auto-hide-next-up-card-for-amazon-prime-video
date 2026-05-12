@@ -639,6 +639,20 @@ const temporarilyDisableOverlay = (player, delay = 5000) => {
   }, delay);
 };
 
+const findCommonParent = (elementA, elementB) => {
+  let current = elementA;
+
+  while (current) {
+    if (current.contains(elementB)) {
+      return current;
+    }
+
+    current = current.parentElement;
+  }
+
+  return null;
+};
+
 const getPlayerUIGridRoot = (player) => {
   const gridAreas = player.querySelectorAll(
     "div[style*='grid-template-columns'] > div[style*='grid-area']"
@@ -4904,19 +4918,9 @@ class PrimeVideoTextRepository {
   }
 
   static generateReactionsContainerSelectors(player, overlayVisible = false) {
-    const reactionsAriaLabelPairs = [];
-    this.#snapshot.likeAriaLabels.forEach((like) => {
-      this.#snapshot.dislikeAriaLabels.forEach((dislike) => {
-        reactionsAriaLabelPairs.push([like, dislike]);
-      });
-    });
-    return reactionsAriaLabelPairs
-      .map((pair) => {
-        return !overlayVisible
-          ? `#${player.id} div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"])`
-          : `#${player.id}[data-nextup-ext-overlay-visible='true'] div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"])`;
-      })
-      .join(",\n");
+    return !overlayVisible
+      ? `#${player.id} div[style*="grid-area"] div[data-nextup-ext-role="reactions"]`
+      : `#${player.id}[data-nextup-ext-overlay-visible='true'] div[style*="grid-area"] div[data-nextup-ext-role="reactions"]`;
   }
 
   static generateHoveredReactionsSelectors(player) {
@@ -5034,6 +5038,69 @@ class NewUiElementLocator {
     return;
   }
 
+  static separateReactionsContainer(nextUpCardGridArea, player) {
+    const result = {
+      reactions: null,
+      nextup: nextUpCardGridArea,
+    };
+
+    try {
+      const buttons = nextUpCardGridArea.querySelectorAll("button");
+      if (buttons.length !== 4) {
+        return result;
+      }
+      const acceptNextupButton = nextUpCardGridArea.querySelector(
+        "#atvwebplayersdk-next-up-button"
+      );
+      if (!acceptNextupButton) {
+        return result;
+      }
+      const reactionsButtons = nextUpCardGridArea.querySelectorAll(
+        "button:not(#atvwebplayersdk-next-up-button):not(#atvwebplayersdk-watch-credits-button)"
+      );
+      if (reactionsButtons.length !== 2) {
+        return result;
+      }
+      const isReactionsButton = (buttons) => {
+        return Array.from(buttons).every((button) =>
+          button.matches(
+            PrimeVideoTextRepository.generateReactionsSelectors(player)
+          )
+        );
+      };
+      if (!isReactionsButton(reactionsButtons)) {
+        return result;
+      }
+      const commonParent = findCommonParent(
+        acceptNextupButton,
+        reactionsButtons[0]
+      );
+      if (
+        !commonParent ||
+        commonParent.querySelectorAll("button").length !== 4
+      ) {
+        return result;
+      }
+      const containers = commonParent.querySelectorAll(":scope > div");
+      if (containers.length !== 2) {
+        return result;
+      }
+
+      for (const container of containers) {
+        const buttons = container.querySelectorAll("button");
+        if (isReactionsButton(buttons)) {
+          result.reactions = container;
+        } else {
+          result.nextup = container;
+        }
+      }
+      return result;
+    } catch (e) {
+      console.log(e);
+      return result;
+    }
+  }
+
   static getNextUpElements(player) {
     const gridRoot = getPlayerUIGridRoot(player);
     const gridAreas = this.getGridAreaCells(gridRoot);
@@ -5041,6 +5108,10 @@ class NewUiElementLocator {
     if (!nextUpCardGridArea) {
       return;
     }
+    const separateReactionsContainerResult = this.separateReactionsContainer(
+      nextUpCardGridArea,
+      player
+    );
 
     const textLineWrapper = nextUpCardGridArea.querySelector(
       "div:has(>img) + div:has(div + div)"
@@ -5054,14 +5125,21 @@ class NewUiElementLocator {
     const buttons = nextUpCardGridArea.querySelectorAll(
       "button:not([aria-label])"
     );
+    const acceptNextupButton = nextUpCardGridArea.querySelector(
+      "#atvwebplayersdk-next-up-button"
+    );
+    const dismissNextupButton = nextUpCardGridArea.querySelector(
+      "#atvwebplayersdk-watch-credits-button"
+    );
 
     return {
-      card: nextUpCardGridArea,
+      card: separateReactionsContainerResult.nextup,
       seriesTitle: textLines[0] ?? null,
       episodeTitle: textLines[1] ?? null,
       thumbnail: thumbnail ?? null,
-      acceptNextupButton: buttons[0] ?? null,
-      dismissNextupButton: buttons[1] ?? null,
+      acceptNextupButton: acceptNextupButton ?? buttons[0] ?? null,
+      dismissNextupButton: dismissNextupButton ?? buttons[1] ?? null,
+      reactions: separateReactionsContainerResult.reactions,
     };
   }
 
@@ -5886,6 +5964,7 @@ class ElementController {
             thumbnail,
             acceptNextupButton,
             dismissNextupButton,
+            reactions,
           } = nextUpElements;
 
           if (card) {
@@ -5905,6 +5984,9 @@ class ElementController {
           }
           if (dismissNextupButton) {
             dismissNextupButton.dataset.nextupExtRole = "dismiss-nextup-button";
+          }
+          if (reactions) {
+            reactions.dataset.nextupExtRole = "reactions";
           }
         });
 
@@ -6553,7 +6635,7 @@ class ElementController {
       const css = !options.showReactionsOnOverlay
         ? `
         ${hiddenSelectors} {
-          display: none !important;
+          visibility: hidden !important;
         }
       `
         : `
