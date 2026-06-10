@@ -6955,6 +6955,9 @@ class ElementController {
         .atvwebplayersdk-photo-sensitivity {
           display: none !important;
         }
+        .dv-player-fullscreen:not([data-nextup-ext-overlay-visible='true']) .atvwebplayersdk-player-container:has(.atvwebplayersdk-maturity-ratings) .feqqns3 {
+          display: none !important;
+        }
       `;
       addStyle(css, "ext-hidePlaybackStartNotices");
     }
