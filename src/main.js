@@ -2717,7 +2717,7 @@ const runXhook = () => {
     static #mpdId;
     static #mp4Url;
     static #metadataResourceArray = [];
-    static #nextUpV2ResourceArray = [];
+    static #nextUpResourceArray = [];
     static #getVodPlaybackResourcesArray = [];
     static #resolutionInfoArray = [];
 
@@ -2733,8 +2733,8 @@ const runXhook = () => {
       return this.#metadataResourceArray;
     }
 
-    static get nextUpV2ResourceArray() {
-      return this.#nextUpV2ResourceArray;
+    static get nextUpResourceArray() {
+      return this.#nextUpResourceArray;
     }
 
     static get getVodPlaybackResourcesArray() {
@@ -2759,17 +2759,17 @@ const runXhook = () => {
       }
     }
 
-    static #pushNextUpV2ResourceArray(obj = {}) {
+    static #pushnextUpResourceArray(obj = {}) {
       const entityId = obj.entityId;
       if (!entityId) {
         return;
       }
-      if (this.#nextUpV2ResourceArray.find((n) => n.entityId === entityId)) {
+      if (this.#nextUpResourceArray.find((n) => n.entityId === entityId)) {
         return;
       }
-      this.#nextUpV2ResourceArray.push(obj);
-      if (this.#nextUpV2ResourceArray > 20) {
-        this.#nextUpV2ResourceArray.shift();
+      this.#nextUpResourceArray.push(obj);
+      if (this.#nextUpResourceArray > 20) {
+        this.#nextUpResourceArray.shift();
       }
     }
 
@@ -3316,7 +3316,7 @@ const runXhook = () => {
         }
 
         const data = JSON.parse(response.text);
-        this.#pushNextUpV2ResourceArray({
+        this.#pushnextUpResourceArray({
           entityId,
           data,
         });
@@ -3889,22 +3889,32 @@ const runXhook = () => {
         return newSubtitleText;
       }
 
-      getNextEpisodeId(nextUpV2Resource) {
+      getNextEpisodeId(nextUpResource) {
         try {
-          if (!nextUpV2Resource || !nextUpV2Resource.data) {
+          if (!nextUpResource || !nextUpResource.data) {
             return;
           }
-          const data = nextUpV2Resource.data;
-          if (data.resources?.nextUpV2?.carousel) {
+          const data = nextUpResource.data;
+          const resources = data?.resources;
+          if (!resources) {
+            return;
+          }
+          const nextUp = resources.nextUpV2 ?? resources.nextUpV3;
+          if (!nextUp) {
+            return;
+          }
+          if (nextUp.carousel) {
+            return;
+          }
+          const autoplayConfig = nextUp?.card?.autoPlayConfig;
+          if (!autoplayConfig) {
             return;
           }
 
-          const carouselItem =
-            data.resources?.nextUpV2?.card?.carouselItems?.[0];
+          const carouselItem = nextUp.card?.carouselItems?.[0];
           if (!carouselItem) {
             return;
           }
-          const autoplayConfig = data.resources?.nextUpV2?.card?.autoPlayConfig;
           if (carouselItem.analytics?.slotType !== "NEXT_EPISODE_SLOT") {
             return;
           } else if (autoplayConfig?.autoplayCardPreferredImage !== "episode") {
@@ -3945,14 +3955,14 @@ const runXhook = () => {
           return;
         }
 
-        const nextUpV2Resource = XhookAfter.nextUpV2ResourceArray.find(
+        const nextUpResource = XhookAfter.nextUpResourceArray.find(
           (n) => n.entityId === titleId
         );
-        if (!nextUpV2Resource) {
+        if (!nextUpResource) {
           return;
         }
 
-        const nextEpisodeId = this.getNextEpisodeId(nextUpV2Resource);
+        const nextEpisodeId = this.getNextEpisodeId(nextUpResource);
         this.player.dataset.nextEpisodeId = nextEpisodeId
           ? nextEpisodeId
           : "null";
@@ -4023,14 +4033,14 @@ const runXhook = () => {
           return;
         }
 
-        const nextUpV2Resource = XhookAfter.nextUpV2ResourceArray.find(
+        const nextUpResource = XhookAfter.nextUpResourceArray.find(
           (n) => n.entityId === titleId
         );
-        if (!nextUpV2Resource) {
+        if (!nextUpResource) {
           return;
         }
 
-        const nextEpisodeId = this.getNextEpisodeId(nextUpV2Resource);
+        const nextEpisodeId = this.getNextEpisodeId(nextUpResource);
         if (nextEpisodeId) {
           const newNextEpisodeInfo = {
             nextEpisodeId,
