@@ -2534,11 +2534,14 @@ const runXhook = () => {
     return validateResponseContentType(response, "application/json");
   };
 
-  const hasNextUpV2Resource = (request, response) => {
+  const hasNextUpResource = (request, response) => {
     if (!request.url.includes("playerChromeResources")) {
       return false;
     }
-    if (!request.url.includes("nextUpV2")) {
+    if (
+      !request.url.includes("nextUpV2") &&
+      !request.url.includes("nextUpV3")
+    ) {
       return false;
     }
     if (response.status !== 200) {
@@ -3167,20 +3170,27 @@ const runXhook = () => {
 
     static enableAutoplay(request, response) {
       const _isGetSections = isGetSections(request, response);
-      const _hasNextUpV2Resource = hasNextUpV2Resource(request, response);
-      if (!_isGetSections && !_hasNextUpV2Resource) {
+      const _hasNextUpResource = hasNextUpResource(request, response);
+      if (!_isGetSections && !_hasNextUpResource) {
         return;
       }
 
-      if (_hasNextUpV2Resource) {
+      if (_hasNextUpResource) {
         try {
           /**
            * If isMultiTitleExperience is true, this function does not enable autoplay.
            * (If isMultiTitleExperience is true, nextUpV2.carousel will be used instead of nextUpV2.card.)
            */
           const data = JSON.parse(response.text);
-          const autoplayConfig =
-            data?.resources?.nextUpV2?.card?.autoPlayConfig;
+          const resources = data?.resources;
+          if (!resources) {
+            return;
+          }
+          const nextUp = resources.nextUpV2 ?? resources.nextUpV3;
+          if (!nextUp) {
+            return;
+          }
+          const autoplayConfig = nextUp?.card?.autoPlayConfig;
           if (!autoplayConfig) {
             return;
           }
@@ -3234,7 +3244,7 @@ const runXhook = () => {
     }
 
     static disableRecommendations(request, response) {
-      if (!hasNextUpV2Resource(request, response)) {
+      if (!hasNextUpResource(request, response)) {
         return;
       }
 
@@ -3295,7 +3305,7 @@ const runXhook = () => {
           entityId,
           data,
         });
-      } else if (hasNextUpV2Resource(request, response)) {
+      } else if (hasNextUpResource(request, response)) {
         const entityId = new window.URL(url).searchParams.get("entityId");
         if (!entityId) {
           return;
