@@ -3250,14 +3250,18 @@ const runXhook = () => {
 
       try {
         const data = JSON.parse(response.text);
-        const nextUpV2 = data?.resources?.nextUpV2;
-        if (!nextUpV2) {
+        const resources = data?.resources;
+        if (!resources) {
           return;
         }
-        if (!Object.hasOwn(nextUpV2, "isMultiTitleExperience")) {
+        const nextUp = resources.nextUpV2 ?? resources.nextUpV3;
+        if (!nextUp) {
           return;
         }
-        nextUpV2.isMultiTitleExperience = false;
+        if (!Object.hasOwn(nextUp, "isMultiTitleExperience")) {
+          return;
+        }
+        nextUp.isMultiTitleExperience = false;
         response.text = JSON.stringify(data);
       } catch (e) {
         console.log(e);
