@@ -4254,7 +4254,7 @@ class PrimeVideoTextRepository {
     forwardAriaLabels: ["Skip forward 10 seconds"],
     likeAriaLabels: ["Like"],
     dislikeAriaLabels: ["Not for me"],
-    nextupTexts: ["Next up"],
+    nextupTexts: ["Next up", "Next Up"],
     acceptNextupTexts: [`"Next up in {{seconds}}`],
     dismissNextupTexts: ["Watch credits"],
     hideAriaLabels: ["Hide"],
