@@ -4441,6 +4441,18 @@ class PrimeVideoTextRepository {
     return this.#filterNonEmptyStrings([data?.hide]);
   }
 
+  static #extractSubtitlesToggleLabelsFromCache(cache = {}) {
+    const data = this.#parseCacheData(cache);
+    if (!data) {
+      return [];
+    }
+    return this.#filterNonEmptyStrings([
+      data?.captionsToggle?.turnOn,
+      data?.captionsToggle?.turnOff,
+      data?.captionsToggle?.unavailable,
+    ]);
+  }
+
   static async #updateSnapshotFromCachedPlayerUiTexts(keys) {
     const results = await Promise.allSettled(
       keys.map((key) => getIDBValue(this.#dbName, this.#storeName, key))
@@ -4468,6 +4480,8 @@ class PrimeVideoTextRepository {
       const dismissNextupTexts =
         this.#extractDismissNextupTextsFromCache(value);
       const hideLabels = this.#extractHideLabelsFromCache(value);
+      const subtitlesToggleLabels =
+        this.#extractSubtitlesToggleLabelsFromCache(value);
 
       this.#snapshot = {
         ...snapshot,
@@ -4516,6 +4530,12 @@ class PrimeVideoTextRepository {
         ],
         hideAriaLabels: [
           ...new Set([...snapshot.hideAriaLabels, ...hideLabels]),
+        ],
+        subtitlesToggleAriaLabels: [
+          ...new Set([
+            ...snapshot.subtitlesToggleAriaLabels,
+            ...subtitlesToggleLabels,
+          ]),
         ],
       };
     }
