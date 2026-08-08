@@ -4991,6 +4991,22 @@ class PrimeVideoTextRepository {
       .join(",\n");
   }
 
+  static generateLikeButtonSelectors(player) {
+    return this.#snapshot.likeAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
+  static generateDislikeButtonSelectors(player) {
+    return this.#snapshot.dislikeAriaLabels
+      .map((label) => {
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+      })
+      .join(",\n");
+  }
+
   static generateHideButtonSelectors(player) {
     return this.#snapshot.hideAriaLabels
       .map((label) => {
@@ -5185,6 +5201,51 @@ class NewUiElementLocator {
       dismissNextupButton: dismissNextupButton ?? buttons[1] ?? null,
       reactions: separateReactionsContainerResult.reactions,
     };
+  }
+
+  static findClosestCommonAncestor(element1, element2) {
+    if (!element1 || !element2) {
+      return null;
+    }
+
+    let ancestor = element1.parentElement;
+
+    while (ancestor) {
+      if (ancestor.contains(element2)) {
+        return ancestor;
+      }
+
+      ancestor = ancestor.parentElement;
+    }
+
+    return null;
+  }
+
+  static findReactionsContainerFromButtons(player) {
+    const likeButton = player.querySelector(
+      PrimeVideoTextRepository.generateLikeButtonSelectors(player)
+    );
+    const dislikeButton = player.querySelector(
+      PrimeVideoTextRepository.generateDislikeButtonSelectors(player)
+    );
+    if (!likeButton || !dislikeButton) {
+      return;
+    }
+
+    const buttonsContainer = this.findClosestCommonAncestor(
+      likeButton,
+      dislikeButton
+    );
+    if (!buttonsContainer) {
+      return;
+    }
+
+    const reactionsContainer = buttonsContainer.parentElement;
+    if (!reactionsContainer) {
+      return;
+    }
+
+    return reactionsContainer;
   }
 
   static isHideRecommendationsButton(img) {
@@ -6029,7 +6090,10 @@ class ElementController {
           if (dismissNextupButton) {
             dismissNextupButton.dataset.nextupExtRole = "dismiss-nextup-button";
           }
-          if (reactions) {
+          if (
+            reactions &&
+            !this.player.querySelector('[data-nextup-ext-role="reactions"]')
+          ) {
             reactions.dataset.nextupExtRole = "reactions";
           }
         });
@@ -6046,6 +6110,42 @@ class ElementController {
 
       const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
         getNextUpElements();
+        unsubscribe();
+      });
+    });
+  }
+
+  markNewUiReactionsFallback() {
+    this.runFeatureWhenVariantResolved("markNewUiReactionsFallback", () => {
+      if (!this.isVariantNew()) {
+        return;
+      }
+      if (!this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")) {
+        return;
+      }
+
+      const mark = () => {
+        if (this.player.querySelector('[data-nextup-ext-role="reactions"]')) {
+          return;
+        }
+
+        const reactions = NewUiElementLocator.findReactionsContainerFromButtons(
+          this.player
+        );
+        if (!reactions) {
+          return;
+        }
+
+        reactions.dataset.nextupExtRole = "reactions";
+      };
+
+      mark();
+
+      const observer = new MutationObserver(mark);
+      observer.observe(this.player, OBSERVER_CONFIG);
+
+      const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
+        mark();
         unsubscribe();
       });
     });
@@ -9018,6 +9118,12 @@ const main = async () => {
 
         try {
           controller.markNewUiNextUpElements();
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.markNewUiReactionsFallback();
         } catch (e) {
           console.log(e);
         }
