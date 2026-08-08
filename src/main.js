@@ -31,7 +31,6 @@ const getDefaultOptions = () => {
     temporarilyDisableOverlay: true,
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
-    clickHideButtonForAllNextup: false,
     clickNextupBeforeVideoEnds: false,
     hideReactions: true,
     showReactionsOnOverlay: false,
@@ -903,13 +902,6 @@ const createOptionMessages = () => {
     showNextupOnOverlay: "オーバーレイ表示が有効な時はNext upを表示する",
     showNextupOnOverlay_Tooltip:
       "自動再生が無効、或いはNext upの非表示ボタンが自動クリックされない場合に表示されます。",
-    clickHideButtonForAllNextup:
-      "全てのNext upの非表示ボタンをクリックする（自動再生の完全なキャンセル）",
-    clickHideButtonForAllNextup_Tooltip: `通常はこのオプションを有効にする必要はありません。\n
-      Next upには「通常のNext up」と「動画終了の数秒前に表示されるNext up」の2つが存在します。
-      自動再生が有効な場合はどちらにも非表示ボタンが表示されますが、後者の非表示ボタンはクリックすると自動再生が完全にキャンセルされ、動画が終了すると動画プレイヤーが閉じてしまいます。
-      そのため非表示ボタンの自動クリックは通常のNext upでのみ行うようにしていますが、このオプションを使用することでその条件を無視して非表示ボタンを自動クリックさせることが可能です。
-      このオプションは念の為に用意しているもので、通常は有効にする必要はありません。`,
     clickNextupBeforeVideoEnds: "動画終了直前にNext upを自動クリックする",
     clickNextupBeforeVideoEnds_Tooltip: `自動再生が有効な場合のNext upのタイマーの挙動に問題があり、自動再生が期待通りに動作しないことがあります。
       このオプションを有効にすると、動画終了の数秒前に表示されるNext upを、動画終了の1秒前に自動クリックします。
@@ -1027,13 +1019,6 @@ const createOptionMessages = () => {
     showNextupOnOverlay: "Show next up card when overlay display is enabled",
     showNextupOnOverlay_Tooltip:
       "This works if autoplay is disabled or if the next up card's hide button is not clicked automatically.",
-    clickHideButtonForAllNextup:
-      "Click the hide button for all next-up-cards (cancel autoplay completely)",
-    clickHideButtonForAllNextup_Tooltip: `Normally it is not necessary to enable this option.\n
-      There are two types of next up cards: “normal next up” and "next up displayed a few seconds before the end of the video".
-      A hide button appears on both when autoplay is enabled, but clicking the latter hide button cancels autoplay completely and closes the video player when the video ends.
-      Therefore, the auto-click of the hide button is only done with the normal next up card, but this option can be used to ignore that condition and have the hide button auto-click.
-      This option is provided just in case and does not normally need to be enabled.`,
     clickNextupBeforeVideoEnds:
       "Automatically click next up just before the video ends",
     clickNextupBeforeVideoEnds_Tooltip: `There is a problem with the Next up card timer behavior when auto-play is enabled, so auto-play may not work as expected.
@@ -1250,19 +1235,6 @@ const createOptionDialog = async () => {
                     regexForMultiineTooltips,
                     ""
                   )}" data-msg-id="clickNextupBeforeVideoEnds"></p>
-              </div>
-
-              <div class="nextup-ext-opt-dialog-item-container">
-                  <label class="indent1">
-                      <input type="checkbox" id="click-hide-button-for-all-nextup" name="click-hide-button-for-all-nextup" ${
-                        options.clickHideButtonForAllNextup ? "checked" : ""
-                      } />
-                      <p>${messages.clickHideButtonForAllNextup}</p>
-                  </label>
-                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.clickHideButtonForAllNextup_Tooltip.replaceAll(
-                    regexForMultiineTooltips,
-                    ""
-                  )}" data-msg-id="clickHideButtonForAllNextup"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -2006,9 +1978,6 @@ const createOptionDialog = async () => {
         case "show-nextup":
           await saveOptions({ showNextupOnOverlay: e.target.checked });
           break;
-        case "click-hide-button-for-all-nextup":
-          await saveOptions({ clickHideButtonForAllNextup: e.target.checked });
-          break;
         case "click-nextup-before-video-ends":
           await saveOptions({ clickNextupBeforeVideoEnds: e.target.checked });
           break;
@@ -2137,66 +2106,60 @@ const createOptionDialog = async () => {
   );
 };
 
+const getOptionDialogItemContainer = (id = "") => {
+  const optDialog = getOptionDialog();
+  if (!optDialog) {
+    return;
+  }
+
+  return optDialog.querySelector(
+    `.nextup-ext-opt-dialog-item-container:has(#${id})`
+  );
+};
+
+const hideOptionDialogItem = (element) => {
+  if (element) {
+    element.style.setProperty("display", "none", "important");
+  }
+};
+
 const adjustOptionDialogByPlayerVariant = (playerVariant) => {
   const optDialog = getOptionDialog();
   if (!optDialog) {
     return;
   }
 
-  const getItemFromItemContainer = (id = "") => {
-    return optDialog.querySelector(
-      `.nextup-ext-opt-dialog-item-container:has(#${id})`
-    );
-  };
-
-  const hide = (element) => {
-    if (element) {
-      element.style.setProperty("display", "none", "important");
-    }
-  };
-
   if (playerVariant === "new") {
     const messages = createOptionMessages();
 
-    const preventsDarkeningNextup = getItemFromItemContainer(
+    const preventsDarkeningNextup = getOptionDialogItemContainer(
       "prevents-darkening-in-conjunction-with-nextup"
     );
-    hide(preventsDarkeningNextup);
-
-    const showNextup = getItemFromItemContainer("show-nextup");
-    hide(showNextup);
-
-    const clickHideButtonForAllNextup = getItemFromItemContainer(
-      "click-hide-button-for-all-nextup"
-    );
-    hide(clickHideButtonForAllNextup);
-
-    const temporarilyDisableOverlay = getItemFromItemContainer(
-      "temporarily-disable-overlay"
-    );
-    hide(temporarilyDisableOverlay);
+    hideOptionDialogItem(preventsDarkeningNextup);
 
     const hideRecommendations_Tooltip = optDialog.querySelector(
       "p[data-msg-id='hideRecommendations']"
     );
-    hide(hideRecommendations_Tooltip);
+    hideOptionDialogItem(hideRecommendations_Tooltip);
 
     const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
       "p[data-msg-id='showReactionsOnOverlay']"
     );
-    hide(showReactionsOnOverlay_Tooltips[0]);
+    hideOptionDialogItem(showReactionsOnOverlay_Tooltips[0]);
 
-    const moveCenterButtonsToBottom = getItemFromItemContainer(
+    const moveCenterButtonsToBottom = getOptionDialogItemContainer(
       "move-center-buttons-to-bottom"
     );
-    hide(moveCenterButtonsToBottom);
+    hideOptionDialogItem(moveCenterButtonsToBottom);
 
-    const addVideoControllerToBottomLeft = getItemFromItemContainer(
+    const addVideoControllerToBottomLeft = getOptionDialogItemContainer(
       "add-video-controller-to-bottom-left"
     );
-    hide(addVideoControllerToBottomLeft);
+    hideOptionDialogItem(addVideoControllerToBottomLeft);
 
-    const hideCenterButtons = getItemFromItemContainer("hide-center-buttons");
+    const hideCenterButtons = getOptionDialogItemContainer(
+      "hide-center-buttons"
+    );
     if (hideCenterButtons) {
       const hideCenterButtonsP = hideCenterButtons.querySelector("p");
       if (hideCenterButtonsP) {
@@ -2204,24 +2167,54 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
       }
     }
   } else if (playerVariant === "legacy") {
-    const clickNextupBeforeVideoEnds = getItemFromItemContainer(
+    const clickNextupBeforeVideoEnds = getOptionDialogItemContainer(
       "click-nextup-before-video-ends"
     );
-    hide(clickNextupBeforeVideoEnds);
+    hideOptionDialogItem(clickNextupBeforeVideoEnds);
 
     const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
       "p[data-msg-id='showReactionsOnOverlay']"
     );
-    hide(showReactionsOnOverlay_Tooltips[1]);
+    hideOptionDialogItem(showReactionsOnOverlay_Tooltips[1]);
 
-    const hideCloseButton = getItemFromItemContainer("hide-close-button");
-    hide(hideCloseButton);
+    const hideCloseButton = getOptionDialogItemContainer("hide-close-button");
+    hideOptionDialogItem(hideCloseButton);
 
-    const addVideoCloseButtonToTopRight = getItemFromItemContainer(
+    const addVideoCloseButtonToTopRight = getOptionDialogItemContainer(
       "add-video-close-button-to-top-right"
     );
-    hide(addVideoCloseButtonToTopRight);
+    hideOptionDialogItem(addVideoCloseButtonToTopRight);
   }
+};
+
+const adjustOptionDialogByCapabilities = (playerController) => {
+  const optDialog = getOptionDialog();
+  if (!optDialog) {
+    return;
+  }
+  const isVariantLegacy = playerController.isVariantLegacy();
+
+  setTimeout(() => {
+    // It seems that LegacyUi requires a wait of a few seconds for supportsShowNextupOnOverlay().
+    // To ensure consistency in the code, we've set it up here so that even NewUi waits a few seconds.
+    if (!isVariantLegacy) {
+      if (!playerController.supportsShowNextupOnOverlay()) {
+        const showNextup = getOptionDialogItemContainer("show-nextup");
+        hideOptionDialogItem(showNextup);
+      }
+      if (!playerController.supportsTemporarilyDisableOverlay()) {
+        const temporarilyDisableOverlay = getOptionDialogItemContainer(
+          "temporarily-disable-overlay"
+        );
+      }
+      if (!playerController.supportsClickNextupBeforeVideoEnds()) {
+        const clickNextupBeforeVideoEnds = getOptionDialogItemContainer(
+          "click-nextup-before-video-ends"
+        );
+        hideOptionDialogItem(clickNextupBeforeVideoEnds);
+      }
+    }
+  }, 3000);
 };
 
 const addEventListenerForOpenOptionsDialog = (
@@ -5519,6 +5512,13 @@ class NextupController {
       "[data-nextup-ext-role='nextup-card']"
     );
     if (!root) return;
+
+    const classicWrapper = root.closest(".atvwebplayersdk-nextupcard-wrapper");
+    if (classicWrapper) {
+      // NewUi + Classic Next up
+      return;
+    }
+
     const acceptButton = root.querySelector(
       "[data-nextup-ext-role='accept-nextup-button']"
     );
@@ -5791,6 +5791,7 @@ class ElementController {
         this.runPendingTasks();
       }
       adjustOptionDialogByPlayerVariant(this.playerVariant);
+      adjustOptionDialogByCapabilities(this);
       this.player.dataset.playerVariant = this.playerVariant;
     };
 
@@ -6334,6 +6335,23 @@ class ElementController {
     );
   }
 
+  supportsShowNextupOnOverlay() {
+    return Boolean(
+      this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")
+    );
+  }
+
+  supportsTemporarilyDisableOverlay() {
+    return Boolean(
+      this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")
+    );
+  }
+  supportsClickNextupBeforeVideoEnds() {
+    return Boolean(
+      !this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")
+    );
+  }
+
   skipAds(options = getDefaultOptions()) {
     if (!options.skipAds) {
       return;
@@ -6570,25 +6588,29 @@ class ElementController {
     if (!options.hideNextup) {
       return;
     }
+
     this.runFeatureWhenVariantResolved("hideNextupCard", () => {
-      if (this.isVariantLegacy()) {
-        this.hideLegacyNextupCard(options);
-      } else if (this.isVariantNew()) {
-        this.hideNewUiNextupCard(options);
+      this.hideNextupCardByCss();
+      this.setupClassicNextupBehavior(options, this.isVariantLegacy());
+      if (this.isVariantNew()) {
+        this.setupModernNextupBehavior(options);
       }
     });
   }
 
-  hideLegacyNextupCard(options = getDefaultOptions()) {
+  hideNextupCardByCss() {
     if (!document.querySelector("#ext-hideNextupCard")) {
       const css = `
-        .atvwebplayersdk-nextupcard-wrapper {
+        .atvwebplayersdk-nextupcard-wrapper,
+        [data-nextup-ext-role="nextup-card"] {
           display: none !important;
         }
       `;
       addStyle(css, "ext-hideNextupCard");
     }
+  }
 
+  setupClassicNextupBehavior(options, isVariantLegacy) {
     new MutationObserver((_, outerObserver) => {
       const wrapper = this.player.querySelector(
         ".atvwebplayersdk-nextupcard-wrapper"
@@ -6602,80 +6624,104 @@ class ElementController {
         const hideButton = wrapper.querySelector(
           ".atvwebplayersdk-nextupcardhide-button"
         );
-        if (hideButton) {
-          const video = this.player.querySelector("video");
-          if (!video || options.clickHideButtonForAllNextup) {
-            try {
+        if (!hideButton) {
+          return;
+        }
+
+        const video = this.player.querySelector("video");
+        if (!video) {
+          try {
+            this.temporarilyDisableOverlay(options, 5000);
+            hideButton.click();
+          } catch (e) {
+            console.log(e);
+          }
+        } else {
+          // Pressing the hide button on the next up card that appears a few seconds before the end of the video seems to cancel autoplay.
+          // To avoid closing the video, the decision to click the hide button is based on the time remaining in the video.
+          try {
+            const currentTime = video.currentTime;
+            const duration = video.duration;
+            if (duration - currentTime >= 6) {
               this.temporarilyDisableOverlay(options, 5000);
               hideButton.click();
-            } catch (e) {
-              console.log(e);
             }
-          } else {
-            // Pressing the hide button on the next up card that appears a few seconds before the end of the video seems to cancel autoplay.
-            // To avoid closing the video, the decision to click the hide button is based on the time remaining in the video.
-            try {
-              const currentTime = video.currentTime;
-              const duration = video.duration;
-              if (duration - currentTime >= 6) {
-                this.temporarilyDisableOverlay(options, 5000);
-                hideButton.click();
-              }
-            } catch (e) {
-              console.log(e);
-            }
+          } catch (e) {
+            console.log(e);
           }
         }
       }).observe(wrapper, OBSERVER_CONFIG);
 
-      this.preventsDarkeningInConjunctionWithNextup(options);
-
-      if (options.showNextupOnOverlay) {
-        if (!this.markLegacyCenterOverlaysWrapper()) {
-          return;
-        }
-
-        const centerOverlaysWrapper = this.player.querySelector(
-          "[data-ident='center-overlays-wrapper']"
-        );
-        new MutationObserver((_) => {
-          const img = wrapper.querySelector("img");
-          if (!img || !img.getAttribute("src")) {
-            centerOverlaysWrapper.dataset.existsNextup = false;
-          } else {
-            centerOverlaysWrapper.dataset.existsNextup = true;
-          }
-        }).observe(wrapper, OBSERVER_CONFIG);
-
-        new MutationObserver((_) => {
-          const img = wrapper.querySelector("img");
-          if (!img || !img.getAttribute("src")) {
-            wrapper.style.setProperty("display", "none", "important");
-            return;
-          }
-          const computedStyle = getComputedStyle(centerOverlaysWrapper);
-          if (computedStyle.cursor === "pointer") {
-            wrapper.style.setProperty("display", "block", "important");
-          } else {
-            wrapper.style.setProperty("display", "none", "important");
-          }
-        }).observe(centerOverlaysWrapper, {
-          attributes: true,
-        });
+      if (isVariantLegacy) {
+        this.preventsDarkeningInConjunctionWithNextup(options);
+        this.setupLegacyNextupOverlayVisibility(options, wrapper);
+      } else {
+        this.setupClassicNextupOverlayVisibility(options, wrapper);
       }
     }).observe(this.player, { ...OBSERVER_CONFIG, attributes: true });
   }
 
-  hideNewUiNextupCard(options = getDefaultOptions()) {
-    if (!document.querySelector("#ext-hideNextupCard")) {
-      const css = `
-        [data-nextup-ext-role="nextup-card"] {
-          display: none !important;
-        }
-      `;
-      addStyle(css, "ext-hideNextupCard");
+  setupLegacyNextupOverlayVisibility(options, nextupWrapper) {
+    if (!options.showNextupOnOverlay) {
+      return;
     }
 
+    if (!this.markLegacyCenterOverlaysWrapper()) {
+      return;
+    }
+
+    const centerOverlaysWrapper = this.player.querySelector(
+      "[data-ident='center-overlays-wrapper']"
+    );
+    new MutationObserver((_) => {
+      const img = nextupWrapper.querySelector("img");
+      if (!img || !img.getAttribute("src")) {
+        centerOverlaysWrapper.dataset.existsNextup = false;
+      } else {
+        centerOverlaysWrapper.dataset.existsNextup = true;
+      }
+    }).observe(nextupWrapper, OBSERVER_CONFIG);
+
+    new MutationObserver((_) => {
+      const img = nextupWrapper.querySelector("img");
+      if (!img || !img.getAttribute("src")) {
+        nextupWrapper.style.setProperty("display", "none", "important");
+        return;
+      }
+      const computedStyle = getComputedStyle(centerOverlaysWrapper);
+      if (computedStyle.cursor === "pointer") {
+        nextupWrapper.style.setProperty("display", "block", "important");
+      } else {
+        nextupWrapper.style.setProperty("display", "none", "important");
+      }
+    }).observe(centerOverlaysWrapper, {
+      attributes: true,
+    });
+  }
+
+  setupClassicNextupOverlayVisibility(options, nextupWrapper) {
+    if (!options.showNextupOnOverlay) {
+      return;
+    }
+
+    new MutationObserver(() => {
+      const img = nextupWrapper.querySelector("img");
+      if (!img || !img.getAttribute("src")) {
+        nextupWrapper.style.setProperty("display", "none", "important");
+        return;
+      }
+      if (this.player.dataset.nextupExtOverlayVisible) {
+        nextupWrapper.style.setProperty("display", "block", "important");
+      } else {
+        nextupWrapper.style.setProperty("display", "none", "important");
+      }
+    }).observe(this.player, {
+      attributes: true,
+      attributeFilter: ["data-nextup-ext-overlay-visible"],
+    });
+  }
+
+  setupModernNextupBehavior(options = getDefaultOptions()) {
     const video = getVisibleVideo();
     const controller = new NextupController(this.player, video, options);
 
