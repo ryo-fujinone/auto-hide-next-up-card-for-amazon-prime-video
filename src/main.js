@@ -2123,6 +2123,12 @@ const hideOptionDialogItem = (element) => {
   }
 };
 
+const showOptionDialogItem = (element) => {
+  if (element) {
+    element.style.setProperty("display", "block", "important");
+  }
+};
+
 const adjustOptionDialogByPlayerVariant = (playerVariant) => {
   const optDialog = getOptionDialog();
   if (!optDialog) {
@@ -2141,11 +2147,6 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
       "p[data-msg-id='hideRecommendations']"
     );
     hideOptionDialogItem(hideRecommendations_Tooltip);
-
-    const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
-      "p[data-msg-id='showReactionsOnOverlay']"
-    );
-    hideOptionDialogItem(showReactionsOnOverlay_Tooltips[0]);
 
     const moveCenterButtonsToBottom = getOptionDialogItemContainer(
       "move-center-buttons-to-bottom"
@@ -2194,6 +2195,14 @@ const adjustOptionDialogByCapabilities = (playerController) => {
   }
   const isVariantLegacy = playerController.isVariantLegacy();
 
+  const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
+    "p[data-msg-id='showReactionsOnOverlay']"
+  );
+  if (!isVariantLegacy) {
+    hideOptionDialogItem(showReactionsOnOverlay_Tooltips[0]);
+    hideOptionDialogItem(showReactionsOnOverlay_Tooltips[1]);
+  }
+
   setTimeout(() => {
     // It seems that LegacyUi requires a wait of a few seconds for supportsShowNextupOnOverlay().
     // To ensure consistency in the code, we've set it up here so that even NewUi waits a few seconds.
@@ -2202,16 +2211,24 @@ const adjustOptionDialogByCapabilities = (playerController) => {
         const showNextup = getOptionDialogItemContainer("show-nextup");
         hideOptionDialogItem(showNextup);
       }
+
       if (!playerController.supportsTemporarilyDisableOverlay()) {
         const temporarilyDisableOverlay = getOptionDialogItemContainer(
           "temporarily-disable-overlay"
         );
       }
+
       if (!playerController.supportsClickNextupBeforeVideoEnds()) {
         const clickNextupBeforeVideoEnds = getOptionDialogItemContainer(
           "click-nextup-before-video-ends"
         );
         hideOptionDialogItem(clickNextupBeforeVideoEnds);
+      }
+
+      if (playerController.hasClassicNextup()) {
+        showOptionDialogItem(showReactionsOnOverlay_Tooltips[0]);
+      } else {
+        showOptionDialogItem(showReactionsOnOverlay_Tooltips[1]);
       }
     }
   }, 3000);
@@ -6335,21 +6352,21 @@ class ElementController {
     );
   }
 
-  supportsShowNextupOnOverlay() {
+  hasClassicNextup() {
     return Boolean(
       this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")
     );
   }
 
+  supportsShowNextupOnOverlay() {
+    return this.hasClassicNextup();
+  }
+
   supportsTemporarilyDisableOverlay() {
-    return Boolean(
-      this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")
-    );
+    return this.hasClassicNextup();
   }
   supportsClickNextupBeforeVideoEnds() {
-    return Boolean(
-      !this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")
-    );
+    return !this.hasClassicNextup();
   }
 
   skipAds(options = getDefaultOptions()) {
