@@ -7372,7 +7372,9 @@ class ElementController {
           [data-nextup-ext-role="hide-recommendations-button"],
           button:has(> .atvweb-inplayback-carousel-card):not(:hover) .atvweb-inplayback-carousel-card-title,
           [data-nextup-ext-role="resolution-info"],
-          .next-up-ext-video-close-button-container .tooltip
+          .next-up-ext-video-close-button-container .tooltip,
+          .atvwebplayersdk-nextupcard-title,
+          .atvwebplayersdk-nextupcardhide-button
           {
             paint-order: stroke fill;
             -webkit-text-stroke: 0.07em black;
