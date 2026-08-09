@@ -8567,7 +8567,6 @@ class ElementController {
     let titleChanged = false;
     let subtitleText = null;
     const subtitleSet = new Set();
-    let existsNextEpisode = false;
 
     let closeBtn;
     let videoClosedByUser = false;
@@ -8622,11 +8621,9 @@ class ElementController {
         const newSubtitleText = getSubtitleText();
         if (!newSubtitleText) {
           subtitleText = null;
-          existsNextEpisode = false;
         } else if (newSubtitleText !== subtitleText) {
           subtitleText = newSubtitleText;
           subtitleSet.add(newSubtitleText);
-          existsNextEpisode = false;
         }
         return;
       }
@@ -8638,7 +8635,6 @@ class ElementController {
 
       subtitleText = newSubtitleText;
       subtitleSet.add(newSubtitleText);
-      existsNextEpisode = true;
     });
 
     const infobarObserver = new MutationObserver((_, observer) => {
@@ -8676,7 +8672,7 @@ class ElementController {
         console.log("Title changed");
         return;
       }
-      if (!subtitleText || !existsNextEpisode) {
+      if (!subtitleText || !(nextEpisodeId && nextEpisodeId !== "null")) {
         console.log("No next episode");
         return;
       }
@@ -8692,27 +8688,20 @@ class ElementController {
           console.log("Video closed by user");
         } else {
           const movePage = () => {
-            if (nextEpisodeId && nextEpisodeId !== "null") {
-              // If the dv-web-player does not have the next episode preloaded.
-              console.log("Play next episode");
-              const origin = window.location.origin;
-              let url = `${origin}/gp/video/detail/${nextEpisodeId}/?autoplay=1&t=0&play-next-episode`;
-              console.log(url);
-              const volumeKey = "atvwebplayersdk_volume";
-              const volumeStr = localStorage.getItem(volumeKey);
-              const volume = parseFloat(volumeStr);
-              if (!Number.isNaN(volume)) {
-                url = `${url}&volume=${volumeStr}`;
-              }
-              localStorage.setItem(volumeKey, "0");
-              setTimeout(() => {
-                window.location.href = url;
-              }, 200);
-            } else {
-              console.log(
-                "Either the last episode has already been played or a problem may have occurred."
-              );
+            console.log("Play next episode");
+            const origin = window.location.origin;
+            let url = `${origin}/gp/video/detail/${nextEpisodeId}/?autoplay=1&t=0&play-next-episode`;
+            console.log(url);
+            const volumeKey = "atvwebplayersdk_volume";
+            const volumeStr = localStorage.getItem(volumeKey);
+            const volume = parseFloat(volumeStr);
+            if (!Number.isNaN(volume)) {
+              url = `${url}&volume=${volumeStr}`;
             }
+            localStorage.setItem(volumeKey, "0");
+            setTimeout(() => {
+              window.location.href = url;
+            }, 200);
           };
 
           const newSubtitleText = getSubtitleText();
