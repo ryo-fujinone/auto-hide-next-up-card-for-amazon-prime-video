@@ -3425,7 +3425,7 @@ const runXhook = () => {
 
     const getResolvedVariant = (player) => {
       const variant = player?.dataset?.playerVariant;
-      if (variant === "legacy" || variant === "new") {
+      if (variant === "legacy" || variant.includes("modern")) {
         return variant;
       }
       return null;
@@ -3521,7 +3521,7 @@ const runXhook = () => {
   };
 
   const isVariantModern = (playerVariant) => {
-    return isVariantModernV1() || isVariantModernV2();
+    return isVariantModernV1(playerVariant) || isVariantModernV2(playerVariant);
   };
 
   const identificationGetVodPlaybackResources = () => {
