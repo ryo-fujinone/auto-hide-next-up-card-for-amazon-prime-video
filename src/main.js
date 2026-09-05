@@ -4965,7 +4965,7 @@ class PrimeVideoTextRepository {
   static generateReactionsSelectors(player) {
     return this.generateReactionsAriaLabels()
       .map((label) => {
-        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"]`;
+        return `#${player.id} button[aria-label="${this.escapeCssAttrValue(label)}"]`;
       })
       .join(",\n");
   }
@@ -4986,14 +4986,14 @@ class PrimeVideoTextRepository {
 
   static generateReactionsContainerSelectors(player, overlayVisible = false) {
     return !overlayVisible
-      ? `#${player.id} div[style*="grid-area"] div[data-nextup-ext-role="reactions"]`
-      : `#${player.id}[data-nextup-ext-overlay-visible='true'] div[style*="grid-area"] div[data-nextup-ext-role="reactions"]`;
+      ? `#${player.id} div[data-nextup-ext-role="reactions"]`
+      : `#${player.id}[data-nextup-ext-overlay-visible='true'] div[data-nextup-ext-role="reactions"]`;
   }
 
   static generateHoveredReactionsSelectors(player) {
     return this.generateReactionsAriaLabels()
       .map((label) => {
-        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover`;
+        return `#${player.id} div[data-nextup-ext-role="reactions"] button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover`;
       })
       .join(",\n");
   }
@@ -5001,7 +5001,7 @@ class PrimeVideoTextRepository {
   static generateReactionsIconSelectors(player) {
     return this.generateReactionsAriaLabels()
       .map((label) => {
-        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"] img`;
+        return `#${player.id} div[data-nextup-ext-role="reactions"] button[aria-label="${this.escapeCssAttrValue(label)}"] img`;
       })
       .join(",\n");
   }
@@ -5009,7 +5009,7 @@ class PrimeVideoTextRepository {
   static generateHoveredReactionsIconSelectors(player) {
     return this.generateReactionsAriaLabels()
       .map((label) => {
-        return `#${player.id} div[style*="grid-area"] button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover img`;
+        return `#${player.id} div[data-nextup-ext-role="reactions"] button[aria-label="${this.escapeCssAttrValue(label)}"]:not(:disabled):hover img`;
       })
       .join(",\n");
   }
