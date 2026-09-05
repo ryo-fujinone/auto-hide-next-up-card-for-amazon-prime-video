@@ -3271,6 +3271,7 @@ const runXhook = () => {
       try {
         const data = JSON.parse(response.text);
         const resources = data?.resources;
+        console.log(resources);
         if (!resources) {
           return;
         }
@@ -3278,10 +3279,15 @@ const runXhook = () => {
         if (!nextUp) {
           return;
         }
-        if (!Object.hasOwn(nextUp, "isMultiTitleExperience")) {
-          return;
-        }
         nextUp.isMultiTitleExperience = false;
+        try {
+          nextUp.carousel._carouselItems = structuredClone(
+            nextUp.carousel.carouselItems
+          );
+          delete nextUp.carousel.carouselItems;
+        } catch (e) {
+          console.log(e);
+        }
         response.text = JSON.stringify(data);
       } catch (e) {
         console.log(e);
