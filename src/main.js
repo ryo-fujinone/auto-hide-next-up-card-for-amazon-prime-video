@@ -3271,7 +3271,6 @@ const runXhook = () => {
       try {
         const data = JSON.parse(response.text);
         const resources = data?.resources;
-        console.log(resources);
         if (!resources) {
           return;
         }
