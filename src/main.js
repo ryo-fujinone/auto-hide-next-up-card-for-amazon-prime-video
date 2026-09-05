@@ -543,7 +543,7 @@ const getVisibleVideo = (player) => {
   return Array.from(videos).find((v) => v.checkVisibility());
 };
 
-const toggleNewUiPlayAndPause = () => {
+const toggleModernPlayAndPause = () => {
   const player = document.querySelector(".dv-player-fullscreen");
   if (player) {
     player.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
@@ -557,7 +557,7 @@ const toggleLegacyPlayAndPause = () => {
   if (uiContainer) {
     uiContainer.dispatchEvent(new KeyboardEvent("keyup", { keyCode: 32 }));
   } else {
-    toggleNewUiPlayAndPause();
+    toggleModernPlayAndPause();
   }
 };
 
@@ -584,7 +584,7 @@ const playVideo = () => {
         if (!playerVariant || playerVariant === "legacy") {
           toggleLegacyPlayAndPause();
         } else if (playerVariant === "new") {
-          toggleNewUiPlayAndPause();
+          toggleModernPlayAndPause();
         }
       }
     } catch (e) {
@@ -616,7 +616,7 @@ const pauseVideo = () => {
         if (!playerVariant || playerVariant === "legacy") {
           toggleLegacyPlayAndPause();
         } else if (playerVariant === "new") {
-          toggleNewUiPlayAndPause();
+          toggleModernPlayAndPause();
         }
       }
     } catch (e) {
@@ -696,7 +696,7 @@ const getSvgSignature = (img) => {
   };
 };
 
-const isNewUiSettingsIcon = (img) => {
+const isModernSettingsIcon = (img) => {
   const sig = getSvgSignature(img);
   return (
     sig.viewBox === "0 0 6 25" &&
@@ -718,20 +718,27 @@ const detectPlayerVariant = (player) => {
     return "legacy";
   }
 
-  // New UI relies heavily on grid layout.
-  // Unlike aria-label based markers, this is language-independent.
-  // Unlike many overlay controls, these grid-area nodes exist even when overlay is hidden.
   const gridAreas = player.querySelectorAll(
     "div[style*='grid-template-columns'] > div[style*='grid-area']"
   );
   if (gridAreas.length >= 2) {
-    return "new";
+    return "modern-v1";
   }
 
   const xrayFreshStart = player.querySelector(".xrayQuickView.freshStart");
   const toastWrapper = player.querySelector(".atvwebplayersdk-toast-wrapper");
   if (xrayFreshStart && toastWrapper) {
-    return "new";
+    return "modern-v1";
+  }
+
+  const loadingOverlay = player.querySelector(
+    ".atvwebplayersdk-loading-overlay"
+  );
+  const nextupcardWrapper = player.querySelector(
+    ".atvwebplayersdk-nextupcard-wrapper"
+  );
+  if (loadingOverlay || nextupcardWrapper) {
+    return "modern-v2";
   }
 
   return "unknown";
@@ -2203,7 +2210,7 @@ const adjustOptionDialogByCapabilities = (playerController) => {
 
   setTimeout(() => {
     // It seems that LegacyUi requires a wait of a few seconds for supportsShowNextupOnOverlay().
-    // To ensure consistency in the code, we've set it up here so that even NewUi waits a few seconds.
+    // To ensure consistency in the code, we've set it up here so that even Modern waits a few seconds.
     if (!isVariantLegacy) {
       if (!playerController.supportsShowNextupOnOverlay()) {
         const showNextup = getOptionDialogItemContainer("show-nextup");
@@ -3505,8 +3512,16 @@ const runXhook = () => {
     return playerVariant === "legacy";
   };
 
-  const isVariantNew = (playerVariant) => {
-    return playerVariant === "new";
+  const isVariantModernV1 = (playerVariant) => {
+    return playerVariant === "modern-v1";
+  };
+
+  const isVariantModernV2 = (playerVariant) => {
+    return playerVariant === "modern-v2";
+  };
+
+  const isVariantModern = (playerVariant) => {
+    return isVariantModernV1() || isVariantModernV2();
   };
 
   const identificationGetVodPlaybackResources = () => {
@@ -3653,7 +3668,7 @@ const runXhook = () => {
         this.mp4Url = XhookAfter.mp4Url;
       }
 
-      resolveCurrentResolutionInfoForNewUi(title) {
+      resolveCurrentResolutionInfoForModern(title) {
         if (!title) {
           return;
         }
@@ -3683,7 +3698,7 @@ const runXhook = () => {
         return resolution;
       }
 
-      renderNewUi() {
+      renderModern() {
         const bottomLeftContainer = this.player.querySelector(
           "[data-nextup-ext-role='bottom-left-container']"
         );
@@ -3737,7 +3752,7 @@ const runXhook = () => {
             } else {
               // Different title
               // Normally, this case probably won't occur.
-              resolution = this.resolveCurrentResolutionInfoForNewUi(title);
+              resolution = this.resolveCurrentResolutionInfoForModern(title);
             }
           } else {
             // While the rating is displayed
@@ -3746,7 +3761,7 @@ const runXhook = () => {
         } else {
           if (title) {
             // The first case for each title
-            resolution = this.resolveCurrentResolutionInfoForNewUi(title);
+            resolution = this.resolveCurrentResolutionInfoForModern(title);
           }
         }
 
@@ -3794,9 +3809,9 @@ const runXhook = () => {
               this.renderLegacy.bind(this),
               { signal }
             );
-          } else if (isVariantNew(playerVariant)) {
+          } else if (isVariantModern(playerVariant)) {
             this.playerObserver = new MutationObserver(() => {
-              this.renderNewUi();
+              this.renderModern();
             }).observe(this.player, {
               childList: true,
               subtree: true,
@@ -3994,7 +4009,7 @@ const runXhook = () => {
         }
       }
 
-      detectOnNewUi() {
+      detectOnModern() {
         const nextEpisodeInfoStr = this.player.dataset.nextupExtNextEpisodeInfo;
         if (nextEpisodeInfoStr) {
           const nextEpisodeInfo = JSON.parse(nextEpisodeInfoStr);
@@ -4077,9 +4092,9 @@ const runXhook = () => {
               this.detectOnLegacy.bind(this),
               { signal }
             );
-          } else if (isVariantNew(playerVariant)) {
+          } else if (isVariantModern(playerVariant)) {
             this.playerObserver = new MutationObserver(() => {
-              this.detectOnNewUi();
+              this.detectOnModern();
             }).observe(this.player, {
               childList: true,
               subtree: true,
@@ -5067,7 +5082,7 @@ class PrimeVideoTextRepository {
   };
 }
 
-class NewUiElementLocator {
+class ModernElementLocator {
   static getGridAreaCells(gridRoot) {
     if (!gridRoot) {
       return [];
@@ -5530,7 +5545,7 @@ class NextupController {
 
     const classicWrapper = root.closest(".atvwebplayersdk-nextupcard-wrapper");
     if (classicWrapper) {
-      // NewUi + Classic Next up
+      // Modern + Classic Next up
       return;
     }
 
@@ -5790,16 +5805,24 @@ class ElementController {
     return this.playerVariant === "legacy";
   }
 
-  isVariantNew() {
-    return this.playerVariant === "new";
+  isVariantModern() {
+    return this.isVariantModernV1() || this.isVariantModernV2();
+  }
+
+  isVariantModernV1() {
+    return this.playerVariant === "modern-v1";
+  }
+
+  isVariantModernV2() {
+    return this.playerVariant === "modern-v2";
   }
 
   startVariantDetection(options = getDefaultOptions()) {
     let canRunPendingTasks = true;
     const afterResolved = () => {
-      if (this.isVariantNew()) {
+      if (this.isVariantModern()) {
         PrimeVideoTextRepository.init();
-        this.observeNewUiOverlayState(options);
+        this.observeModernOverlayState(options);
       }
       if (canRunPendingTasks) {
         canRunPendingTasks = false;
@@ -5866,8 +5889,8 @@ class ElementController {
     this.runFeatureWhenVariantResolved("createOptionBtn", () => {
       if (this.isVariantLegacy()) {
         this.createLegacyOptionBtn();
-      } else if (this.isVariantNew()) {
-        this.createNewUiOptionBtn();
+      } else if (this.isVariantModern()) {
+        this.createModernOptionBtn();
       }
     });
   }
@@ -5926,7 +5949,7 @@ class ElementController {
     this.tempAddElemToPlayer();
   }
 
-  createNewUiOptionBtn() {
+  createModernOptionBtn() {
     new MutationObserver((_) => {
       if (this.player.querySelector(".nextup-ext-opt-btn-container")) {
         return;
@@ -5940,7 +5963,7 @@ class ElementController {
 
         let settingsIcon;
         for (const item of svgImageButtons) {
-          if (isNewUiSettingsIcon(item.img)) {
+          if (isModernSettingsIcon(item.img)) {
             settingsIcon = item;
             break;
           }
@@ -5985,7 +6008,7 @@ class ElementController {
 
       let isReady = false;
       for (const cloneImg of cloneButton.querySelectorAll("img")) {
-        if (isNewUiSettingsIcon(cloneImg)) {
+        if (isModernSettingsIcon(cloneImg)) {
           cloneImg.setAttribute("src", OPTION_BTN_IMG_DATA_URL);
           cloneImg.style.filter =
             "sepia(100%) saturate(2000%) hue-rotate(120deg)";
@@ -6050,9 +6073,9 @@ class ElementController {
     );
   }
 
-  markNewUiNextUpElements() {
-    this.runFeatureWhenVariantResolved("markNewUiNextUpElements", () => {
-      if (!this.isVariantNew()) {
+  markModernNextUpElements() {
+    this.runFeatureWhenVariantResolved("markModernNextUpElements", () => {
+      if (!this.isVariantModern()) {
         return;
       }
 
@@ -6073,7 +6096,7 @@ class ElementController {
             return;
           }
 
-          const nextUpElements = NewUiElementLocator.getNextUpElements(
+          const nextUpElements = ModernElementLocator.getNextUpElements(
             this.player
           );
           if (!nextUpElements) return;
@@ -6131,9 +6154,9 @@ class ElementController {
     });
   }
 
-  markNewUiReactionsFallback() {
-    this.runFeatureWhenVariantResolved("markNewUiReactionsFallback", () => {
-      if (!this.isVariantNew()) {
+  markModernReactionsFallback() {
+    this.runFeatureWhenVariantResolved("markModernReactionsFallback", () => {
+      if (!this.isVariantModern()) {
         return;
       }
       if (!this.player.querySelector(".atvwebplayersdk-nextupcard-wrapper")) {
@@ -6145,9 +6168,8 @@ class ElementController {
           return;
         }
 
-        const reactions = NewUiElementLocator.findReactionsContainerFromButtons(
-          this.player
-        );
+        const reactions =
+          ModernElementLocator.findReactionsContainerFromButtons(this.player);
         if (!reactions) {
           return;
         }
@@ -6167,9 +6189,9 @@ class ElementController {
     });
   }
 
-  markNewUiRecommendationsElements() {
+  markModernRecommendationsElements() {
     const callback = () => {
-      if (!this.isVariantNew()) {
+      if (!this.isVariantModern()) {
         return;
       }
 
@@ -6196,7 +6218,7 @@ class ElementController {
           }
 
           const recommendationsElements =
-            NewUiElementLocator.getRecommendationsElements(this.player);
+            ModernElementLocator.getRecommendationsElements(this.player);
           if (!recommendationsElements) return;
 
           const { state, recommendationsButton, hideRecommendationsButton } =
@@ -6235,18 +6257,18 @@ class ElementController {
     };
 
     this.runFeatureWhenVariantResolved(
-      "markNewUiRecommendationsElements",
+      "markModernRecommendationsElements",
       callback
     );
   }
 
-  markNewUiOverlayBottomLeftContainer(options = getDefaultOptions()) {
+  markModernOverlayBottomLeftContainer(options = getDefaultOptions()) {
     if (!options.showVideoResolution_xhook) {
       return;
     }
 
     const callback = () => {
-      if (!this.isVariantNew()) {
+      if (!this.isVariantModern()) {
         return;
       }
 
@@ -6267,7 +6289,7 @@ class ElementController {
           }
 
           const bottomLeftContainer =
-            NewUiElementLocator.getOverlayBottomLeftContainer(this.player);
+            ModernElementLocator.getOverlayBottomLeftContainer(this.player);
           if (!bottomLeftContainer) return;
 
           bottomLeftContainer.dataset.nextupExtRole = "bottom-left-container";
@@ -6290,14 +6312,14 @@ class ElementController {
     };
 
     this.runFeatureWhenVariantResolved(
-      "markNewUiOverlayBottomLeftContainer",
+      "markModernOverlayBottomLeftContainer",
       callback
     );
   }
 
-  observeNewUiOverlayState(options = getDefaultOptions()) {
-    this.runFeatureWhenVariantResolved("observeNewUiOverlayState", () => {
-      if (!this.isVariantNew()) {
+  observeModernOverlayState(options = getDefaultOptions()) {
+    this.runFeatureWhenVariantResolved("observeModernOverlayState", () => {
+      if (!this.isVariantModern()) {
         return;
       }
 
@@ -6447,8 +6469,8 @@ class ElementController {
     this.runFeatureWhenVariantResolved("hideSkipIntroBtn", () => {
       if (this.isVariantLegacy()) {
         this.hideLegacySkipIntroBtn(options);
-      } else if (this.isVariantNew()) {
-        this.hideNewUiSkipIntroBtn(options);
+      } else if (this.isVariantModern()) {
+        this.hideModernSkipIntroBtn(options);
       }
     });
   }
@@ -6507,7 +6529,7 @@ class ElementController {
     });
   }
 
-  hideNewUiSkipIntroBtn(options = getDefaultOptions()) {
+  hideModernSkipIntroBtn(options = getDefaultOptions()) {
     const renderStyle = () => {
       const hiddenSelectors =
         PrimeVideoTextRepository.generateSkipIntroButtonSelectors(this.player);
@@ -6525,7 +6547,7 @@ class ElementController {
           visibility: visible !important;
         }
       `;
-      upsertStyle(css, `ext-hideNewUiSkipIntroBtn-${this.player.id}`);
+      upsertStyle(css, `ext-hideModernSkipIntroBtn-${this.player.id}`);
     };
 
     renderStyle();
@@ -6607,7 +6629,7 @@ class ElementController {
     this.runFeatureWhenVariantResolved("hideNextupCard", () => {
       this.hideNextupCardByCss();
       this.setupClassicNextupBehavior(options, this.isVariantLegacy());
-      if (this.isVariantNew()) {
+      if (this.isVariantModern()) {
         this.setupModernNextupBehavior(options);
       }
     });
@@ -6760,8 +6782,8 @@ class ElementController {
     this.runFeatureWhenVariantResolved("hideReactions", () => {
       if (this.isVariantLegacy()) {
         this.hideLegacyReactions(options);
-      } else if (this.isVariantNew()) {
-        this.hideNewUiReactions(options);
+      } else if (this.isVariantModern()) {
+        this.hideModernReactions(options);
       }
     });
   }
@@ -6831,7 +6853,7 @@ class ElementController {
     }).observe(this.player, OBSERVER_CONFIG);
   }
 
-  hideNewUiReactions(options = getDefaultOptions()) {
+  hideModernReactions(options = getDefaultOptions()) {
     const renderStyle = () => {
       const hiddenSelectors =
         PrimeVideoTextRepository.generateReactionsContainerSelectors(
@@ -6851,7 +6873,7 @@ class ElementController {
           visibility: visible !important;
         }
         `;
-      upsertStyle(css, `ext-hideNewUiReactions-${this.player.id}`);
+      upsertStyle(css, `ext-hideModernReactions-${this.player.id}`);
     };
 
     renderStyle();
@@ -6868,8 +6890,8 @@ class ElementController {
     }
     if (this.isVariantLegacy()) {
       this.hideLegacyRecommendations(options);
-    } else if (this.isVariantNew()) {
-      this.hideNewUiRecommendations(options);
+    } else if (this.isVariantModern()) {
+      this.hideModernRecommendations(options);
     }
   }
 
@@ -6986,7 +7008,7 @@ class ElementController {
     }).observe(targetContainer, OBSERVER_CONFIG);
   }
 
-  hideNewUiRecommendations(options = getDefaultOptions()) {
+  hideModernRecommendations(options = getDefaultOptions()) {
     const expandRecommendationsButtonSelector =
       "[data-nextup-ext-role='expand-recommendations-button']";
     const recommendationsButtonSelector =
@@ -7012,7 +7034,7 @@ class ElementController {
           display: none !important;
         }
       `;
-      addStyle(css, "ext-hideNewUiRecommendations");
+      addStyle(css, "ext-hideModernRecommendations");
     };
 
     renderStyle();
@@ -7161,8 +7183,8 @@ class ElementController {
     this.runFeatureWhenVariantResolved("preventsDarkening", () => {
       if (this.isVariantLegacy()) {
         this.preventsLegacyDarkening(options);
-      } else if (this.isVariantNew()) {
-        this.preventsNewUiDarkening(options);
+      } else if (this.isVariantModern()) {
+        this.preventsModernDarkening(options);
       }
     });
   }
@@ -7321,7 +7343,7 @@ class ElementController {
     }
   }
 
-  preventsNewUiDarkening(options = getDefaultOptions()) {
+  preventsModernDarkening(options = getDefaultOptions()) {
     if (!document.querySelector("#ext-preventsDarkening")) {
       // .feqqns3 - Darkening overlay for the top area
       // .f10znfo1 - Darkening overlay for the bottom area
@@ -7843,7 +7865,7 @@ class ElementController {
 
       let isReady = false;
       for (const cloneImg of cloneButton.querySelectorAll("img")) {
-        if (isNewUiSettingsIcon(cloneImg)) {
+        if (isModernSettingsIcon(cloneImg)) {
           cloneImg.setAttribute("src", closeButtonImgDataUrl);
           isReady = true;
           break;
@@ -7885,7 +7907,7 @@ class ElementController {
     });
 
     this.runFeatureWhenVariantResolved("addVideoCloseButtonToTopRight", () => {
-      if (this.isVariantNew()) {
+      if (this.isVariantModern()) {
         observer.observe(this.player, OBSERVER_CONFIG);
       }
     });
@@ -8097,7 +8119,7 @@ class ElementController {
       }
     };
 
-    const hideNewUiEpisodeTitle = () => {
+    const hideModernEpisodeTitle = () => {
       if (!options.hideEpisodeTitle) {
         return;
       }
@@ -8118,7 +8140,7 @@ class ElementController {
       }
     };
 
-    const hideNewUiCloseButton = () => {
+    const hideModernCloseButton = () => {
       if (!options.hideCloseButton) {
         return;
       }
@@ -8162,7 +8184,7 @@ class ElementController {
       }
     };
 
-    const hideNewUiVariousButtonsInTopRight = () => {
+    const hideModernVariousButtonsInTopRight = () => {
       if (!options.hideVariousButtonsInTopRight) {
         return;
       }
@@ -8218,7 +8240,7 @@ class ElementController {
       }
     };
 
-    const hideNewUiSeekBar = () => {
+    const hideModernSeekBar = () => {
       if (!options.hideSeekBar) {
         return;
       }
@@ -8260,7 +8282,7 @@ class ElementController {
       }
     };
 
-    const hideNewUiPlaybackTime = () => {
+    const hideModernPlaybackTime = () => {
       if (!options.hidePlaybackTime) {
         return;
       }
@@ -8322,7 +8344,7 @@ class ElementController {
       }
     };
 
-    const hideNewUiCenterButtons = () => {
+    const hideModernCenterButtons = () => {
       if (!options.hideCenterButtons) {
         return;
       }
@@ -8360,7 +8382,7 @@ class ElementController {
       }
     };
 
-    const hideNewUiNextEpisodeButton = () => {
+    const hideModernNextEpisodeButton = () => {
       if (!options.hideNextEpisodeButton) {
         return;
       }
@@ -8394,7 +8416,7 @@ class ElementController {
       }
     };
 
-    const tweakHideNewUiSkipIntroButton = () => {
+    const tweakHideModernSkipIntroButton = () => {
       if (!options.hideSkipIntroBtn || !options.tweakHideSkipIntroButton) {
         return;
       }
@@ -8431,7 +8453,7 @@ class ElementController {
       }
     };
 
-    const tweakShowNewUiVideoResolutionInfo = () => {
+    const tweakShowModernVideoResolutionInfo = () => {
       if (
         !options.showVideoResolution_xhook ||
         !options.tweakShowVideoResolutionInfo
@@ -8476,18 +8498,18 @@ class ElementController {
           tweakShowLegacyVideoResolutionInfo,
         ];
         runHideFns(fnList);
-      } else if (this.isVariantNew()) {
+      } else if (this.isVariantModern()) {
         const fnList = [
           hideTitle,
-          hideNewUiEpisodeTitle,
-          hideNewUiCloseButton,
-          hideNewUiVariousButtonsInTopRight,
-          hideNewUiSeekBar,
-          hideNewUiPlaybackTime,
-          hideNewUiCenterButtons,
-          hideNewUiNextEpisodeButton,
-          tweakHideNewUiSkipIntroButton,
-          tweakShowNewUiVideoResolutionInfo,
+          hideModernEpisodeTitle,
+          hideModernCloseButton,
+          hideModernVariousButtonsInTopRight,
+          hideModernSeekBar,
+          hideModernPlaybackTime,
+          hideModernCenterButtons,
+          hideModernNextEpisodeButton,
+          tweakHideModernSkipIntroButton,
+          tweakShowModernVideoResolutionInfo,
         ];
         runHideFns(fnList);
         const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
@@ -8498,53 +8520,56 @@ class ElementController {
     });
   }
 
-  adjustNewUiResolutionInfoStyle(options = getDefaultOptions()) {
+  adjustModernResolutionInfoStyle(options = getDefaultOptions()) {
     if (!options.showVideoResolution_xhook) {
       return;
     }
 
-    this.runFeatureWhenVariantResolved("adjustNewUiResolutionInfoStyle", () => {
-      if (!this.isVariantNew()) {
-        return;
-      }
-
-      const adjustStyle = () => {
-        const optBtnImg = this.player.querySelector(
-          ".nextup-ext-opt-btn-container img"
-        );
-        if (!optBtnImg) return;
-
-        const computedStyle = getComputedStyle(optBtnImg);
-        const width = computedStyle.width;
-        if (!width) return;
-
-        let num = parseFloat(width);
-        if (num === 0 || !Number.isFinite(num)) {
-          return;
-        }
-        if (num < 10) {
+    this.runFeatureWhenVariantResolved(
+      "adjustModernResolutionInfoStyle",
+      () => {
+        if (!this.isVariantModern()) {
           return;
         }
 
-        const fontSize = num - 5 + "px";
-        const css = `
+        const adjustStyle = () => {
+          const optBtnImg = this.player.querySelector(
+            ".nextup-ext-opt-btn-container img"
+          );
+          if (!optBtnImg) return;
+
+          const computedStyle = getComputedStyle(optBtnImg);
+          const width = computedStyle.width;
+          if (!width) return;
+
+          let num = parseFloat(width);
+          if (num === 0 || !Number.isFinite(num)) {
+            return;
+          }
+          if (num < 10) {
+            return;
+          }
+
+          const fontSize = num - 5 + "px";
+          const css = `
           [data-nextup-ext-role="resolution-info"] {
             font-size: ${fontSize}
           }
         `;
-        upsertStyle(css, "ext-adjustNewUiResolutionInfoStyle");
-      };
+          upsertStyle(css, "ext-adjustModernResolutionInfoStyle");
+        };
 
-      adjustStyle();
-      new MutationObserver(adjustStyle).observe(this.player, {
-        attributes: true,
-        attributeFilter: ["data-nextup-ext-overlay-visible"],
-      });
-
-      window.addEventListener("resize", () => {
         adjustStyle();
-      });
-    });
+        new MutationObserver(adjustStyle).observe(this.player, {
+          attributes: true,
+          attributeFilter: ["data-nextup-ext-overlay-visible"],
+        });
+
+        window.addEventListener("resize", () => {
+          adjustStyle();
+        });
+      }
+    );
   }
 
   forcePlayNextEpisode(options = getDefaultOptions()) {
@@ -8554,8 +8579,8 @@ class ElementController {
     this.runFeatureWhenVariantResolved("forcePlayNextEpisode", () => {
       if (this.isVariantLegacy()) {
         this.forcePlayNextEpisodeLegacy(options);
-      } else if (this.isVariantNew()) {
-        this.forcePlayNextEpisodeNewUi(options);
+      } else if (this.isVariantModern()) {
+        this.forcePlayNextEpisodeModern(options);
       }
     });
   }
@@ -8798,7 +8823,7 @@ class ElementController {
     });
   }
 
-  forcePlayNextEpisodeNewUi(options = getDefaultOptions()) {
+  forcePlayNextEpisodeModern(options = getDefaultOptions()) {
     let titleText = null;
     let episodeTitle = null;
     let videoSrc = null;
@@ -9013,7 +9038,7 @@ class ElementController {
 
     const afterVideoOpen = () => {
       delete this.player.dataset.nextupExtVideoInfo;
-      this.forcePlayNextEpisodeNewUi(options);
+      this.forcePlayNextEpisodeModern(options);
     };
 
     let videoSrcObserver;
@@ -9169,25 +9194,25 @@ const main = async () => {
         observer.disconnect();
 
         try {
-          controller.markNewUiNextUpElements();
+          controller.markModernNextUpElements();
         } catch (e) {
           console.log(e);
         }
 
         try {
-          controller.markNewUiReactionsFallback();
+          controller.markModernReactionsFallback();
         } catch (e) {
           console.log(e);
         }
 
         try {
-          controller.markNewUiRecommendationsElements();
+          controller.markModernRecommendationsElements();
         } catch (e) {
           console.log(e);
         }
 
         try {
-          controller.markNewUiOverlayBottomLeftContainer(options);
+          controller.markModernOverlayBottomLeftContainer(options);
         } catch (e) {
           console.log(e);
         }
@@ -9275,7 +9300,7 @@ const main = async () => {
         }
 
         try {
-          controller.adjustNewUiResolutionInfoStyle(options);
+          controller.adjustModernResolutionInfoStyle(options);
         } catch (e) {
           console.log(e);
         }
