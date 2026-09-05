@@ -2140,7 +2140,7 @@ const adjustOptionDialogByPlayerVariant = (playerVariant) => {
     return;
   }
 
-  if (playerVariant === "new") {
+  if (playerVariant.includes("modern-")) {
     const messages = createOptionMessages();
 
     const preventsDarkeningNextup = getOptionDialogItemContainer(
@@ -2198,12 +2198,12 @@ const adjustOptionDialogByCapabilities = (playerController) => {
   if (!optDialog) {
     return;
   }
-  const isVariantLegacy = playerController.isVariantLegacy();
+  const isVariantModern = playerController.isVariantModern();
 
   const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
     "p[data-msg-id='showReactionsOnOverlay']"
   );
-  if (!isVariantLegacy) {
+  if (isVariantModern) {
     hideOptionDialogItem(showReactionsOnOverlay_Tooltips[0]);
     hideOptionDialogItem(showReactionsOnOverlay_Tooltips[1]);
   }
@@ -2211,7 +2211,7 @@ const adjustOptionDialogByCapabilities = (playerController) => {
   setTimeout(() => {
     // It seems that LegacyUi requires a wait of a few seconds for supportsShowNextupOnOverlay().
     // To ensure consistency in the code, we've set it up here so that even Modern waits a few seconds.
-    if (!isVariantLegacy) {
+    if (isVariantModern) {
       if (!playerController.supportsShowNextupOnOverlay()) {
         const showNextup = getOptionDialogItemContainer("show-nextup");
         hideOptionDialogItem(showNextup);
