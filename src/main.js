@@ -7401,8 +7401,9 @@ class ElementController {
           [data-nextup-ext-role="resolution-info"],
           .next-up-ext-video-close-button-container .tooltip,
           .atvwebplayersdk-nextupcard-title,
-          .atvwebplayersdk-nextupcardhide-button
-          {
+          .atvwebplayersdk-nextupcardhide-button,
+          .atvwebplayersdk-top-left-regulatory-overlay span,
+          .atvwebplayersdk-top-left-regulatory-overlay div {
             paint-order: stroke fill;
             -webkit-text-stroke: 0.07em black;
             font-weight: bold !important;
