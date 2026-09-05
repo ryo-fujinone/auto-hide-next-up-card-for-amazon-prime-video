@@ -7157,11 +7157,11 @@ class ElementController {
     }
     if (!document.querySelector("#ext-hidePlaybackStartNotices")) {
       const css = `
-        /* Legacy UI*/
+        /* Legacy*/
         .atvwebplayersdk-regulatory-overlay {
           display: none !important;
         }
-        /* New UI*/
+        /* Modern v1*/
         .atvwebplayersdk-maturity-ratings {
           display: none !important;
         }
@@ -7169,6 +7169,13 @@ class ElementController {
           display: none !important;
         }
         .dv-player-fullscreen:not([data-nextup-ext-overlay-visible='true']) .atvwebplayersdk-player-container:has(.atvwebplayersdk-maturity-ratings) .feqqns3 {
+          display: none !important;
+        }
+        /* Modern v2*/
+        .atvwebplayersdk-top-left-regulatory-overlay {
+          display: none !important;
+        }
+        .dv-player-fullscreen:not([data-nextup-ext-overlay-visible='true']) .atvwebplayersdk-player-container:has(.atvwebplayersdk-top-left-regulatory-overlay) .feqqns3 {
           display: none !important;
         }
       `;
