@@ -2199,6 +2199,7 @@ const adjustOptionDialogByCapabilities = (playerController) => {
     return;
   }
   const isVariantModern = playerController.isVariantModern();
+  const isVariantModernV2 = playerController.isVariantModernV2();
 
   const showReactionsOnOverlay_Tooltips = optDialog.querySelectorAll(
     "p[data-msg-id='showReactionsOnOverlay']"
@@ -2217,10 +2218,14 @@ const adjustOptionDialogByCapabilities = (playerController) => {
         hideOptionDialogItem(showNextup);
       }
 
-      if (!playerController.supportsTemporarilyDisableOverlay()) {
+      if (
+        !playerController.supportsTemporarilyDisableOverlay() ||
+        isVariantModernV2
+      ) {
         const temporarilyDisableOverlay = getOptionDialogItemContainer(
           "temporarily-disable-overlay"
         );
+        hideOptionDialogItem(temporarilyDisableOverlay);
       }
 
       if (!playerController.supportsClickNextupBeforeVideoEnds()) {
@@ -6666,10 +6671,16 @@ class ElementController {
         }
 
         const video = this.player.querySelector("video");
+        const hide = () => {
+          if (!this.isVariantModernV2()) {
+            this.temporarilyDisableOverlay(options, 5000);
+          }
+          hideButton.click();
+          console.log("Next up - hideButton clicked");
+        };
         if (!video) {
           try {
-            this.temporarilyDisableOverlay(options, 5000);
-            hideButton.click();
+            hide();
           } catch (e) {
             console.log(e);
           }
@@ -6680,8 +6691,7 @@ class ElementController {
             const currentTime = video.currentTime;
             const duration = video.duration;
             if (duration - currentTime >= 6) {
-              this.temporarilyDisableOverlay(options, 5000);
-              hideButton.click();
+              hide();
             }
           } catch (e) {
             console.log(e);
