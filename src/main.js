@@ -4979,7 +4979,7 @@ class PrimeVideoTextRepository {
     });
     return reactionsAriaLabelPairs
       .map((pair) => {
-        return `#${player.id} div[style*="grid-area"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"]) div`;
+        return `#${player.id} div[data-nextup-ext-role="reactions"]:has(button[aria-label="${pair[0]}"]):has(button[aria-label="${pair[1]}"]) div`;
       })
       .join(",\n");
   }
