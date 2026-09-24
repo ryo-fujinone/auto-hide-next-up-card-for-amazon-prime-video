@@ -32,6 +32,7 @@ const getDefaultOptions = () => {
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
     clickNextupBeforeVideoEnds: false,
+    clickNextEpisodeButtonBeforeVideoEnds: false,
     hideReactions: true,
     showReactionsOnOverlay: false,
     hideRecommendations: true,
@@ -913,6 +914,8 @@ const createOptionMessages = () => {
     clickNextupBeforeVideoEnds_Tooltip: `自動再生が有効な場合のNext upのタイマーの挙動に問題があり、自動再生が期待通りに動作しないことがあります。
       このオプションを有効にすると、動画終了の数秒前に表示されるNext upを、動画終了の1秒前に自動クリックします。
       動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する」を試してみてください。`,
+    clickNextEpisodeButtonBeforeVideoEnds:
+      "動画終了直前に次のエピソードボタンを自動クリックする",
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
@@ -1026,10 +1029,12 @@ const createOptionMessages = () => {
     showNextupOnOverlay_Tooltip:
       "This works if autoplay is disabled or if the next up card's hide button is not clicked automatically.",
     clickNextupBeforeVideoEnds:
-      "Automatically click next up just before the video ends",
+      "Automatically click the next up just before the video ends",
     clickNextupBeforeVideoEnds_Tooltip: `There is a problem with the Next up card timer behavior when auto-play is enabled, so auto-play may not work as expected.
       When this option is enabled, the Next up card that appears a few seconds before the video ends will be clicked automatically 1 second before the end of the video.
       If you want to watch the video all the way to the end, leave this option disabled and try "Experimental: Play the next episode if the video is automatically closed at the end of the video" instead.`,
+    clickNextEpisodeButtonBeforeVideoEnds:
+      "Automatically click the next episode button just before the video ends",
     hideReactions: "Hide reactions (like/not for me)",
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
@@ -1242,6 +1247,17 @@ const createOptionDialog = async () => {
                   )}" data-msg-id="clickNextupBeforeVideoEnds"></p>
               </div>
 
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="click-next-episode-button-before-video-ends" name="click-next-episode-button-before-video-ends" ${
+                        options.clickNextEpisodeButtonBeforeVideoEnds
+                          ? "checked"
+                          : ""
+                      } />
+                      <p>${messages.clickNextEpisodeButtonBeforeVideoEnds}</p>
+                  </label>
+              </div>
+              
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
                       <input type="checkbox" id="hide-reactions" name="hide-reactions" ${
@@ -1985,6 +2001,11 @@ const createOptionDialog = async () => {
           break;
         case "click-nextup-before-video-ends":
           await saveOptions({ clickNextupBeforeVideoEnds: e.target.checked });
+          break;
+        case "click-next-episode-button-before-video-ends":
+          await saveOptions({
+            clickNextEpisodeButtonBeforeVideoEnds: e.target.checked,
+          });
           break;
         case "hide-reactions":
           await saveOptions({ hideReactions: e.target.checked });
@@ -6682,6 +6703,7 @@ class ElementController {
           }
           hideButton.click();
           console.log("Next up - hideButton clicked");
+          return true;
         };
         if (!video) {
           try {
@@ -6690,13 +6712,14 @@ class ElementController {
             console.log(e);
           }
         } else {
-          // Pressing the hide button on the next up card that appears a few seconds before the end of the video seems to cancel autoplay.
-          // To avoid closing the video, the decision to click the hide button is based on the time remaining in the video.
           try {
             const currentTime = video.currentTime;
             const duration = video.duration;
             if (duration - currentTime >= 6) {
-              hide();
+              const hidden = hide();
+              if (hidden) {
+                this.clickNextEpisodeButtonBeforeVideoEnds(options);
+              }
             }
           } catch (e) {
             console.log(e);
@@ -6787,6 +6810,67 @@ class ElementController {
     const unsubscribe = PrimeVideoTextRepository.subscribe(() => {
       control();
       unsubscribe();
+    });
+  }
+
+  clickNextEpisodeButtonBeforeVideoEnds(options = getDefaultOptions()) {
+    if (!options.clickNextEpisodeButtonBeforeVideoEnds) {
+      return;
+    }
+    const video = getVisibleVideo();
+    if (!video) {
+      return;
+    }
+    let videoSrc = null;
+
+    const dispatchKeyboardEvent = () => {
+      const event = new KeyboardEvent("keydown", { keyCode: 9 });
+      this.player.dispatchEvent(event);
+    };
+
+    let canDispatchKeyboardEvent = true;
+
+    const checkRemainingTime = () => {
+      if (!Number.isFinite(video.duration)) {
+        return;
+      }
+      try {
+        const remaining = Math.max(0, video.duration - video.currentTime);
+        if (remaining > 4) {
+          canDispatchKeyboardEvent = true;
+        }
+        if (remaining <= 3 && canDispatchKeyboardEvent) {
+          dispatchKeyboardEvent();
+          canDispatchKeyboardEvent = false;
+          temporarilyDisableOverlay(this.player, 2000);
+        }
+        if (remaining <= 1) {
+          const nextEpisodeButton = this.player.querySelector(
+            ".atvwebplayersdk-nexttitle-button, #atvwebplayersdk-next-episode-button"
+          );
+          if (nextEpisodeButton) {
+            nextEpisodeButton.click();
+            console.log("nextEpisodeButton clicked");
+            video.removeEventListener("timeupdate", checkRemainingTime);
+          }
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    video.addEventListener("timeupdate", checkRemainingTime);
+
+    const videoSrcObserver = new MutationObserver(() => {
+      const src = video.src;
+      if (src && videoSrc !== src) {
+        videoSrc = src;
+        videoSrcObserver.disconnect();
+        video.removeEventListener("timeupdate", checkRemainingTime);
+      }
+    });
+    videoSrcObserver.observe(video, {
+      attributes: true,
+      attributeFilter: ["src"],
     });
   }
 
