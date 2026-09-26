@@ -33,6 +33,7 @@ const getDefaultOptions = () => {
     showNextupOnOverlay: false,
     clickNextupBeforeVideoEnds: false,
     clickNextEpisodeButtonBeforeVideoEnds: false,
+    tryPlayNextEpisodeIfAutoplayFails: false,
     hideReactions: true,
     showReactionsOnOverlay: false,
     hideRecommendations: true,
@@ -916,6 +917,8 @@ const createOptionMessages = () => {
       動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する」を試してみてください。`,
     clickNextEpisodeButtonBeforeVideoEnds:
       "動画終了直前に次のエピソードボタンを自動クリックする",
+    tryPlayNextEpisodeIfAutoplayFails:
+      "実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる",
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
@@ -1035,6 +1038,8 @@ const createOptionMessages = () => {
       If you want to watch the video all the way to the end, leave this option disabled and try "Experimental: Play the next episode if the video is automatically closed at the end of the video" instead.`,
     clickNextEpisodeButtonBeforeVideoEnds:
       "Automatically click the next episode button just before the video ends",
+    tryPlayNextEpisodeIfAutoplayFails:
+      "Experimental: Try to play the next episode if autoplay fails",
     hideReactions: "Hide reactions (like/not for me)",
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
@@ -1255,6 +1260,17 @@ const createOptionDialog = async () => {
                           : ""
                       } />
                       <p>${messages.clickNextEpisodeButtonBeforeVideoEnds}</p>
+                  </label>
+              </div>
+
+              <div class="nextup-ext-opt-dialog-item-container">
+                  <label class="indent1">
+                      <input type="checkbox" id="try-play-next-episode-if-autoplay-fails" name="click-next-episode-button-before-video-ends" ${
+                        options.tryPlayNextEpisodeIfAutoplayFails
+                          ? "checked"
+                          : ""
+                      } />
+                      <p>${messages.tryPlayNextEpisodeIfAutoplayFails}</p>
                   </label>
               </div>
               
@@ -2005,6 +2021,11 @@ const createOptionDialog = async () => {
         case "click-next-episode-button-before-video-ends":
           await saveOptions({
             clickNextEpisodeButtonBeforeVideoEnds: e.target.checked,
+          });
+          break;
+        case "try-play-next-episode-if-autoplay-fails":
+          await saveOptions({
+            tryPlayNextEpisodeIfAutoplayFails: e.target.checked,
           });
           break;
         case "hide-reactions":
@@ -5822,6 +5843,7 @@ class ElementController {
     this.centerOverlaysWrapperIsMarked = false;
     this.playerVariant = "unknown";
     this.pendingTasks = new Map();
+    this.canTryRestorePlayer = false;
   }
 
   hasResolvedVariant() {
@@ -6719,6 +6741,11 @@ class ElementController {
               const hidden = hide();
               if (hidden) {
                 this.clickNextEpisodeButtonBeforeVideoEnds(options);
+                if (options.tryPlayNextEpisodeIfAutoplayFails) {
+                  this.canTryRestorePlayer = true;
+                }
+              } else {
+                this.canTryRestorePlayer = false;
               }
             }
           } catch (e) {
@@ -6872,6 +6899,241 @@ class ElementController {
       attributes: true,
       attributeFilter: ["src"],
     });
+  }
+
+  tryPlayNextEpisodeIfAutoplayFails(options = getDefaultOptions()) {
+    if (!options.hideNextup || !options.tryPlayNextEpisodeIfAutoplayFails) {
+      return;
+    }
+
+    const startSession = () => {
+      const video = getVisibleVideo(this.player);
+      if (!video) {
+        return;
+      }
+
+      let videoSrc = video.src;
+
+      let playerClosed = false;
+      let videoClosedByUser = false;
+      let escapePressed = false;
+      let finished = false;
+      let restoreTimeout = null;
+
+      const abortController = new AbortController();
+      const { signal } = abortController;
+
+      let closeButtonObserver;
+      let playerStateObserver;
+      let videoSrcObserver;
+
+      const cleanup = () => {
+        closeButtonObserver?.disconnect();
+        playerStateObserver?.disconnect();
+        videoSrcObserver?.disconnect();
+
+        abortController.abort();
+
+        if (restoreTimeout) {
+          clearTimeout(restoreTimeout);
+          restoreTimeout = null;
+        }
+      };
+
+      const finishSession = () => {
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+        this.canTryRestorePlayer = false;
+        cleanup();
+      };
+
+      const restartSession = () => {
+        finishSession();
+        setTimeout(() => {
+          startSession();
+        }, 2000);
+      };
+
+      const restorePlayer = () => {
+        if (!this.canTryRestorePlayer) {
+          return;
+        }
+        if (!playerClosed) {
+          return;
+        }
+        if (videoClosedByUser || escapePressed) {
+          return;
+        }
+
+        console.log(
+          "tryPlayNextEpisodeIfAutoplayFails:",
+          "Trying to restore player"
+        );
+
+        finishSession();
+
+        this.player.classList.add("dv-player-fullscreen");
+
+        setTimeout(() => {
+          if (this.player.checkVisibility()) {
+            console.log(
+              "tryPlayNextEpisodeIfAutoplayFails:",
+              "Trying to start the video"
+            );
+            const playVideoInterval = setInterval(() => {
+              playVideo();
+            }, 500);
+
+            setTimeout(() => {
+              clearInterval(playVideoInterval);
+            }, 3000);
+          }
+        }, 1000);
+
+        // Start a monitoring session on a new episode
+        setTimeout(() => {
+          startSession();
+        }, 1000);
+      };
+
+      const closeButtonClicked = () => {
+        videoClosedByUser = true;
+        this.canTryRestorePlayer = false;
+      };
+
+      closeButtonObserver = new MutationObserver(() => {
+        const modernSelector =
+          PrimeVideoTextRepository.generateCloseButtonSelectors(this.player);
+        const legacySelector = ".atvwebplayersdk-playerclose-button";
+
+        const modernCloseButton = this.player.querySelector(modernSelector);
+        const legacyCloseButton = this.player.querySelector(legacySelector);
+
+        const closeButton = modernCloseButton ?? legacyCloseButton;
+        if (!closeButton) {
+          return;
+        }
+
+        closeButton.addEventListener("click", closeButtonClicked, {
+          signal,
+        });
+      });
+
+      closeButtonObserver.observe(this.player, {
+        ...OBSERVER_CONFIG,
+        attributes: true,
+      });
+
+      const escPressed = (e) => {
+        if (e.key !== "Escape") {
+          return;
+        }
+
+        escapePressed = true;
+
+        setTimeout(() => {
+          if (!this.player.classList.contains("dv-player-fullscreen")) {
+            videoClosedByUser = true;
+            this.canTryRestorePlayer = false;
+          } else {
+            escapePressed = false;
+          }
+        }, 500);
+      };
+
+      document.body.addEventListener("keydown", escPressed, { signal });
+
+      playerStateObserver = new MutationObserver(() => {
+        const isOpen = this.player.classList.contains("dv-player-fullscreen");
+        if (isOpen) {
+          return;
+        }
+
+        playerClosed = true;
+
+        restoreTimeout = setTimeout(() => {
+          let mes = "Timed out waiting for a new video src";
+          if (videoClosedByUser) {
+            mes = "The video player was closed by the user";
+          }
+          console.log("tryPlayNextEpisodeIfAutoplayFails:", mes);
+
+          finishSession();
+
+          // Wait for the user to open the video player.
+          waitForPlayerOpen();
+        }, 5000);
+      });
+
+      playerStateObserver.observe(this.player, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+
+      videoSrcObserver = new MutationObserver(() => {
+        const newVideoSrc = video.src;
+
+        if (!videoSrc || videoSrc === "") {
+          // Account for the delay between the video player opening and the video.src being set.
+          videoSrc = newVideoSrc;
+          return;
+        }
+
+        if (!newVideoSrc || newVideoSrc === videoSrc) {
+          return;
+        }
+
+        console.log(
+          "tryPlayNextEpisodeIfAutoplayFails:",
+          "Video src changed",
+          videoSrc,
+          "->",
+          newVideoSrc
+        );
+
+        if (this.player.classList.contains("dv-player-fullscreen")) {
+          console.log(
+            "tryPlayNextEpisodeIfAutoplayFails:",
+            "Whether autoplay worked or the user manually skipped to the next episode"
+          );
+          restartSession();
+          return;
+        }
+
+        restorePlayer();
+      });
+
+      videoSrcObserver.observe(video, {
+        attributes: true,
+        attributeFilter: ["src"],
+      });
+    };
+
+    const waitForPlayerOpen = () => {
+      if (this.player.classList.contains("dv-player-fullscreen")) {
+        startSession();
+        return;
+      }
+
+      const observer = new MutationObserver(() => {
+        if (!this.player.classList.contains("dv-player-fullscreen")) {
+          return;
+        }
+
+        observer.disconnect();
+        startSession();
+      });
+
+      observer.observe(this.player, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    };
+
+    startSession();
   }
 
   hideReactions(options = getDefaultOptions()) {
@@ -9414,6 +9676,12 @@ const main = async () => {
 
         try {
           controller.forcePlayNextEpisode(options);
+        } catch (e) {
+          console.log(e);
+        }
+
+        try {
+          controller.tryPlayNextEpisodeIfAutoplayFails(options);
         } catch (e) {
           console.log(e);
         }
