@@ -3363,7 +3363,7 @@ const runXhook = () => {
           );
           delete nextUp.carousel.carouselItems;
         } catch (e) {
-          console.log(e);
+          // console.log(e);
         }
         response.text = JSON.stringify(data);
       } catch (e) {
