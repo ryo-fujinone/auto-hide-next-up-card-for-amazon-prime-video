@@ -6721,9 +6721,9 @@ class ElementController {
 
     this.runFeatureWhenVariantResolved("hideNextupCard", () => {
       this.hideNextupCardByCss();
-      this.setupClassicNextupBehavior(options, this.isVariantLegacy());
+      this.setupClassicNextupHandling(options, this.isVariantLegacy());
       if (this.isVariantModern()) {
-        this.setupModernNextupBehavior(options);
+        this.setupModernV1NextupHandling(options);
       }
     });
   }
@@ -6740,7 +6740,7 @@ class ElementController {
     }
   }
 
-  setupClassicNextupBehavior(options, isVariantLegacy) {
+  setupClassicNextupHandling(options, isVariantLegacy) {
     new MutationObserver((_, outerObserver) => {
       const wrapper = this.player.querySelector(
         ".atvwebplayersdk-nextupcard-wrapper"
@@ -6863,7 +6863,7 @@ class ElementController {
     });
   }
 
-  setupModernNextupBehavior(options = getDefaultOptions()) {
+  setupModernV1NextupHandling(options = getDefaultOptions()) {
     const video = getVisibleVideo();
     const controller = new NextupController(this.player, video, options);
 
