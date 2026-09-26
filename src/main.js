@@ -936,6 +936,10 @@ const createOptionMessages = () => {
       動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる」または「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」を試してみてください。`,
     tryPlayNextEpisodeIfAutoplayFails:
       "実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる",
+    tryPlayNextEpisodeIfAutoplayFails_Tooltip: `Next upの非表示ボタンを自動クリックすると、自動再生がキャンセルされる場合があります。
+      このオプションを有効にすると、Next upの非表示ボタンを自動クリックした後、動画が自動的に閉じた場合に次のエピソードの再生を試みます。
+      このオプションで再生されるコンテンツが、必ず次のエピソードになるとは限りません。
+      このオプションが正常に動作しない場合は、「動画終了直前に次のエピソードボタンを自動クリックする」または「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」を試してみてください。`,
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
     showReactionsOnOverlay: "オーバーレイ表示が有効な時はReactionsを表示する",
     showReactionsOnOverlay_Tooltip:
@@ -1060,6 +1064,10 @@ const createOptionMessages = () => {
       If you want to watch the video all the way to the end, leave this option disabled and try either ”Experimental: Try to play the next episode if autoplay fails” or ”Experimental: Try to play the next episode if the video closes automatically”.`,
     tryPlayNextEpisodeIfAutoplayFails:
       "Experimental: Try to play the next episode if autoplay fails",
+    tryPlayNextEpisodeIfAutoplayFails_Tooltip: `Automatically clicking the Next up hide button may cancel autoplay.
+      When this option is enabled, the extension will try to play the next episode if the video closes automatically after the Next up hide button is clicked.
+      The content played by this option is not guaranteed to be the next episode.
+      If this option does not work properly, try either ”Automatically click the next episode button just before the video ends” or ”Experimental: Try to play the next episode if the video closes automatically”.`,
     hideReactions: "Hide reactions (like/not for me)",
     showReactionsOnOverlay: "Show Reactions when overlay display is enabled",
     showReactionsOnOverlay_Tooltip:
@@ -1296,6 +1304,10 @@ const createOptionDialog = async () => {
                       } />
                       <p>${messages.tryPlayNextEpisodeIfAutoplayFails}</p>
                   </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.tryPlayNextEpisodeIfAutoplayFails_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="tryPlayNextEpisodeIfAutoplayFails"></p>
               </div>
               
               <div class="nextup-ext-opt-dialog-item-container">
