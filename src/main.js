@@ -1279,7 +1279,7 @@ const createOptionDialog = async () => {
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label class="indent1">
-                      <input type="checkbox" id="try-play-next-episode-if-autoplay-fails" name="click-next-episode-button-before-video-ends" ${
+                      <input type="checkbox" id="try-play-next-episode-if-autoplay-fails" name="try-play-next-episode-if-autoplay-fails" ${
                         options.tryPlayNextEpisodeIfAutoplayFails
                           ? "checked"
                           : ""
