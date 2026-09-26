@@ -1032,7 +1032,9 @@ const createOptionMessages = () => {
     disableReactions: "Reactions（好き/好きではない）を無効にする",
     tryPlayNextEpisode:
       "実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる",
-    tryPlayNextEpisode_Tooltip: `この機能は自動再生の代替手段として機能します。\n
+    tryPlayNextEpisode_Tooltip: `動画が自動的に閉じた場合に、次のエピソードのIDを取得できていれば、そのエピソードのページへ移動して再生を試みます。
+      次のエピソードのIDを取得するために、Prime Videoの通信を監視します。
+      この機能によって次のエピソードへ移動する際は、ページが再読み込みされます。\n
       Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
       Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。`,
     close: "閉じる",
@@ -1161,9 +1163,11 @@ const createOptionMessages = () => {
     disableReactions: "Disable reactions (like/not for me)",
     tryPlayNextEpisode:
       "Experimental: Try to play the next episode if the video closes automatically",
-    tryPlayNextEpisode_Tooltip: `This feature functions as an alternative to autoplay.\n
-      For Chrome, you must allow [audio] permissions for the site.
-      For Firefox, you must allow the [Autoplay] permission for the site.`,
+    tryPlayNextEpisode_Tooltip: `If the video closes automatically and the next episode ID has been obtained, this feature attempts to open the next episode's page and start playback.
+      To obtain the next episode ID, this feature monitors Prime Video's network activity.
+      The page will be reloaded when this feature moves to the next episode.\n
+      On Chrome, you need to allow the [Sound] permission for the site.
+      On Firefox, you need to allow the [Autoplay] permission for the site.`,
     close: "Close",
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
