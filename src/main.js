@@ -32,7 +32,7 @@ const getDefaultOptions = () => {
     preventsDarkeningInConjunctionWithNextup: true,
     showNextupOnOverlay: false,
     clickNextupBeforeVideoEnds: false,
-    clickNextEpisodeButtonBeforeVideoEnds: false,
+    advanceToNextEpisodeBeforeVideoEnds: false,
     tryPlayNextEpisodeIfAutoplayFails: false,
     hideReactions: true,
     showReactionsOnOverlay: false,
@@ -1054,10 +1054,10 @@ const createOptionMessages = () => {
     clickNextupBeforeVideoEnds_Tooltip: `自動再生が有効な場合のNext upのタイマーの挙動に問題があり、自動再生が期待通りに動作しないことがあります。
       このオプションを有効にすると、動画終了の数秒前に表示されるNext upを、動画終了の1秒前に自動クリックします。
       動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」を試してみてください。`,
-    clickNextEpisodeButtonBeforeVideoEnds:
+    advanceToNextEpisodeBeforeVideoEnds:
       "動画終了直前に次のエピソードボタンを自動クリックする",
-    clickNextEpisodeButtonBeforeVideoEnds_Tooltip: `Next upの非表示ボタンを自動クリックすると、自動再生がキャンセルされる場合があります。
-      このオプションを有効にすると、動画終了の1秒前に「次のエピソード」ボタンを自動クリックします。
+    advanceToNextEpisodeBeforeVideoEnds_Tooltip: `Next upの非表示ボタンを自動クリックすると、自動再生がキャンセルされる場合があります。
+      このオプションを有効にすると、動画終了の1.5秒前に「次のエピソード」ボタンを自動クリックします。
       動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる」または「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」を試してみてください。`,
     tryPlayNextEpisodeIfAutoplayFails:
       "実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる",
@@ -1195,10 +1195,10 @@ const createOptionMessages = () => {
     clickNextupBeforeVideoEnds_Tooltip: `There is a problem with the Next up card timer behavior when auto-play is enabled, so auto-play may not work as expected.
       When this option is enabled, the Next up card that appears a few seconds before the video ends will be clicked automatically 1 second before the end of the video.
       If you want to watch the video all the way to the end, leave this option disabled and try ”Experimental: Try to play the next episode if the video closes automatically” instead.`,
-    clickNextEpisodeButtonBeforeVideoEnds:
+    advanceToNextEpisodeBeforeVideoEnds:
       "Automatically click the next episode button just before the video ends",
-    clickNextEpisodeButtonBeforeVideoEnds_Tooltip: `Automatically clicking the Next up hide button may cancel autoplay.
-      When this option is enabled, the ”Next episode” button will be clicked automatically 1 second before the video ends.
+    advanceToNextEpisodeBeforeVideoEnds_Tooltip: `Automatically clicking the Next up hide button may cancel autoplay.
+      When this option is enabled, the ”Next episode” button will be clicked automatically 1.5 second before the video ends.
       If you want to watch the video all the way to the end, leave this option disabled and try either ”Experimental: Try to play the next episode if autoplay fails” or ”Experimental: Try to play the next episode if the video closes automatically”.`,
     tryPlayNextEpisodeIfAutoplayFails:
       "Experimental: Try to play the next episode if autoplay fails",
@@ -1444,17 +1444,17 @@ const createOptionDialog = async () => {
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label class="indent1">
-                      <input type="checkbox" id="click-next-episode-button-before-video-ends" name="click-next-episode-button-before-video-ends" ${
-                        options.clickNextEpisodeButtonBeforeVideoEnds
+                      <input type="checkbox" id="advance-to-next-episode-before-video-ends" name="advance-to-next-episode-before-video-ends" ${
+                        options.advanceToNextEpisodeBeforeVideoEnds
                           ? "checked"
                           : ""
                       } />
-                      <p>${messages.clickNextEpisodeButtonBeforeVideoEnds}</p>
+                      <p>${messages.advanceToNextEpisodeBeforeVideoEnds}</p>
                   </label>
-                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.clickNextEpisodeButtonBeforeVideoEnds_Tooltip.replaceAll(
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.advanceToNextEpisodeBeforeVideoEnds_Tooltip.replaceAll(
                     regexForMultiineTooltips,
                     ""
-                  )}" data-msg-id="clickNextEpisodeButtonBeforeVideoEnds"></p>
+                  )}" data-msg-id="advanceToNextEpisodeBeforeVideoEnds"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
@@ -2252,9 +2252,9 @@ const createOptionDialog = async () => {
         case "click-nextup-before-video-ends":
           await saveOptions({ clickNextupBeforeVideoEnds: e.target.checked });
           break;
-        case "click-next-episode-button-before-video-ends":
+        case "advance-to-next-episode-before-video-ends":
           await saveOptions({
-            clickNextEpisodeButtonBeforeVideoEnds: e.target.checked,
+            advanceToNextEpisodeBeforeVideoEnds: e.target.checked,
           });
           break;
         case "try-play-next-episode-if-autoplay-fails":
@@ -6919,6 +6919,7 @@ class ElementController {
       if (this.isVariantModern()) {
         this.setupModernV1NextupHandling(options);
       }
+      this.advanceToNextEpisodeBeforeVideoEnds(options);
     });
   }
 
@@ -6974,7 +6975,6 @@ class ElementController {
             if (duration - currentTime >= 6) {
               const hidden = hide();
               if (hidden) {
-                this.clickNextEpisodeButtonBeforeVideoEnds(options);
                 if (options.tryPlayNextEpisodeIfAutoplayFails) {
                   this.canTryRestorePlayer = true;
                 }
@@ -7074,65 +7074,150 @@ class ElementController {
     });
   }
 
-  clickNextEpisodeButtonBeforeVideoEnds(options = getDefaultOptions()) {
-    if (!options.clickNextEpisodeButtonBeforeVideoEnds) {
+  advanceToNextEpisodeBeforeVideoEnds(options = getDefaultOptions()) {
+    if (!options.advanceToNextEpisodeBeforeVideoEnds) {
       return;
     }
-    const video = getVisibleVideo();
-    if (!video) {
-      return;
-    }
-    let videoSrc = null;
 
-    const dispatchKeyboardEvent = () => {
-      const event = new KeyboardEvent("keydown", { keyCode: 9 });
-      this.player.dispatchEvent(event);
-    };
-
-    let canDispatchKeyboardEvent = true;
-
-    const checkRemainingTime = () => {
-      if (!Number.isFinite(video.duration)) {
+    const startSession = () => {
+      const video = getVisibleVideo(this.player);
+      if (!video) {
         return;
       }
-      try {
-        const remaining = Math.max(0, video.duration - video.currentTime);
-        if (remaining > 4) {
-          canDispatchKeyboardEvent = true;
-        }
-        if (remaining <= 3 && canDispatchKeyboardEvent) {
-          dispatchKeyboardEvent();
-          canDispatchKeyboardEvent = false;
-          temporarilyDisableOverlay(this.player, 2000);
-        }
-        if (remaining <= 1) {
-          const nextEpisodeButton = this.player.querySelector(
-            ".atvwebplayersdk-nexttitle-button, #atvwebplayersdk-next-episode-button"
-          );
-          if (nextEpisodeButton) {
-            nextEpisodeButton.click();
-            console.log("nextEpisodeButton clicked");
-            video.removeEventListener("timeupdate", checkRemainingTime);
-          }
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    };
-    video.addEventListener("timeupdate", checkRemainingTime);
 
-    const videoSrcObserver = new MutationObserver(() => {
-      const src = video.src;
-      if (src && videoSrc !== src) {
-        videoSrc = src;
-        videoSrcObserver.disconnect();
+      let videoSrc = video.src;
+
+      const dispatchKeyboardEvent = () => {
+        const event = new KeyboardEvent("keydown", { keyCode: 9 });
+        this.player.dispatchEvent(event);
+      };
+
+      let canDispatchKeyboardEvent = true;
+
+      let checkRemainingTime;
+      let playerStateObserver;
+      let videoSrcObserver;
+
+      const cleanupSession = () => {
+        playerStateObserver?.disconnect();
+        videoSrcObserver?.disconnect();
         video.removeEventListener("timeupdate", checkRemainingTime);
+      };
+
+      checkRemainingTime = () => {
+        if (
+          video.paused ||
+          video.seeking ||
+          video.ended ||
+          !Number.isFinite(video.duration)
+        ) {
+          return;
+        }
+        try {
+          const remaining = Math.max(0, video.duration - video.currentTime);
+          if (remaining > 4) {
+            canDispatchKeyboardEvent = true;
+          }
+          if (remaining <= 3 && canDispatchKeyboardEvent) {
+            dispatchKeyboardEvent();
+            canDispatchKeyboardEvent = false;
+            temporarilyDisableOverlay(this.player, 2000);
+          }
+          if (remaining <= 1.5) {
+            const nextEpisodeButton = this.player.querySelector(
+              ".atvwebplayersdk-nexttitle-button, #atvwebplayersdk-next-episode-button"
+            );
+            const nextupButton = this.player.querySelector(
+              ".atvwebplayersdk-nextupcard-button, [data-nextup-ext-role='accept-nextup-button']"
+            );
+            if (nextEpisodeButton) {
+              nextEpisodeButton.click();
+              video.removeEventListener("timeupdate", checkRemainingTime);
+              console.log("nextEpisodeButton clicked");
+            } else if (nextupButton) {
+              // If autoplay is disabled
+              nextupButton.click();
+              video.removeEventListener("timeupdate", checkRemainingTime);
+              console.log("nextupButton clicked");
+            }
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      };
+      video.addEventListener("timeupdate", checkRemainingTime);
+
+      playerStateObserver = new MutationObserver(() => {
+        const isOpen = this.player.classList.contains("dv-player-fullscreen");
+        if (isOpen) {
+          return;
+        }
+
+        console.log(
+          "advanceToNextEpisodeBeforeVideoEnds:",
+          "The video player has closed"
+        );
+
+        cleanupSession();
+        waitForPlayerOpen();
+      });
+
+      playerStateObserver.observe(this.player, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+
+      videoSrcObserver = new MutationObserver(() => {
+        const newVideoSrc = video.src;
+
+        if (!videoSrc) {
+          videoSrc = newVideoSrc;
+          return;
+        }
+
+        if (!newVideoSrc || newVideoSrc === videoSrc) {
+          return;
+        }
+
+        console.log(
+          "advanceToNextEpisodeBeforeVideoEnds:",
+          "Video src changed",
+          videoSrc,
+          "->",
+          newVideoSrc
+        );
+
+        cleanupSession();
+        startSession();
+      });
+      videoSrcObserver.observe(video, {
+        attributes: true,
+        attributeFilter: ["src"],
+      });
+    };
+
+    const waitForPlayerOpen = () => {
+      if (this.player.classList.contains("dv-player-fullscreen")) {
+        startSession();
+        return;
       }
-    });
-    videoSrcObserver.observe(video, {
-      attributes: true,
-      attributeFilter: ["src"],
-    });
+
+      const observer = new MutationObserver(() => {
+        if (!this.player.classList.contains("dv-player-fullscreen")) {
+          return;
+        }
+
+        observer.disconnect();
+        startSession();
+      });
+
+      observer.observe(this.player, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    };
+
+    startSession();
   }
 
   tryPlayNextEpisodeIfAutoplayFails(options = getDefaultOptions()) {
