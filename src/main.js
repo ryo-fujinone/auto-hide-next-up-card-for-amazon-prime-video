@@ -1166,7 +1166,7 @@ const createOptionMessages = () => {
     noticeTitle: "Auto hide next up card for Amazon Prime Video からのお知らせ",
     hideNoticeItem: "このお知らせを今後表示しない",
     notice_autoplayBehaviorChange202609_Title:
-      "Prime Videoの自動再生について (2026/09/26)",
+      "Prime Videoの自動再生について (2026/09/27)",
     notice_autoplayBehaviorChange202609_body: `Prime Videoの仕様変更により、Next upを非表示にすると、動画終了後に次のエピソードへ自動的に移動しなくなる場合があります。
       従来のように次のエピソードへ自動的に移動したい場合は、以下のいずれかの機能を利用できます。
       - 「動画終了直前に次のエピソードボタンを自動クリックする」
@@ -1308,7 +1308,7 @@ const createOptionMessages = () => {
     noticeTitle: "Notice from Auto hide next up card for Amazon Prime Video",
     hideNoticeItem: "Don't show this notice again",
     notice_autoplayBehaviorChange202609_Title:
-      "About Prime Video Autoplay (2026/09/26)",
+      "About Prime Video Autoplay (2026/09/27)",
     notice_autoplayBehaviorChange202609_body: `Due to changes to Prime Video, hiding Next up may prevent Prime Video from automatically moving to the next episode after the video ends.
       If you would like to automatically move to the next episode as before, you can use one of the following features:
       - ”Automatically click the Next Episode button just before the video ends”
