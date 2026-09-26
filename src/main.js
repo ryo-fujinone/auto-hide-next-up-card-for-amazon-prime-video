@@ -9431,7 +9431,7 @@ class ElementController {
     };
     video?.addEventListener("timeupdate", remainingListener, { signal });
 
-    const afteVideorClose = () => {
+    const afterVideoClose = () => {
       if (videoInfoWatcher) {
         clearInterval(videoInfoWatcher);
       }
@@ -9463,7 +9463,7 @@ class ElementController {
         return;
       }
       videoCloseObserver.disconnect();
-      afteVideorClose();
+      afterVideoClose();
       playNextEpisode();
       videoOpenObserver.observe(this.player, {
         attributes: true,
@@ -9485,7 +9485,7 @@ class ElementController {
         console.log("Video src has changed (and probably the title too)");
         videoCloseObserver.disconnect();
         videoOpenObserver.disconnect();
-        afteVideorClose();
+        afterVideoClose();
         afterVideoOpen();
       }
     });
