@@ -87,6 +87,7 @@ const getDefaultOptions = () => {
     disableRecommendations_xhook: false,
     disableReactions_xhook: false,
     tryPlayNextEpisode_xhook: false,
+    dismissedNotices: [],
   };
 };
 
@@ -908,6 +909,130 @@ class Dialog {
   }
 }
 
+const showNotice = (options = getDefaultOptions()) => {
+  const optDialog = getOptionDialog();
+  if (!optDialog || optDialog.hasAttribute("open")) {
+    return;
+  }
+  if (document.querySelector(".dv-player-fullscreen")) {
+    return;
+  }
+  const searchParams = new URL(window.location.href).searchParams;
+  if (searchParams.get("autoplay") === "1") {
+    return;
+  }
+
+  const noticeItems = optDialog.querySelectorAll(
+    ".nextup-ext-opt-dialog-notice-item[data-notice-id]"
+  );
+  if (noticeItems.length === 0) {
+    return;
+  }
+
+  const dismissedNoticeIds = new Set(options.dismissedNotices);
+  const noticeItemsToShow = [...noticeItems].filter((item) => {
+    const noticeId = item.dataset.noticeId;
+    return noticeId && !dismissedNoticeIds.has(noticeId);
+  });
+  if (noticeItemsToShow.length === 0) {
+    return;
+  }
+
+  let shouldShowWrapper = false;
+  for (const item of noticeItemsToShow) {
+    const noticeId = item.dataset.noticeId;
+    switch (noticeId) {
+      case "autoplay-behavior-change-202609":
+        if (!options.hideNextup) {
+          break;
+        }
+        item.style.display = "block";
+        shouldShowWrapper = true;
+        break;
+      default:
+        item.style.display = "block";
+        shouldShowWrapper = true;
+        break;
+    }
+  }
+
+  if (!shouldShowWrapper) {
+    return;
+  }
+  const noticeWrapper = optDialog.querySelector(
+    ".nextup-ext-opt-dialog-notice"
+  );
+  if (!noticeWrapper) {
+    return;
+  }
+  noticeWrapper.style.display = "block";
+  setTimeout(() => {
+    optDialog.showModal();
+  }, 1500);
+};
+
+const addEventListenerForNoticeItemHideButton = () => {
+  const optDialog = getOptionDialog();
+  if (!optDialog) {
+    return;
+  }
+
+  const noticeHideButtons = optDialog.querySelectorAll(
+    ".nextup-ext-opt-dialog-notice-item[data-notice-id] .nextup-ext-opt-dialog-notice-item-hide-button"
+  );
+  if (noticeHideButtons.length === 0) {
+    return;
+  }
+
+  const hideNoticeWrapper = () => {
+    const noticeWrapper = optDialog.querySelector(
+      ".nextup-ext-opt-dialog-notice"
+    );
+    if (!noticeWrapper) {
+      return;
+    }
+    noticeWrapper.style.display = "none";
+  };
+
+  const tryHideNoticeWrapper = () => {
+    const noticeItems = optDialog.querySelectorAll(
+      ".nextup-ext-opt-dialog-notice-item[data-notice-id]"
+    );
+    if (noticeItems.length === 0) {
+      hideNoticeWrapper();
+      return;
+    }
+    const shouldHide = Array.from(noticeItems).every(
+      (item) => !item.checkVisibility()
+    );
+    if (shouldHide) {
+      hideNoticeWrapper();
+    }
+  };
+
+  for (const button of noticeHideButtons) {
+    button.addEventListener("click", async (e) => {
+      const targetItem = e.target.closest(
+        ".nextup-ext-opt-dialog-notice-item[data-notice-id]"
+      );
+      if (!targetItem) {
+        return;
+      }
+      targetItem.style.display = "none";
+      const noticeId = targetItem.dataset.noticeId;
+      if (!noticeId) {
+        return;
+      }
+      const options = await getOptions();
+      const dismissedNotices = options.dismissedNotices ?? [];
+      dismissedNotices.push(noticeId);
+      await saveOptions({ dismissedNotices });
+
+      tryHideNoticeWrapper();
+    });
+  }
+};
+
 const createOptionMessages = () => {
   const jaMessages = {
     promptReloadPage: "オプションを変更した場合はページをリロードしてください",
@@ -1038,6 +1163,17 @@ const createOptionMessages = () => {
       Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
       Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。`,
     close: "閉じる",
+    noticeTitle: "Auto hide next up card for Amazon Prime Video からのお知らせ",
+    hideNoticeItem: "このお知らせを今後表示しない",
+    notice_autoplayBehaviorChange202609_Title:
+      "Prime Videoの自動再生について (2026/09/26)",
+    notice_autoplayBehaviorChange202609_body: `Prime Videoの仕様変更により、Next upを非表示にすると、動画終了後に次のエピソードへ自動的に移動しなくなる場合があります。
+      従来のように次のエピソードへ自動的に移動したい場合は、以下のいずれかの機能を利用できます。
+      - 「動画終了直前に次のエピソードボタンを自動クリックする」
+      - 「実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる」
+      - 「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」
+      ※これらの機能は併用せず、いずれか1つのみを有効にすることを推奨します。
+      ※各機能の詳細や注意点については、それぞれのツールチップをご確認ください。`,
   };
   const enMessages = {
     promptReloadPage: "If you change the options, please reload the page",
@@ -1169,6 +1305,17 @@ const createOptionMessages = () => {
       On Chrome, you need to allow the [Sound] permission for the site.
       On Firefox, you need to allow the [Autoplay] permission for the site.`,
     close: "Close",
+    noticeTitle: "Notice from Auto hide next up card for Amazon Prime Video",
+    hideNoticeItem: "Don't show this notice again",
+    notice_autoplayBehaviorChange202609_Title:
+      "About Prime Video Autoplay (2026/09/26)",
+    notice_autoplayBehaviorChange202609_body: `Due to changes to Prime Video, hiding Next up may prevent Prime Video from automatically moving to the next episode after the video ends.
+      If you would like to automatically move to the next episode as before, you can use one of the following features:
+      - ”Automatically click the Next Episode button just before the video ends”
+      - ”Experimental: Try to play the next episode if autoplay fails”
+      - ”Experimental: Try to play the next episode if the video player closes automatically”
+      Note: We recommend enabling only one of these features at a time.
+      Note: Please check the tooltip for each feature for more details and important notes.`,
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
@@ -1192,7 +1339,18 @@ const createOptionDialog = async () => {
       </div>
       <div class="nextup-ext-opt-dialog-content nextup-ext-opt-dialog-content-active" data-tab-id="options">
           <section>
-              <div class="nextup-ext-opt-dialog-notice"></div>
+              <div class="nextup-ext-opt-dialog-notice">
+                <p class="nextup-ext-opt-dialog-notice-title"><strong>
+                  ${messages.noticeTitle}
+                </strong></p>
+                <div class="nextup-ext-opt-dialog-notice-item" data-notice-id="autoplay-behavior-change-202609">
+                  <p class="nextup-ext-opt-dialog-notice-item-title">${messages.notice_autoplayBehaviorChange202609_Title}</p>
+                  <p>${messages.notice_autoplayBehaviorChange202609_body.replaceAll(regexForMultiineTooltips, "")}</p>
+                  <button type="button" class="nextup-ext-opt-dialog-notice-item-hide-button">
+                    ${messages.hideNoticeItem}
+                  </button>
+                </div>
+              </div>
 
               <div class="group-title nextup-ext-opt-dialog-note">
                 <p>${messages.promptReloadPage}</p>
@@ -1811,9 +1969,42 @@ const createOptionDialog = async () => {
         margin-bottom: 10px;
         display: none;
     }
-    .nextup-ext-opt-dialog-notice p {
+    .nextup-ext-opt-dialog-notice-title {
         color: red;
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 4px;
     }
+    .nextup-ext-opt-dialog-notice-item {
+        color: initial;
+        border: 1px dotted red;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        display: none;
+        
+    }
+    .nextup-ext-opt-dialog-notice-item p{
+        white-space: pre-line; 
+    }
+    .nextup-ext-opt-dialog-notice-item-title {
+        color: red;
+        text-align: center;
+        text-decoration: underline;
+    }
+    .nextup-ext-opt-dialog-notice-item-hide-button {
+        background-color: #DDD;
+        border: solid 1px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 12px;
+    }
+    .nextup-ext-opt-dialog-notice-item-hide-button:hover {
+        background-color: #EEE;
+    }
+    .nextup-ext-opt-dialog-notice-item-hide-button:active {
+        background-color: #CCC;
+      }
 
     .nextup-ext-opt-dialog-close-button {
         position: absolute;
@@ -1971,6 +2162,9 @@ const createOptionDialog = async () => {
   }
 
   const optDialog = getOptionDialog();
+
+  showNotice(options);
+  addEventListenerForNoticeItemHideButton();
 
   //  Adjust width of options dialog.
   optDialog.style.setProperty("visibility", "hidden", "important");
