@@ -931,6 +931,9 @@ const createOptionMessages = () => {
       動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」を試してみてください。`,
     clickNextEpisodeButtonBeforeVideoEnds:
       "動画終了直前に次のエピソードボタンを自動クリックする",
+    clickNextEpisodeButtonBeforeVideoEnds_Tooltip: `Next upの非表示ボタンを自動クリックすると、自動再生がキャンセルされる場合があります。
+      このオプションを有効にすると、動画終了の1秒前に「次のエピソード」ボタンを自動クリックします。
+      動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる」または「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」を試してみてください。`,
     tryPlayNextEpisodeIfAutoplayFails:
       "実験的: 自動再生が機能しなかった場合に次のエピソードの再生を試みる",
     hideReactions: "Reactions（好き/好きではない）を非表示にする",
@@ -1049,9 +1052,12 @@ const createOptionMessages = () => {
       "Automatically click the next up just before the video ends",
     clickNextupBeforeVideoEnds_Tooltip: `There is a problem with the Next up card timer behavior when auto-play is enabled, so auto-play may not work as expected.
       When this option is enabled, the Next up card that appears a few seconds before the video ends will be clicked automatically 1 second before the end of the video.
-      If you want to watch the video all the way to the end, leave this option disabled and try "Experimental: Try to play the next episode if the video closes automatically" instead.`,
+      If you want to watch the video all the way to the end, leave this option disabled and try ”Experimental: Try to play the next episode if the video closes automatically” instead.`,
     clickNextEpisodeButtonBeforeVideoEnds:
       "Automatically click the next episode button just before the video ends",
+    clickNextEpisodeButtonBeforeVideoEnds_Tooltip: `Automatically clicking the Next up hide button may cancel autoplay.
+      When this option is enabled, the ”Next episode” button will be clicked automatically 1 second before the video ends.
+      If you want to watch the video all the way to the end, leave this option disabled and try either ”Experimental: Try to play the next episode if autoplay fails” or ”Experimental: Try to play the next episode if the video closes automatically”.`,
     tryPlayNextEpisodeIfAutoplayFails:
       "Experimental: Try to play the next episode if autoplay fails",
     hideReactions: "Hide reactions (like/not for me)",
@@ -1275,6 +1281,10 @@ const createOptionDialog = async () => {
                       } />
                       <p>${messages.clickNextEpisodeButtonBeforeVideoEnds}</p>
                   </label>
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.clickNextEpisodeButtonBeforeVideoEnds_Tooltip.replaceAll(
+                    regexForMultiineTooltips,
+                    ""
+                  )}" data-msg-id="clickNextEpisodeButtonBeforeVideoEnds"></p>
               </div>
 
               <div class="nextup-ext-opt-dialog-item-container">
