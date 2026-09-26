@@ -86,7 +86,7 @@ const getDefaultOptions = () => {
     removeNextupTimecodes_xhook: false,
     disableRecommendations_xhook: false,
     disableReactions_xhook: false,
-    forcePlayNextEpisode_xhook: false,
+    tryPlayNextEpisode_xhook: false,
   };
 };
 
@@ -352,6 +352,20 @@ class OptionsSchemaManager {
     (stored) => {
       // A silly mistake. Do not remove this item.
       return structuredClone(stored ?? {});
+    },
+    (stored) => {
+      const out = structuredClone(stored ?? {});
+
+      if (
+        "forcePlayNextEpisode_xhook" in out &&
+        !("tryPlayNextEpisode_xhook" in out)
+      ) {
+        out.tryPlayNextEpisode_xhook = out.forcePlayNextEpisode_xhook;
+      }
+
+      delete out.forcePlayNextEpisode_xhook;
+
+      return out;
     },
   ];
 
@@ -914,7 +928,7 @@ const createOptionMessages = () => {
     clickNextupBeforeVideoEnds: "動画終了直前にNext upを自動クリックする",
     clickNextupBeforeVideoEnds_Tooltip: `自動再生が有効な場合のNext upのタイマーの挙動に問題があり、自動再生が期待通りに動作しないことがあります。
       このオプションを有効にすると、動画終了の数秒前に表示されるNext upを、動画終了の1秒前に自動クリックします。
-      動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する」を試してみてください。`,
+      動画を最後まで再生したい場合は、このオプションを有効にせず、「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」を試してみてください。`,
     clickNextEpisodeButtonBeforeVideoEnds:
       "動画終了直前に次のエピソードボタンを自動クリックする",
     tryPlayNextEpisodeIfAutoplayFails:
@@ -1004,14 +1018,14 @@ const createOptionMessages = () => {
     removeNextupTimecodes: "Next upのタイムコードを除去する",
     removeNextupTimecodes_Tooltip: `通常はこの機能を有効にする必要はありません。
       この機能によりNext upが無効化されますが、自動再生の処理も無効化されます。
-      次のエピソードを自動的に再生したい場合は「実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する」も有効にしてください。\n
+      次のエピソードを自動的に再生したい場合は「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」も有効にしてください。\n
       なおこの機能を有効にすると、「おすすめの商品」の表示も無効化されます。
       「おすすめの商品」のみを無効化したい場合はこの機能を有効にせず、「おすすめの商品を無効にする」を有効にしてください。`,
     disableRecommendations: "おすすめの商品を無効にする",
     disableReactions: "Reactions（好き/好きではない）を無効にする",
-    forcePlayNextEpisode:
-      "実験的: 動画終了時に自動的に閉じた場合に次のエピソードを再生する",
-    forcePlayNextEpisode_Tooltip: `この機能は自動再生の代替手段として機能します。\n
+    tryPlayNextEpisode:
+      "実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる",
+    tryPlayNextEpisode_Tooltip: `この機能は自動再生の代替手段として機能します。\n
       Chromeの場合、サイトに対して [音声] の権限を許可する必要があります。
       Firefoxの場合、サイトに対して [自動再生] の権限を許可する必要があります。`,
     close: "閉じる",
@@ -1035,7 +1049,7 @@ const createOptionMessages = () => {
       "Automatically click the next up just before the video ends",
     clickNextupBeforeVideoEnds_Tooltip: `There is a problem with the Next up card timer behavior when auto-play is enabled, so auto-play may not work as expected.
       When this option is enabled, the Next up card that appears a few seconds before the video ends will be clicked automatically 1 second before the end of the video.
-      If you want to watch the video all the way to the end, leave this option disabled and try "Experimental: Play the next episode if the video is automatically closed at the end of the video" instead.`,
+      If you want to watch the video all the way to the end, leave this option disabled and try "Experimental: Try to play the next episode if the video closes automatically" instead.`,
     clickNextEpisodeButtonBeforeVideoEnds:
       "Automatically click the next episode button just before the video ends",
     tryPlayNextEpisodeIfAutoplayFails:
@@ -1126,14 +1140,14 @@ const createOptionMessages = () => {
     removeNextupTimecodes: "Remove next up timecodes",
     removeNextupTimecodes_Tooltip: `Normally there is no need to enable this feature.
       This feature disables next up, but it also disables autoplay
-      If you want the next episode to play automatically, please also enable “Experimental: Play the next episode if the video is automatically closed at the end of the video”.\n
+      If you want the next episode to play automatically, please also enable “Experimental: Try to play the next episode if the video closes automatically”.\n
       Please note that enabling this feature will also disable the “featured items” display.
       If you wish to disable “featured items” only, please do not enable this feature and enable “Disable featured items”.`,
     disableRecommendations: "Disable featured items",
     disableReactions: "Disable reactions (like/not for me)",
-    forcePlayNextEpisode:
-      "Experimental: Play the next episode if the video is automatically closed at the end of the video",
-    forcePlayNextEpisode_Tooltip: `This feature functions as an alternative to autoplay.\n
+    tryPlayNextEpisode:
+      "Experimental: Try to play the next episode if the video closes automatically",
+    tryPlayNextEpisode_Tooltip: `This feature functions as an alternative to autoplay.\n
       For Chrome, you must allow [audio] permissions for the site.
       For Firefox, you must allow the [Autoplay] permission for the site.`,
     close: "Close",
@@ -1699,15 +1713,15 @@ const createOptionDialog = async () => {
 
               <div class="nextup-ext-opt-dialog-item-container">
                   <label>
-                      <input type="checkbox" id="force-play-next-episode" name="force-play-next-episode" ${
-                        options.forcePlayNextEpisode_xhook ? "checked" : ""
+                      <input type="checkbox" id="try-play-next-episode" name="try-play-next-episode" ${
+                        options.tryPlayNextEpisode_xhook ? "checked" : ""
                       } />
-                      <p>${messages.forcePlayNextEpisode}</p>
+                      <p>${messages.tryPlayNextEpisode}</p>
                   </label>
-                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.forcePlayNextEpisode_Tooltip.replaceAll(
+                  <p class="nextup-ext-opt-dialog-tooltip" title="${messages.tryPlayNextEpisode_Tooltip.replaceAll(
                     regexForMultiineTooltips,
                     ""
-                  )}" data-msg-id="forcePlayNextEpisode"></p>
+                  )}" data-msg-id="tryPlayNextEpisode"></p>
               </div>
           </section>
       </div>
@@ -2142,8 +2156,8 @@ const createOptionDialog = async () => {
         case "disable-reactions":
           await saveOptions({ disableReactions_xhook: e.target.checked });
           break;
-        case "force-play-next-episode":
-          await saveOptions({ forcePlayNextEpisode_xhook: e.target.checked });
+        case "try-play-next-episode":
+          await saveOptions({ tryPlayNextEpisode_xhook: e.target.checked });
           break;
         default:
           break;
@@ -3356,7 +3370,7 @@ const runXhook = () => {
       }
     }
 
-    static forcePlayNextEpisode(request, response) {
+    static tryPlayNextEpisode(request, response) {
       const url = request.url;
       if (url.includes(".mp4")) {
         const pathname = new window.URL(url).pathname;
@@ -3448,8 +3462,8 @@ const runXhook = () => {
       if (options.disableReactions_xhook) {
         this.#queue.push(this.disableReactions);
       }
-      if (options.forcePlayNextEpisode_xhook) {
-        this.#queue.push(this.forcePlayNextEpisode);
+      if (options.tryPlayNextEpisode_xhook) {
+        this.#queue.push(this.tryPlayNextEpisode);
       }
     }
   }
@@ -3938,7 +3952,7 @@ const runXhook = () => {
   showVideoResolution();
 
   const detectNextEpisodeId = () => {
-    if (!options.forcePlayNextEpisode_xhook) {
+    if (!options.tryPlayNextEpisode_xhook) {
       return;
     }
 
@@ -4243,7 +4257,7 @@ const injectXhook = (options = getDefaultOptions()) => {
     options.removeNextupTimecodes_xhook,
     options.disableRecommendations_xhook,
     options.disableReactions_xhook,
-    options.forcePlayNextEpisode_xhook,
+    options.tryPlayNextEpisode_xhook,
   ];
   const shouldInjectXhook = xhookOptions.some((opt) => opt);
   if (!shouldInjectXhook) {
@@ -8941,20 +8955,20 @@ class ElementController {
     );
   }
 
-  forcePlayNextEpisode(options = getDefaultOptions()) {
-    if (!options.forcePlayNextEpisode_xhook) {
+  tryPlayNextEpisode(options = getDefaultOptions()) {
+    if (!options.tryPlayNextEpisode_xhook) {
       return;
     }
-    this.runFeatureWhenVariantResolved("forcePlayNextEpisode", () => {
+    this.runFeatureWhenVariantResolved("tryPlayNextEpisode", () => {
       if (this.isVariantLegacy()) {
-        this.forcePlayNextEpisodeLegacy(options);
+        this.tryPlayNextEpisodeLegacy(options);
       } else if (this.isVariantModern()) {
-        this.forcePlayNextEpisodeModern(options);
+        this.tryPlayNextEpisodeModern(options);
       }
     });
   }
 
-  forcePlayNextEpisodeLegacy(options = getDefaultOptions()) {
+  tryPlayNextEpisodeLegacy(options = getDefaultOptions()) {
     let titleText = null;
     let titleChanged = false;
     let subtitleText = null;
@@ -9179,7 +9193,7 @@ class ElementController {
         new MutationObserver((_, observer) => {
           if (this.player.classList.contains("dv-player-fullscreen")) {
             observer.disconnect();
-            this.forcePlayNextEpisode(options);
+            this.tryPlayNextEpisode(options);
           }
         }).observe(this.player, {
           attributes: true,
@@ -9192,7 +9206,7 @@ class ElementController {
     });
   }
 
-  forcePlayNextEpisodeModern(options = getDefaultOptions()) {
+  tryPlayNextEpisodeModern(options = getDefaultOptions()) {
     let titleText = null;
     let episodeTitle = null;
     let videoSrc = null;
@@ -9286,26 +9300,26 @@ class ElementController {
 
     const playNextEpisode = () => {
       if (videoClosedByUser) {
-        console.log("forcePlayNextEpisode:", "Video closed by user");
+        console.log("tryPlayNextEpisode:", "Video closed by user");
         return;
       }
 
       const nextEpisodeInfoStr = this.player.dataset.nextupExtNextEpisodeInfo;
       if (!nextEpisodeInfoStr) {
-        console.log("forcePlayNextEpisode:", "Next episode not found");
+        console.log("tryPlayNextEpisode:", "Next episode not found");
         return;
       }
       delete this.player.dataset.nextupExtNextEpisodeInfo;
       const nextEpisodeInfo = JSON.parse(nextEpisodeInfoStr);
       const nextEpisodeId = nextEpisodeInfo.nextEpisodeId;
       if (!nextEpisodeId || videoSrc !== nextEpisodeInfo.videoSrc) {
-        console.log("forcePlayNextEpisode:", "Next episode not found");
+        console.log("tryPlayNextEpisode:", "Next episode not found");
         return;
       }
 
       setTimeout(() => {
         if (videoClosedByUser) {
-          console.log("forcePlayNextEpisode:", "Video closed by user");
+          console.log("tryPlayNextEpisode:", "Video closed by user");
           return;
         }
 
@@ -9407,7 +9421,7 @@ class ElementController {
 
     const afterVideoOpen = () => {
       delete this.player.dataset.nextupExtVideoInfo;
-      this.forcePlayNextEpisodeModern(options);
+      this.tryPlayNextEpisodeModern(options);
     };
 
     let videoSrcObserver;
@@ -9675,7 +9689,7 @@ const main = async () => {
         }
 
         try {
-          controller.forcePlayNextEpisode(options);
+          controller.tryPlayNextEpisode(options);
         } catch (e) {
           console.log(e);
         }
