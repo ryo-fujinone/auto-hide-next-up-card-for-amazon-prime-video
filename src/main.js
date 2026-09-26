@@ -963,8 +963,8 @@ const createOptionMessages = () => {
       "左上の閉じるボタンを非表示にし、右上に同等のボタンを表示する",
     hideXRay: "実験的: X-Rayを非表示にする（提供地域のみ）",
     hideXRay_Tooltip: `X-Rayは一部の地域で提供されている機能です。
-      日本のプライムビデオでは通常表示されないため、日本ではこの設定の影響はありません。
-      この拡張機能は日本のプライムビデオでのみテストされているため、この機能は実験的です。`,
+      日本のPrime Videoでは通常表示されないため、日本ではこの設定の影響はありません。
+      この拡張機能は日本のPrime Videoでのみテストされているため、この機能は実験的です。`,
     hideVariousTextAndButtons: "各種テキストやボタンを非表示にする",
     hideVariousTextAndButtons_Tooltip: `表示用のキーを押しながらマウスを操作している間は、非表示にしている要素が一時的に表示状態になります。
       （デフォルト：WindowsではCtrl/Shiftキー、MacではCommand/Shiftキー）
@@ -999,15 +999,15 @@ const createOptionMessages = () => {
       Windows：Ctrl/Shift/Alt/英数字をサポート
       Mac：Command/Shift/Option/英数字をサポート`,
     monitorNetworkActivity: "通信の監視・改変",
-    monitorNetworkActivity_Tooltip: `通信の監視・改変を行うことでプライムビデオの挙動を制御します。
+    monitorNetworkActivity_Tooltip: `通信の監視・改変を行うことでPrime Videoの挙動を制御します。
       広告ブロック系の拡張機能との併用は避けることを推奨します。`,
     forceHighestResolution: "強制的に最高画質で再生する",
-    forceHighestResolution_Tooltip: `プライムビデオは通信状況やウィンドウサイズなどを基に画質を動的に制御します。
+    forceHighestResolution_Tooltip: `Prime Videoは通信状況やウィンドウサイズなどを基に画質を動的に制御します。
       この機能は、最高画質を強制するために、マニフェスト（MPD）から最高画質以外の情報を除去します。\n
       HD画質（720p/1080p）で再生できるかどうかは、OS・ブラウザ・端末によって変わります。
       ユーザーエージェント要件とWidevine要件があると思われ、両方が満たされない場合、標準画質に制限されるようです。
       WindowsとmacOSの場合、Widevine要件（VMP）を満たすブラウザでのみHD画質で再生可能だと思われます。
-      （プライムビデオはChrome、Firefox、Edge、Safari、Operaを公式にサポートし、その他Brave、VivaldiでもHDで再生可能）
+      （Prime VideoはChrome、Firefox、Edge、Safari、Operaを公式にサポートし、その他Brave、VivaldiでもHDで再生可能）
       Androidのブラウザを使用する場合、ユーザーエージェントをWindowsかmacOSに偽装することでHD画質で再生できる可能性があります。
       Linuxの場合、HD画質での再生に必要なWidevine要件を満たすことはできません。`,
     forceHighestResolutionLenient:
@@ -1020,7 +1020,7 @@ const createOptionMessages = () => {
     removeAdRelatedData_Tooltip:
       "この機能が有効な時に動画が途中で止まることがある場合は、この機能を無効にしてください。",
     enableAutoplay: "自動再生のフラグをtrueに変更する",
-    enableAutoplay_Tooltip: `プライムビデオの設定を変更せずに自動再生を活用するための機能です。
+    enableAutoplay_Tooltip: `Prime Videoの設定を変更せずに自動再生を活用するための機能です。
       他の視聴環境の都合で自動再生をオンにしたくない場合に役立ちます。`,
     removeNextupTimecodes: "Next upのタイムコードを除去する",
     removeNextupTimecodes_Tooltip: `通常はこの機能を有効にする必要はありません。
