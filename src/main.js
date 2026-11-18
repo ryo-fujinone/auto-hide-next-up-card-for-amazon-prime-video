@@ -949,6 +949,16 @@ const showNotice = (options = getDefaultOptions()) => {
         item.style.display = "block";
         shouldShowWrapper = true;
         break;
+      case "playback-speed-controls-202611":
+        if (
+          !options.forceHighestResolution_xhook ||
+          options.forceHighestResolutionLenient_xhook
+        ) {
+          break;
+        }
+        item.style.display = "block";
+        shouldShowWrapper = true;
+        break;
       default:
         item.style.display = "block";
         shouldShowWrapper = true;
@@ -1174,6 +1184,11 @@ const createOptionMessages = () => {
       - 「実験的: 動画が自動的に閉じた場合に次のエピソードの再生を試みる」
       ※これらの機能は併用せず、いずれか1つのみを有効にすることを推奨します。
       ※各機能の詳細や注意点については、それぞれのツールチップをご確認ください。`,
+    notice_playbackSpeedControls202611_Title:
+      "Prime Videoの再生速度変更機能について (2026/11/18)",
+    notice_playbackSpeedControls202611_body: `Prime Videoのプレイヤーに、再生速度を変更する機能が追加されました。アカウントによっては、再生速度メニューがまだ表示されない場合があります。\n
+      この拡張機能の「強制的に最高画質で再生する」が有効だと、再生速度メニューに「利用できません」と表示されることがあります。その場合は、このダイアログ下部の「通信の監視・改変」で「実験的: 最高品質ではない最高解像度での再生を許容する」を有効にし、ページを再読み込みしてください。この設定では、同じ解像度でもビットレートの低い映像が選ばれることがあります。\n
+      最高画質に固定したまま再生速度を変えたい場合は、Video Speed Controllerなどの拡張機能を使う方法もあります。`,
   };
   const enMessages = {
     promptReloadPage: "If you change the options, please reload the page",
@@ -1316,6 +1331,11 @@ const createOptionMessages = () => {
       - ”Experimental: Try to play the next episode if the video player closes automatically”
       Note: We recommend enabling only one of these features at a time.
       Note: Please check the tooltip for each feature for more details and important notes.`,
+    notice_playbackSpeedControls202611_Title:
+      "Prime Video’s playback speed controls (2026/11/18)",
+    notice_playbackSpeedControls202611_body: `Prime Video has added playback speed controls to its player. The playback speed menu may not appear yet for some accounts.\n
+      If this extension’s “Force playback at highest resolution” option is enabled, the playback speed menu may show “Unavailable” as a tooltip. If this happens, go to “Monitor and modify network activity” near the bottom of this dialog, enable “Experimental: Allow playback of videos that are not of the highest quality”, and reload the page. With this option enabled, Prime Video may play a lower-bitrate stream at the same resolution.\n
+      If you want to change playback speed while keeping playback locked to the highest available quality, you can use an extension such as Video Speed Controller.`,
   };
   return /ja|ja-JP/.test(window.navigator.language) ? jaMessages : enMessages;
 };
@@ -1346,6 +1366,13 @@ const createOptionDialog = async () => {
                 <div class="nextup-ext-opt-dialog-notice-item" data-notice-id="autoplay-behavior-change-202609">
                   <p class="nextup-ext-opt-dialog-notice-item-title">${messages.notice_autoplayBehaviorChange202609_Title}</p>
                   <p>${messages.notice_autoplayBehaviorChange202609_body.replaceAll(regexForMultiineTooltips, "")}</p>
+                  <button type="button" class="nextup-ext-opt-dialog-notice-item-hide-button">
+                    ${messages.hideNoticeItem}
+                  </button>
+                </div>
+                <div class="nextup-ext-opt-dialog-notice-item" data-notice-id="playback-speed-controls-202611">
+                  <p class="nextup-ext-opt-dialog-notice-item-title">${messages.notice_playbackSpeedControls202611_Title}</p>
+                  <p>${messages.notice_playbackSpeedControls202611_body.replaceAll(regexForMultiineTooltips, "")}</p>
                   <button type="button" class="nextup-ext-opt-dialog-notice-item-hide-button">
                     ${messages.hideNoticeItem}
                   </button>
