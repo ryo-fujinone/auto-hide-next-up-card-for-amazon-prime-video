@@ -8080,6 +8080,7 @@ class ElementController {
           button:has(> .atvweb-inplayback-carousel-card):not(:hover) .atvweb-inplayback-carousel-card-title,
           [data-nextup-ext-role="resolution-info"],
           .next-up-ext-video-close-button-container .tooltip,
+          div:has(>#atvwebplayersdk-speed-control-button) .tooltip,
           .atvwebplayersdk-nextupcard-title,
           .atvwebplayersdk-nextupcardhide-button,
           .atvwebplayersdk-top-left-regulatory-overlay span,
@@ -8121,7 +8122,8 @@ class ElementController {
           ${PrimeVideoTextRepository.generatePictureInPictureToggleButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateFullscreenToggleButtonSelectors(this.player)},
           ${PrimeVideoTextRepository.generateSettingsButtonSelectors(this.player)},
-          .next-up-ext-video-close-button-container button {
+          .next-up-ext-video-close-button-container button,
+          #atvwebplayersdk-speed-control-button {
             background: transparent !important;
             filter: drop-shadow(1px 0 0 black) drop-shadow(-1px 0 0 black) drop-shadow(0 1px 0 black) drop-shadow(0 -1px 0 black);
           }
